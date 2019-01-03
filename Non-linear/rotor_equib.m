@@ -1,9 +1,9 @@
 function x = rotor_equib(P,x0,O,A)
-if nargin < 3
+if nargin < 3 || isempty(O)
     O = 0;
 end
-if nargin < 4
-    A = 0;%linspace(0,2*pi,100);
+if nargin < 4 || isempty(A)
+    A = linspace(0,2*pi,100);
 end
 N = length(A);
 
@@ -71,11 +71,11 @@ States.bSolve = 0;
 
 Forces = bearingforces(P,States);
 
-Fr  = P.Model.Rotor.K*xCG*wons;
-Fg  = P.Model.Fg*wons;
+Fr  = P.Model.Rotor.K*xCG;
+Fg  = P.Model.Fg;
 Fb  = P.Model.A'*Forces.F;
 
-constr = [mean(Fg - Fr - Fb,2); Forces.FInt(:)];
+constr = [Fg - Fr - mean(Fb,2); Forces.FInt(:)];
 
 if any(isnan(constr))
     1

@@ -1,4 +1,4 @@
-function P = setupsystem(P,type,O)
+function P = setupsystem(P,type,O,A)
 if ~isfield(P,'g')
     P.g = [0 0]';
 end
@@ -7,6 +7,9 @@ if nargin < 2
 end
 if nargin < 3
     O = 0;
+end
+if nargin < 4
+    A = [];
 end
 
 % Rotors - first setup the mass related parameters for all of the rotors
@@ -40,7 +43,7 @@ else
 end
 
 %% Now find equilibrium position & resetup
-x0 = rotor_equib(P,x0,O);
+x0 = rotor_equib(P,x0,O,A);
 
 P.Model.x0 = x0(1:P.Model.NDof);
 P.Model.xInt = x0(P.Model.NDof+1:end);

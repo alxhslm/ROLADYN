@@ -49,7 +49,13 @@ if ~isfield(B.Elements,'N')
     end   
 end
 B.Elements.r = B.Setup.Z/B.Elements.N; %force ratio
-B.Elements.psi = B.Geometry.psi0 + (0:(B.Elements.N-1))'*(2*pi/B.Elements.N);
+switch B.Setup.Arrangement
+    case {'single','double_alternating'}
+        B.Elements.psi = B.Geometry.psi0 + (0:(B.Elements.N-1))'*(2*pi/B.Elements.N);
+    case 'double_inline'
+        B.Elements.psi = B.Geometry.psi0 + floor(0:0.5:(B.Elements.N/2-1.5))'*(4*pi/B.Elements.N);
+end
+    
 B.Elements = createArrangement(B.Setup.Arrangement,B.Geometry,B.Elements);
 
 if ~isfield(B.Setup,'KbParallel')
@@ -130,15 +136,13 @@ F = B.F0 + B.KPar*[qi; qo];
 
 xInt = B.x0;
 
-
-
 function S = createArrangement(Arrangement,Geometry,S)
 S.alpha = Geometry.alpha0 + 0*S.psi;
 S.z = Geometry.z0 + 0*S.psi;
 
 if strcmpi(Arrangement,'single')
     %done
-elseif strcmpi(Arrangement,'double')
+elseif strncmpi(Arrangement,'double',6)
     if mod(length(S.psi),2)
         error('You need an even number of balls for a double arrangement')
     end
