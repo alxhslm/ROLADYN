@@ -53,7 +53,7 @@ switch B.Setup.Arrangement
     case {'single','double_alternating'}
         B.Elements.psi = B.Geometry.psi0 + (0:(B.Elements.N-1))'*(2*pi/B.Elements.N);
     case 'double_inline'
-        B.Elements.psi = B.Geometry.psi0 + floor(0:0.5:(B.Elements.N/2-1.5))'*(4*pi/B.Elements.N);
+        B.Elements.psi = B.Geometry.psi0 + floor(0:0.5:(B.Elements.N/2-0.5))'*(4*pi/B.Elements.N);
 end
     
 B.Elements = createArrangement(B.Setup.Arrangement,B.Geometry,B.Elements);
