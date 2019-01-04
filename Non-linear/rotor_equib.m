@@ -24,7 +24,8 @@ options.ftol = 1E-8;
 options.xtol = 1E-12;
 options.jacobian = @rotor_equilibrium_jacob;
 options.jacobianstructure = Jstr;
-    
+options.print_level = 0;
+
 info.status = 2;
 
 iter = 0;
