@@ -26,16 +26,16 @@ D.z   = N(D.iNode);
 D.material = setupmaterial(D.material);
 
 if isfield(D,'m') 
-    if isfield(D,'Id') && ~isfield(D,'R')
-        %only know inertia properties
-        D = mass2dim(D);
-    elseif isnan(D.material.rho)
-        if isfield(D,'R')
+    if isnan(D.material.rho)
+        if isfield(D,'R') && isfield(D,'t')
             %only know geometric properties
             D = dim2mass(D);
         else
             error('Disc not fully defined');
         end
+    elseif ~(isfield(D,'Id') && isfield(D,'R'))
+        %only know inertia properties
+        D = mass2dim(D);   
     end
 elseif isnan(D.material.rho) && ~isfield(D,'R')
     error('Disc not fully defined');
