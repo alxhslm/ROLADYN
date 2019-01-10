@@ -11,9 +11,9 @@ A = repmat(A,1,1,NSweep);
 
 for i = 1:NSweep
     [R(:,:,i),S(:,:,i),A(:,:,i)] = rotor_ss(O(i),FE);
+    A2(:,:,i) = blkdiag(A(:,:,i),A(:,:,i));
 end
 
-A2 = blkdiag(A,A);
 At = mtransposex(A2);
 S2 = mtimesx(At,mtimesx(S,A2));
 R2 = mtimesx(At,mtimesx(R,A2));
