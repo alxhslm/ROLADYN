@@ -1,4 +1,4 @@
-function h = plot_system(P,bLabel)
+function varargout = plot_system(P,bLabel)
 
 if nargin < 2
     bLabel = 1;
@@ -102,6 +102,10 @@ ylabel('x (m)')
 zlabel('y (m)')
 view(2)
 axis equal
+
+if nargout > 0
+    varargout{1} = h;
+end
 
 function [X,Y,Z] = plot_cylinder(ri,ro,z0,t)
 r = [ri ro ro ri];
