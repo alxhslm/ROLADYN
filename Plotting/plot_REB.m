@@ -23,8 +23,8 @@ elseif nargs > 2
 else
     REB = varargin{1};
     q = zeros(4,1);
-    Xz = REB.Geometry.D/2*sin(REB.Elements.alpha);
-    Xr = REB.Geometry.D/2*cos(REB.Elements.alpha);
+    Xz = (REB.Geometry.RRaceo - REB.Geometry.D/2)*sin(REB.Elements.alpha);
+    Xr = (REB.Geometry.RRaceo - REB.Geometry.D/2)*cos(REB.Elements.alpha);
     Q = 0*Xz;
     Ai = 0;
     Ao = 0;
@@ -68,15 +68,15 @@ aBall = REB.Kinematics.rPivot_lat.*(q(1).*cos(REB.Elements.psi) + q(2).*sin(REB.
 q(1:3,:) = q(1:3,:)*m2mm;
 
 for i = 1:REB.Elements.N
-   hBall(i) = plot_ball(hBall(i),(REB.Geometry.zo*sign(REB.Elements.z(i))+Xz(i))*m2mm,(REB.Geometry.Ro+Xr(i))*m2mm,REB.Geometry.D/2*m2mm,aBall(i),Acage+REB.Elements.psi(i),N2kN*Q(i));
+   hBall(i) = plot_ball(hBall(i),(REB.Geometry.zRaceo*sign(REB.Elements.z(i))+Xz(i))*m2mm,(REB.Geometry.rRaceo+Xr(i))*m2mm,REB.Geometry.D/2*m2mm,aBall(i),Acage+REB.Elements.psi(i),N2kN*Q(i));
 end
 
-hRace(1,1) = plot_race(hRace(1,1),  q ,REB.Geometry.zi*m2mm, REB.Geometry.ri*m2mm,REB.Geometry.Ri*m2mm,REB.Elements.z(1)*m2mm,REB.Geometry.D*m2mm,Ai,'FaceAlpha',0.5,'FaceColor','k');
-hRace(2,1) = plot_race(hRace(2,1), 0*q,REB.Geometry.zo*m2mm,-REB.Geometry.ro*m2mm,REB.Geometry.Ro*m2mm,REB.Elements.z(1)*m2mm,REB.Geometry.D*m2mm,Ao,'FaceAlpha',0.5,'FaceColor','k');
+hRace(1,1) = plot_race(hRace(1,1),  q ,REB.Geometry.zRacei*m2mm, REB.Geometry.RRacei*m2mm,REB.Geometry.rRacei*m2mm,REB.Elements.z(1)*m2mm,REB.Geometry.D*m2mm,Ai,'FaceAlpha',0.5,'FaceColor','k');
+hRace(2,1) = plot_race(hRace(2,1), 0*q,REB.Geometry.zRaceo*m2mm,-REB.Geometry.RRaceo*m2mm,REB.Geometry.rRaceo*m2mm,REB.Elements.z(1)*m2mm,REB.Geometry.D*m2mm,Ao,'FaceAlpha',0.5,'FaceColor','k');
 
 if strncmpi(REB.Setup.Arrangement,'double',6)
-    hRace(1,2) = plot_race(hRace(1,2),  q,-REB.Geometry.zi*m2mm, REB.Geometry.ri*m2mm,REB.Geometry.Ri*m2mm,REB.Elements.z(2)*m2mm,REB.Geometry.D*m2mm,Ai,'FaceAlpha',0.5,'FaceColor','k');
-    hRace(2,2) = plot_race(hRace(2,2),0*q,-REB.Geometry.zo*m2mm,-REB.Geometry.ro*m2mm,REB.Geometry.Ro*m2mm,REB.Elements.z(2)*m2mm,REB.Geometry.D*m2mm,Ao,'FaceAlpha',0.5,'FaceColor','k');
+    hRace(1,2) = plot_race(hRace(1,2),  q,-REB.Geometry.zRacei*m2mm, REB.Geometry.RRacei*m2mm,REB.Geometry.rRacei*m2mm,REB.Elements.z(2)*m2mm,REB.Geometry.D*m2mm,Ai,'FaceAlpha',0.5,'FaceColor','k');
+    hRace(2,2) = plot_race(hRace(2,2),0*q,-REB.Geometry.zRaceo*m2mm,-REB.Geometry.RRaceo*m2mm,REB.Geometry.rRaceo*m2mm,REB.Elements.z(2)*m2mm,REB.Geometry.D*m2mm,Ao,'FaceAlpha',0.5,'FaceColor','k');
 end
 
 U.hBall = hBall;

@@ -44,24 +44,24 @@ vrdot = xdotInt(E.N+(1:E.N),:);
 vzddot = xddotInt(1:E.N,:);
 vrddot = xddotInt(E.N+(1:E.N),:);
 
-z = B.Geometry.zi*sign(E.z/(E.z(1)+eps));
+z = B.Geometry.zRacei*sign(E.z/(E.z(1)+eps));
 PSI = E.psi*x0 + wons*Acage;
 Z = z*x0;
 
-dzi  = wons*qi(3,:) + B.Geometry.Ri*(sin(PSI).*(wons*qi(4,:)) - cos(PSI).*(wons*qi(5,:)));
+dzi  = wons*qi(3,:) + B.Geometry.rRacei*(sin(PSI).*(wons*qi(4,:)) - cos(PSI).*(wons*qi(5,:)));
 dri  = cos(PSI).*(wons*qi(1,:)) + sin(PSI).*(wons*qi(2,:)) - Z.*(sin(PSI).*(wons*qi(4,:)) - cos(PSI).*(wons*qi(5,:)));
 
-dzo  = wons*qo(3,:) + B.Geometry.Ro*(sin(PSI).*(wons*qo(4,:)) - cos(PSI).*(wons*qo(5,:)));
+dzo  = wons*qo(3,:) + B.Geometry.rRaceo*(sin(PSI).*(wons*qo(4,:)) - cos(PSI).*(wons*qo(5,:)));
 dro  = cos(PSI).*(wons*qo(1,:)) + sin(PSI).*(wons*qo(2,:)) - Z.*(sin(PSI).*(wons*qo(4,:)) - cos(PSI).*(wons*qo(5,:)));
 
-dzdoti  = wons*qidot(3,:) + B.Geometry.Ri*(sin(PSI).*(wons*qidot(4,:)) - cos(PSI).*(wons*qidot(5,:))) + ...
-         Ocage*B.Geometry.Ri*(cos(PSI).*(wons*qi(4,:)) + sin(PSI).*(wons*qi(5,:)));
+dzdoti  = wons*qidot(3,:) + B.Geometry.rRacei*(sin(PSI).*(wons*qidot(4,:)) - cos(PSI).*(wons*qidot(5,:))) + ...
+         Ocage*B.Geometry.rRacei*(cos(PSI).*(wons*qi(4,:)) + sin(PSI).*(wons*qi(5,:)));
 
 drdoti  = cos(PSI).*(wons*qidot(1,:)) + sin(PSI).*(wons*qidot(2,:)) - Z.*(sin(PSI).*(wons*qidot(4,:)) - cos(PSI).*(wons*qidot(5,:))) + ... 
         Ocage*(-sin(PSI).*(wons*qi(1,:)) + cos(PSI).*(wons*qi(2,:)) - Z.*(cos(PSI).*(wons*qi(4,:)) + sin(PSI).*(wons*qi(5,:))));
     
-dzdoto  = wons*qodot(3,:) + B.Geometry.Ro*(sin(PSI).*(wons*qodot(4,:)) - cos(PSI).*(wons*qodot(5,:))) + ...
-         Ocage*B.Geometry.Ri*(cos(PSI).*(wons*qo(4,:)) + sin(PSI).*(wons*qo(5,:)));     
+dzdoto  = wons*qodot(3,:) + B.Geometry.rRaceo*(sin(PSI).*(wons*qodot(4,:)) - cos(PSI).*(wons*qodot(5,:))) + ...
+         Ocage*B.Geometry.rRacei*(cos(PSI).*(wons*qo(4,:)) + sin(PSI).*(wons*qo(5,:)));     
     
 drdoto  = cos(PSI).*(wons*qodot(1,:)) + sin(PSI).*(wons*qodot(2,:)) - Z.*(sin(PSI).*(wons*qodot(4,:)) - cos(PSI).*(wons*qodot(5,:))) + ... 
         Ocage*(-sin(PSI).*(wons*qo(1,:)) + cos(PSI).*(wons*qo(2,:)) - Z.*(cos(PSI).*(wons*qo(4,:)) + sin(PSI).*(wons*qo(5,:))));
@@ -73,8 +73,8 @@ Ar = B.Geometry.A0*cos(E.alpha)*x0 + dri - dro - B.Geometry.cr;
 Xz = vz - dzo;
 Xr = vr - dro;
 [Ai,Ao,alpha_i,alpha_o] = race_geometry(Xz,Xr,Az,Ar);
-dbi = Ai - (B.Geometry.ri-B.Geometry.D/2);
-dbo = Ao - (B.Geometry.ro-B.Geometry.D/2); 
+dbi = Ai - (B.Geometry.RRacei-B.Geometry.D/2);
+dbo = Ao - (B.Geometry.RRaceo-B.Geometry.D/2); 
 dbi_dot = (dzdoti-vzdot).*sin(alpha_i) + (drdoti - vrdot).*cos(alpha_i);
 dbo_dot =-(dzdoto-vzdot).*sin(alpha_i) - (drdoto - vrdot).*cos(alpha_o);
 [usi,uso] = ehd_sum_speeds(B,alpha_i,alpha_o,wons*Oi,wons*Oo);
@@ -91,8 +91,8 @@ Fzi = Qi.*sin(alpha_i) - Fi.*cos(alpha_i);
 Wi = [sum(Fri.*cos(PSI));
     sum(Fri.*sin(PSI));
     sum(Fzi);
-    sum( B.Geometry.Ri.*Fzi.*sin(PSI) - Z.*Fri.*sin(PSI));
-    sum(-B.Geometry.Ri.*Fzi.*cos(PSI) + Z.*Fri.*cos(PSI));
+    sum( B.Geometry.rRacei.*Fzi.*sin(PSI) - Z.*Fri.*sin(PSI));
+    sum(-B.Geometry.rRacei.*Fzi.*cos(PSI) + Z.*Fri.*cos(PSI));
     0*x0];
 
 Fro = Qo.*cos(alpha_o) + Fo.*sin(alpha_o);
@@ -100,8 +100,8 @@ Fzo = Qo.*sin(alpha_o) - Fo.*cos(alpha_o);
 Wo = [sum(Fro.*cos(PSI));
     sum(Fro.*sin(PSI));
     sum(Fzo);
-    sum( B.Geometry.Ro.*Fzo.*sin(PSI) - Z.*Fro.*sin(PSI));
-    sum(-B.Geometry.Ro.*Fzo.*cos(PSI) + Z.*Fro.*cos(PSI));
+    sum( B.Geometry.rRaceo.*Fzo.*sin(PSI) - Z.*Fro.*sin(PSI));
+    sum(-B.Geometry.rRaceo.*Fzo.*cos(PSI) + Z.*Fro.*cos(PSI));
     0*x0];
 
 if B.Options.bPinned

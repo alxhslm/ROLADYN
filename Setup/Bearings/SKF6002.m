@@ -20,8 +20,8 @@ REB.Geometry.cz = 0E-6;
 REB.Geometry.do = REB.Geometry.dm + REB.Geometry.cr + REB.Geometry.D;
 REB.Geometry.di = REB.Geometry.dm - REB.Geometry.cr - REB.Geometry.D;
 
-REB.Geometry.ro = 1.05*REB.Geometry.D/2;
-REB.Geometry.ri = 1.05*REB.Geometry.D/2;
+REB.Geometry.RRaceo = 1.05*REB.Geometry.D/2;
+REB.Geometry.RRacei = 1.05*REB.Geometry.D/2;
 
 % REB.Geometry.psi0 = (pi/2 - pi/REB.Setup.Z*floor((max(REB.Setup.Z-5,0)*0.5 + 1)));
 

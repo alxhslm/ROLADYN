@@ -45,23 +45,23 @@ if B.Options.bRaceComplianceo
 end
 
 sgn = sign(E.z/(E.z(1)+eps));
-z = B.Geometry.zi*sgn;
+z = B.Geometry.zRacei*sgn;
 Z = z*x0;
 
 PSI = E.psi*x0 + wons*Acage;
 
-dz  = wons*q(3,:) + B.Geometry.Ri*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cz;
+dz  = wons*q(3,:) + B.Geometry.rRacei*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cz*sgn;
 dr  = cos(PSI).*(wons*q(1,:)) + sin(PSI).*(wons*q(2,:)) - Z.*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cr;
 
 Az = B.Geometry.A0*sin(E.alpha)*x0 + dz;
 Ar = B.Geometry.A0*cos(E.alpha)*x0 + dr;
 A = sqrt(Az.^2 + Ar.^2);
 
-Xz0 = (Az./A) .* ((B.Geometry.ro-B.Geometry.D/2) + max(A - B.Geometry.A0,0)/(1 + B.Contact.lambda));
-Xr0 = (Ar./A) .* ((B.Geometry.ro-B.Geometry.D/2) + max(A - B.Geometry.A0,0)/(1 + B.Contact.lambda));
+Xz0 = (Az./A) .* ((B.Geometry.RRaceo-B.Geometry.D/2) + max(A - B.Geometry.A0,0)/(1 + B.Contact.lambda));
+Xr0 = (Ar./A) .* ((B.Geometry.RRaceo-B.Geometry.D/2) + max(A - B.Geometry.A0,0)/(1 + B.Contact.lambda));
 [Ai0,Ao0,alpha_i0,alpha_o0] = race_geometry(Xz0,Xr0,Az,Ar);
-dbi0 = Ai0 - (B.Geometry.ri-B.Geometry.D/2) - wi;
-dbo0 = Ao0 - (B.Geometry.ro-B.Geometry.D/2) - wo;
+dbi0 = Ai0 - (B.Geometry.RRacei-B.Geometry.D/2) - wi;
+dbo0 = Ao0 - (B.Geometry.RRaceo-B.Geometry.D/2) - wo;
 Qi0 = hertz_contact(E.r*B.Contact.Inner.K,B.Contact.n,dbi0,0);
 Qo0 = hertz_contact(E.r*B.Contact.Outer.K,B.Contact.n,dbo0,0);
 
@@ -70,12 +70,12 @@ if (B.Options.bCentrifugal || B.Options.bGyro)
     %for some reason, it is badly posed if you add v to the QS solution
     %therefore, we just overwrite X
   
-    Xz = B.Geometry.D/2*sin(E.alpha)*x0 - vz.*(sgn*x0);
-    Xr = B.Geometry.D/2*cos(E.alpha)*x0 + vr;
+    Xz = (B.Geometry.RRaceo-B.Geometry.D/2)*sin(E.alpha)*x0 - vz.*(sgn*x0);
+    Xr = (B.Geometry.RRaceo-B.Geometry.D/2)*cos(E.alpha)*x0 + vr;
     
     [Ai,Ao,alpha_i,alpha_o] = race_geometry(Xz,Xr,Az,Ar);
-    dbi = Ai - (B.Geometry.ri-B.Geometry.D/2) - wi;
-    dbo = Ao - (B.Geometry.ro-B.Geometry.D/2) - wo;
+    dbi = Ai - (B.Geometry.RRacei-B.Geometry.D/2) - wi;
+    dbo = Ao - (B.Geometry.RRaceo-B.Geometry.D/2) - wo;
     Qi = hertz_contact(E.r*B.Contact.Inner.K,B.Contact.n,dbi,1E-14);
     Qo = hertz_contact(E.r*B.Contact.Outer.K,B.Contact.n,dbo,1E-14);
 else
@@ -125,8 +125,8 @@ Fzi = Qi.*sin(alpha_i) - Fi.*cos(alpha_i);
 Wi = [sum(Fri.*cos(PSI));
     sum(Fri.*sin(PSI));
     sum(Fzi);
-    sum( B.Geometry.Ri.*Fzi.*sin(PSI) - Z.*Fri.*sin(PSI));
-    sum(-B.Geometry.Ri.*Fzi.*cos(PSI) + Z.*Fri.*cos(PSI));
+    sum( B.Geometry.rRacei.*Fzi.*sin(PSI) - Z.*Fri.*sin(PSI));
+    sum(-B.Geometry.rRacei.*Fzi.*cos(PSI) + Z.*Fri.*cos(PSI));
     0*x0];
 
 Fro = Qo.*cos(alpha_o) + Fo.*sin(alpha_o);
@@ -134,8 +134,8 @@ Fzo = Qo.*sin(alpha_o) - Fo.*cos(alpha_o);
 Wo =-[sum(Fro.*cos(PSI));
       sum(Fro.*sin(PSI));
       sum(Fzo);
-      sum( B.Geometry.Ro.*Fzo.*sin(PSI) - Z.*Fro.*sin(PSI));
-      sum(-B.Geometry.Ro.*Fzo.*cos(PSI) + Z.*Fro.*cos(PSI));
+      sum( B.Geometry.rRaceo.*Fzo.*sin(PSI) - Z.*Fro.*sin(PSI));
+      sum(-B.Geometry.rRaceo.*Fzo.*cos(PSI) + Z.*Fro.*cos(PSI));
       0*x0];
 
 %forces

@@ -222,7 +222,7 @@ end
 Material.Estar = Material.E/(1-Material.v^2)/2;
 
 function Geometry = setupGeometry(Geometry)
-default_fields = {'alpha0','psi0'};
+default_fields = {'alpha0','psi0','z0'};
 for i = 1:length(default_fields)
     if ~isfield(Geometry,default_fields{i})
         Geometry.(default_fields{i}) = 0;
@@ -239,13 +239,15 @@ else
     error('Not eenough geometrical parameters specified')
 end
 
-Geometry.Ri = Geometry.dm/2 + (Geometry.ri - Geometry.D/2)*cos(Geometry.alpha0);
-Geometry.Ro = Geometry.dm/2 - (Geometry.ro - Geometry.D/2)*cos(Geometry.alpha0);
+%--location of race centres--
+%radial location
+Geometry.rRacei = Geometry.dm/2 + (Geometry.RRacei - Geometry.D/2)*cos(Geometry.alpha0);% - Geometry.cr/2;
+Geometry.rRaceo = Geometry.dm/2 - (Geometry.RRaceo - Geometry.D/2)*cos(Geometry.alpha0);% + Geometry.cr/2;
+%axial location
+Geometry.zRacei = Geometry.z0 + (Geometry.RRacei - Geometry.D/2)*sin(Geometry.alpha0);% - Geometry.cz/2;
+Geometry.zRaceo = Geometry.z0 - (Geometry.RRaceo - Geometry.D/2)*sin(Geometry.alpha0);% + Geometry.cz/2;
 
-Geometry.zi = Geometry.z0 + (Geometry.ri - Geometry.D/2)*sin(Geometry.alpha0);
-Geometry.zo = Geometry.z0 - (Geometry.ro - Geometry.D/2)*sin(Geometry.alpha0);
-
-Geometry.A0 = Geometry.ri + Geometry.ro - Geometry.D;
+Geometry.A0 = Geometry.RRacei + Geometry.RRaceo - Geometry.D;
 Geometry.gamma = Geometry.D/Geometry.dm;
 
 function Kinematics = setupKinematics(Geometry)
@@ -284,8 +286,8 @@ end
 Race.K = Race.Kax/Race.R + Race.Kfl/Race.R^3;
 
 function Contact = setupPointContacts(Contact,Geometry,Material,Fluid)
-Rr = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.ri);
-if 0.5*Geometry.Dr > Geometry.ri
+Rr = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRacei);
+if 0.5*Geometry.Dr > Geometry.RRacei
     error('The inner contact is non-conforming')
 end
 Rz = 1/(1/(0.5*Geometry.Dz) + 1/(0.5*Geometry.di/cos(Geometry.alpha0)));
@@ -295,8 +297,8 @@ end
 Contact.Inner = setupHertzPointContact(Contact.Inner,Material,Rr,Rz);
 % Contact.Inner.EHD = setupEHDcontact(Contact.Inner,Material,Fluid);
 
-Rr = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.ro);
-if 0.5*Geometry.Dr > Geometry.ro
+Rr = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRaceo);
+if 0.5*Geometry.Dr > Geometry.RRaceo
     error('The outer contact is non-conforming')
 end
 Rz = 1/(1/(0.5*Geometry.Dz) - 1/(0.5*Geometry.do/cos(Geometry.alpha0)));

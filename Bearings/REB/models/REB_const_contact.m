@@ -45,12 +45,12 @@ if B.Options.bRaceComplianceo
 end
 
 sgn = sign(E.z/(E.z(1)+eps));
-z = B.Geometry.zi*sgn;
+z = B.Geometry.zRacei*sgn;
 Z = z*x0;
 
 PSI = E.psi*x0 + Acage;
 
-dz  = wons*q(3,:) + B.Geometry.Ri*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cz;
+dz  = wons*q(3,:) + B.Geometry.rRacei*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cz;
 dr  = cos(PSI).*(wons*q(1,:)) + sin(PSI).*(wons*q(2,:)) - Z.*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cr;
 
 dn = dr .* (cos(E.alpha)*x0) + dz .* (sin(E.alpha)*x0);
@@ -140,8 +140,8 @@ Fzi = Qi.*sin(alpha_i) - Fi.*cos(alpha_i);
 Wi = [sum(Fri.*cos(PSI));
     sum(Fri.*sin(PSI));
     sum(Fzi);
-    sum( B.Geometry.Ri.*Fzi.*sin(PSI) - Z.*Fri.*sin(PSI));
-    sum(-B.Geometry.Ri.*Fzi.*cos(PSI) + Z.*Fri.*cos(PSI));
+    sum( B.Geometry.rRacei.*Fzi.*sin(PSI) - Z.*Fri.*sin(PSI));
+    sum(-B.Geometry.rRacei.*Fzi.*cos(PSI) + Z.*Fri.*cos(PSI));
     0*x0];
 
 Fro = Qo.*cos(alpha_o) + Fo.*sin(alpha_o);
@@ -149,8 +149,8 @@ Fzo = Qo.*sin(alpha_o) - Fo.*cos(alpha_o);
 Wo =-[sum(Fro.*cos(PSI));
       sum(Fro.*sin(PSI));
       sum(Fzo);
-      sum( B.Geometry.Ro.*Fzo.*sin(PSI) - Z.*Fro.*sin(PSI));
-      sum(-B.Geometry.Ro.*Fzo.*cos(PSI) + Z.*Fro.*cos(PSI));
+      sum( B.Geometry.rRaceo.*Fzo.*sin(PSI) - Z.*Fro.*sin(PSI));
+      sum(-B.Geometry.rRaceo.*Fzo.*cos(PSI) + Z.*Fro.*cos(PSI));
       0*x0];
 
 %forces
