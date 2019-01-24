@@ -55,15 +55,25 @@ h = waitbar(0,'Sweep');
 Npts = size(States.qi,2);
 for j = 1:Npts
     States_j = getjthpoint(States,j);
-    con_fun = @preload_constr;
     options.jacobian = @preload_jac;
     options.jacobianstructure = Jstr;
     info.status = 2;
-    while ~any(info.status==[0 1])
-        [X,info] = fipopt([],X0,con_fun,options,Params,States_j,N,iFree);
+    count = 0;
+    bConverged = 0;
+    while count < 10
+        [X,info] = fipopt([],X0,@preload_constr,options,Params,States_j,N,iFree);
+        F = preload_constr(X,Params,States_j,N,iFree);
         X0 = X;
+        count = count + 1;
+        if any(info.status==[0 1])
+           bConverged = 1;
+        end
     end
-    Xsol(:,j) = X;
+    if bConverged
+        Xsol(:,j) = X;
+    else
+        Xsol(:,j) = NaN;
+    end
     waitbar(j/Npts,h);
 end
 close(h);
