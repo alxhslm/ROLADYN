@@ -30,6 +30,9 @@ P = setupexcitation(P);
 % Create mesh using specified nodes
 P = setupmesh(P);
 
+% now setup the matrices
+P = setupmatrices(P,{'Rotor','Bearing','Excite'});
+
 % Assemble the matrices for the rigid shaft model
 P = setupmodel(P,type);
 
@@ -51,11 +54,8 @@ P.Model.xInt = x0(P.Model.NDof+1:end);
 P.Mesh.x0 = P.Model.A * x0(1:P.Model.NDof);
 P.Mesh.xInt = x0(P.Model.NDof+1:end);
 
-% Bearings - now setup the bearing stiffness matrices etc
+% and finally update everthing with the correct bearing stiffnesses at
+% equilibrium
 P.Bearing = setupbearing_stiffness(P.Bearing,P.Rotor,O,A,P.Mesh.x0);
-
-% Create mesh using specified nodes
-P = setupmesh(P);
-
-% Assemble the matrices for the rigid shaft model
-P = setupmodel(P,type);
+P = setupmatrices(P,{'Bearing'});
+P.Model = mesh2model(P.Mesh,P.Model.A);
