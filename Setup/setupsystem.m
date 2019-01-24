@@ -15,9 +15,9 @@ end
 % Rotors - first setup the mass related parameters for all of the rotors
 P.Rotor = setuprotors(P.Rotor);
 
-% Bearings - now setup the bearing stiffness matrices etc
+% Bearings - now setup the bearings
 if isfield(P,'Bearing')
-    P.Bearing = setupbearings(P.Bearing,P.Rotor,O);
+    P.Bearing = setupbearings(P.Bearing,P.Rotor);
 else
     P.Bearing = {};
 end
@@ -52,8 +52,7 @@ P.Mesh.x0 = P.Model.A * x0(1:P.Model.NDof);
 P.Mesh.xInt = x0(P.Model.NDof+1:end);
 
 % Bearings - now setup the bearing stiffness matrices etc
-P.Rotor = setuprotors(P.Rotor,P.Mesh.x0);
-P.Bearing = setupbearings(P.Bearing,P.Rotor,O,P.Mesh.x0);
+P.Bearing = setupbearing_stiffness(P.Bearing,P.Rotor,O,A,P.Mesh.x0);
 
 % Create mesh using specified nodes
 P = setupmesh(P);

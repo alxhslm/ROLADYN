@@ -1,22 +1,8 @@
-function B = setupbearings(B,R,O,x0)
+function B = setupbearings(B,R)
 if ~iscell(B)
     B = {B};
 end
-if nargin > 3
-    for i = 1:length(B)
-        for j = 1:2
-            qi{i}{j} = B{i}.Ri{j} * B{i}.Si{j} * x0;
-            qo{i}{j} = B{i}.Ro{j} * B{i}.So{j} * x0;
-        end
-    end
-else
-    for i = 1:length(B)
-        for j = 1:2
-            qi{i}{j} = zeros(4,1);
-            qo{i}{j} = zeros(4,1);
-        end
-    end
-end
+
 iInputCount = 0;
 iInternalCount = 0;
 for i = 1:length(B)
@@ -25,20 +11,8 @@ for i = 1:length(B)
         B{i}.iRotor = [NaN B{i}.iRotor];
         B{i}.iNode  = [NaN B{i}.iNode];
     end
-    
-    if ~isnan(B{i}.iRotor(1))
-        Oo = R{B{i}.iRotor(1)}.Speed*O;
-    else
-        Oo = 0;
-    end
-    
-    if ~isnan(B{i}.iRotor(2))
-        Oi = R{B{i}.iRotor(2)}.Speed*O;
-    else
-        Oi = 0;
-    end
-        
-    B{i} = setup_each_bearing(B{i},i,R,qi{i},qo{i},Oi,Oo);
+            
+    B{i} = setup_each_bearing(B{i},i,R);
     for j = 1:2
         B{i}.iInputo{j} = iInputCount + (1:4);
         B{i}.iInputi{j} = iInputCount + (5:8);
@@ -51,7 +25,7 @@ for i = 1:length(B)
     end
 end
 
-function B = setup_each_bearing(B,ind,R,xi,xo,Oi,Oo)
+function B = setup_each_bearing(B,ind,R)
 %no damping as default
 damping_fields = {'cxx','cxy','cyy'};
 for i = 1:length(damping_fields)
@@ -149,9 +123,12 @@ RBear(4,:) = -RBear(4,:);
 
 for j = 1:2
     if strncmp(B.Model{j},'REB',3)
-        [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupREB(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo); 
+        B.Params{j} = setupREB(B.Params{j}); 
         B.NDofInt(j) = B.Params{j}.Model.NDofTot;       
-
+        
+        B.Kb{j} = zeros(8);
+        B.Cb{j} = zeros(8);
+        
         B.Kxx{j} = B.Kb{j}(1:2,1:2);
         B.Kxy{j} = B.Kb{j}(1:2,3:4);
         B.Kyy{j} = B.Kb{j}(3:4,3:4);
@@ -160,9 +137,12 @@ for j = 1:2
         B.Cxy{j} = B.Cb{j}(1:2,3:4);
         B.Cyy{j} = B.Cb{j}(3:4,3:4);
     elseif strncmp(B.Model{j},'SFD',3)
-        [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupSFD(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo);
+        B.Params{j} = setupSFD(B.Params{j});
         B.NDofInt(j) = 0;
-
+        
+        B.Kb{j} = zeros(8);
+        B.Cb{j} = zeros(8);
+        
         B.Kxx{j} = B.Kb{j}(1:2,1:2);
         B.Kxy{j} = B.Kb{j}(1:2,3:4);
         B.Kyy{j} = B.Kb{j}(3:4,3:4);
@@ -185,9 +165,9 @@ for j = 1:2
                 [B.(params2default{i})] = deal(repmat({zeros(2)},1,2));
             end
         end
-          
+        
         B.NDofInt(j) = 0;
-               
+                         
         B.Kb{j} = [B.Kxx{j} B.Kxy{j};
                    B.Kxy{j} B.Kyy{j}];
         
@@ -197,16 +177,15 @@ for j = 1:2
                    B.Cxy{j} B.Cyy{j}];
        
         B.Cb{j} = kron([1 -1; -1 1],B.Cb{j});
-        
-        Kb = max(-1E20,min(B.Kb{j},1E20));
-        B.Fb{j} = Kb*[xi{j}+B.ui{j};xo{j}+B.uo{j}];
-        
-        B.xInt{j} = [];
     end
+    
+    B.Fb{j} = zeros(8,1);
     B.Mb{j} = zeros(8);
     B.R{j} = blkdiag(RBear,RBear);
     B.Ri{j} = RBear;
     B.Ro{j} = RBear;
+    
+    B.xInt{j} = zeros(B.NDofInt(j),1);
 end
 
 if isfield(B,'m') && ~isfield(B,'mx')
