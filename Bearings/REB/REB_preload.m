@@ -1,19 +1,8 @@
 function [F,V,S] = REB_preload(Params,States,q0)
-%convert bearing displacememnts into the q vector
-if size(States.qi,1) == 4
-    R = [1     0     0     0
-         0     0     1     0
-         0     0     0     0
-         0     0     0    -1
-         0     1     0     0
-         0     0     0     0];
-else
-    R =  [1     0     0     0    0
-          0     1     0     0    0
-          0     0     1     0    0
-          0     0     0     1    0
-          0     0     0     0    1
-          0     0     0     0    0];
+
+%decide if we need to show the waitbar
+if ~isfield(States,'bWaitbar')
+    States.bWaitbar = 0;
 end
 
 %solve for the ball equilibrium
@@ -51,7 +40,9 @@ X0 = [q0(iFree); x0];
 options.print_level = 0;
 options.maxit = 400;
     
-h = waitbar(0,'Sweep');
+if States.bWaitbar
+    h = waitbar(0,'Sweep');
+end
 Npts = size(States.qi,2);
 for j = 1:Npts
     States_j = getjthpoint(States,j);
@@ -74,9 +65,13 @@ for j = 1:Npts
     else
         Xsol(:,j) = NaN;
     end
-    waitbar(j/Npts,h);
+    if States.bWaitbar
+        waitbar(j/Npts,h);
+    end
 end
-close(h);
+if States.bWaitbar
+    close(h);
+end
 
 States.qi(iFree,:) = Xsol(1:N,:);
 States.xInt = Xsol(N+1:end,:);

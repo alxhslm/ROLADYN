@@ -24,6 +24,11 @@ States = default_inputs(States,R);
 States = default_speeds(States,NPts);
 States = default_int(States,Params,NPts);
 
+%decide if we need to show the waitbar
+if ~isfield(States,'bWaitbar')
+    States.bWaitbar = 0;
+end
+
 if States.bSolve
     %QS solution
     States.xInt     = zeros(Params.Model.NDofTot,NPts);
@@ -102,7 +107,9 @@ if Params.Model.NDof > 0
     State_j = getjthpoint(States,1);
     x0 = State_j.xInt;
         
-%     h = waitbar(0,'Sweep');
+    if States.bWaitbar
+        h = waitbar(0,'Sweep');
+    end
     Npts = size(States.qi,2);
     for j = 1:Npts  
         
@@ -133,9 +140,14 @@ if Params.Model.NDof > 0
         States.xInt(:,j) = x;
         x0 = x;
         
-%         waitbar(j/Npts,h);
+        if States.bWaitbar
+            waitbar(j/Npts,h);
+        end
     end
-%     close(h);
+    
+    if States.bWaitbar
+        close(h);
+    end
 else
     States.xInt = zeros(0,size(States.qi,2));
 end
