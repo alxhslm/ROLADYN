@@ -23,11 +23,12 @@ D.fun = str2func(['SFD_', D.Model]);
 States.qi = qi;
 States.qo = qo;
 States.bSolve = 1;
-[Forces,~,Stiffness] = SFD_model(D, States);
+[Forces,Channels,Stiffness] = SFD_model(D, States);
 D.F0 = Forces.F;
 D.K0 = Stiffness.K;
 D.C0 = Stiffness.C;
 D.M0 = Stiffness.M;
+D.Channels = Channels;
 D.qi0 = qi;
 D.qo0 = qo;
 

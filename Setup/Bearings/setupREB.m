@@ -114,10 +114,11 @@ States.Oo = Oo*wons;
 States.Ai = psi;
 States.Ao = 0*wons;
 States.bSolve = 1;
-[Forces,~,Stiffness] = REB_model(B, States);
+[Forces,Channels,Stiffness] = REB_model(B, States);
 B.F0 = mean(Forces.F,2);
 B.K0 = mean(Stiffness.K,3);
 B.C0 = mean(Stiffness.C,3);
+B.Channels = Channels;
 
 B.Fi0 = mean(Forces.Fi,2);
 B.Fo0 = mean(Forces.Fo,2);
