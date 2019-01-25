@@ -32,14 +32,9 @@ iter = 0;
 bSuccess = 0;
 while ~bSuccess && iter < 20
     [x,info] = fipopt([],x0,@rotor_equilibrium,options,P,O,A);
-    constr = rotor_equilibrium(x,P,O,A);
+    % constr = rotor_equilibrium(x,P,O,A);
     bSuccess = any(info.status == [0 1]);
-    if ~bSuccess
-        x0 = [rand(P.Model.NDof,1)*1E-2;
-              rand(P.Model.NDofInt*N,1)*1E-6];
-    else
-        x0 = x;
-    end
+    x0 = x;
     iter = iter + 1;
 end
 
@@ -48,7 +43,7 @@ J = full(rotor_equilibrium_jacob(x,P,O,A));
 x = [xCG; 
     mean(xInt,2)];
 
-if ~any(info.status == [0 1])
+if ~bSuccess
     error('Failed to find equilibirum position')
 end
 
