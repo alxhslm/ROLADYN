@@ -1,11 +1,7 @@
 function [W,Ferr,V,S] = REB_harris_analytical(B,States)
 
-q    = States.qi    - States.qo;
+q    = States.qi - States.qo;
 xInt = States.xInt;
-
-% if B.bPinned
-%     q(4:5,:) = 0;
-% end
 
 Oi = States.Oi;
 Oo = States.Oo;

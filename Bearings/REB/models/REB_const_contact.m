@@ -1,11 +1,7 @@
 function [F,V,S] = REB_const_contact(B,States)
 
-q    = States.qi    - States.qo;
+q    = States.qi - States.qo;
 xInt = States.xInt;
-
-% if B.bPinned
-%     q(4:5,:) = 0;
-% end
 
 Oi = States.Oi;
 Oo = States.Oo;
@@ -54,19 +50,6 @@ dz  = wons*q(3,:) + B.Geometry.rRacei*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons
 dr  = cos(PSI).*(wons*q(1,:)) + sin(PSI).*(wons*q(2,:)) - Z.*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cr;
 
 dn = dr .* (cos(E.alpha)*x0) + dz .* (sin(E.alpha)*x0);
-
-if B.Options.bSaturate
-    rContact = dn>0;
-    
-    if B.Options.bCentrifugal
-        Fc = (B.Dynamics.mb * Ocage.^2 * B.Geometry.dm/2);
-        xc =  wons*(Fc/B.Contact.Outer.K).^(1/B.Contact.Outer.n);
-        vr = vr.*rContact + (1-rContact).*xc;
-    end
-    
-    wi = wi.*rContact;
-    wo = wo.*rContact;
-end
 
 lambda = (B.Contact.Outer.K / B.Contact.Inner.K)^(1/B.Contact.n);
 db0 = dn / (1 + lambda);

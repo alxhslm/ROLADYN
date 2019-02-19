@@ -104,11 +104,7 @@ Wo = [sum(Fro.*cos(PSI));
     sum(-B.Geometry.rRaceo.*Fzo.*cos(PSI) + Z.*Fro.*cos(PSI));
     0*x0];
 
-if B.Options.bPinned
-    Wi(4:5,:) = 0;
-    Wo(4:5,:) = 0;
-end
- 
+
 %forces
 F.F = Wi;
 F.FInt = fErr;

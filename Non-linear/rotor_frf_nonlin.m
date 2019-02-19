@@ -15,8 +15,6 @@ end
 problem.X0scale = P.Model.x0scale;
 problem.Xhscale = P.Model.xhscale;
 
-problem.P.Bearing{1}.Params{2}.Options.bSaturate = 1;
-
 if nargin>5
     %Asynchronous
     hWB = waitbar(0, 'Rotation Speed');

@@ -193,14 +193,12 @@ function Options = setupOptions(Options)
 
 fields = {'bAnalyticalDeriv' , 1;
           'bSjovall'         , 0;
-          'bPinned'          , 0;
           'bPivot'           , 0;
           'bGyro'            , 0;
           'bCentrifugal'     , 0;
           'bRaceCompliancei' , 0;
           'bRaceComplianceo' , 0;
-          'bComplexDynLoads' , 0
-          'bSaturate' , 0};
+          'bComplexDynLoads' , 0};
 
 for i = 1:size(fields,1)
     if ~isfield(Options,fields{i,1})

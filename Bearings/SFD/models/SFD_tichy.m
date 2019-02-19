@@ -13,10 +13,6 @@ z = linspace(-D.L/2,D.L/2,D.Nz);
 T = repmat(T,1,1,NPts);
 Z = repmat(Z,1,1,NPts);
 
-if D.bPinned
-    q(4:5,:) = 0;
-end
-
 wons = q(1,:)*0 + 1;
 q(1,:) = q(1,:) + eps;
 Q = repmat(permute(q,[3 4 2 1]),D.Nz,D.Nt);

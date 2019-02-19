@@ -3,10 +3,6 @@ function [F,V,S] = REB_harris(B,States)
 q    = States.qi - States.qo;
 xInt = States.xInt;
 
-% if B.Options.bPinned
-%     q(4:5,:) = 0;
-% end
-
 Oi = States.Oi;
 Oo = States.Oo;
 Ai = States.Ai;
@@ -50,7 +46,7 @@ Z = z*x0;
 
 PSI = E.psi*x0 + wons*Acage;
 
-dz  = wons*q(3,:) + B.Geometry.rRacei*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cz*sgn;
+dz  = wons*q(3,:) + B.Geometry.rRacei*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cz;
 dr  = cos(PSI).*(wons*q(1,:)) + sin(PSI).*(wons*q(2,:)) - Z.*(sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:))) - B.Geometry.cr;
 
 Az = B.Geometry.A0*sin(E.alpha)*x0 + dz;
