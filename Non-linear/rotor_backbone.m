@@ -1,19 +1,16 @@
-function results = rotor_backbone(P,hbm,A,w0,iDofX,iDofU,x0)
-%FRF_NONLIN Summary of this function goes here
-%   Detailed explanation goes here
-
+function results = rotor_backbone(P,hbm,A,O,iDofX,iDofU)
 problem = rotor2problem(P);
+[hbm,problem] = setuphbm(hbm,problem);
 P = problem.P;
-hbm = setuphbm(hbm,problem);
 
-problem.iDof = iDofX;
-problem.iInput = iDofU;
+problem.res.output = 'fnl';
+problem.res.iDof = iDofX;
 
-if nargin < 7
-    x0 = rotor_init(hbm,problem,w0,A(1));
-end
-% problem.Xscale = max(max(abs(x0)),1E-6);
-results = hbm_bb(hbm,problem,A(1),A(end),w0,x0);
-results.O = results.w;
-results = rmfield(results,'w');
-results.x0 = x0;
+problem.res.input = 'fe';
+problem.res.iInput = iDofU;
+
+x0 = rotor_init(hbm,problem,O,A(1));
+xEnd = rotor_init(hbm,problem,O,A(end));
+
+results = hbm_bb(hbm,problem,A(1),O,x0,A(end),O,xEnd);
+results = renameStructField(results,'w','O');
