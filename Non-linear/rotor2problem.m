@@ -12,20 +12,13 @@ problem.NDof = P.Model.NDof;
 problem.NOutput = P.Model.NDof;
 problem.NInput = P.Mesh.NExcite;
 
-if P.Model.bUseAlgebraic
-    problem.NAlg   = NDofInt;
-else
-    problem.NAlg = 0;
-    problem.NDof = problem.NDof + NDofInt;
-end
+problem.NDof = problem.NDof + NDofInt;
 
-problem.res.iDof = 1;
+problem.res.iInput = 1;
+problem.res.iOutput = 1;
 problem.res.iHarm = 2;
-
-if P.Model.bCompressREB
-    problem.jacobX = @rotor_hbm_jacobian;
-%     problem.derivW = @rotor_hbm_deriv;
-end
+problem.res.input = 'fe';
+problem.res.output = 'fnl';
 
 problem.P = P;
 
@@ -38,15 +31,13 @@ problem.C  = P.Model.Rotor.C + P.Model.Bearing.C;
 problem.K  = P.Model.Rotor.K;
 problem.F0 = -P.Model.Fg + P.Model.Rotor.F0 - P.Model.Rotor.K*P.Model.x0;
 
-if ~P.Model.bUseAlgebraic
-    problem.Ku = [problem.Ku; zeros(NDofInt,size(problem.Ku,2))];
-    problem.Cu = [problem.Cu; zeros(NDofInt,size(problem.Cu,2))];
-    problem.Mu = [problem.Mu; zeros(NDofInt,size(problem.Mu,2))];
-    problem.K  = blkdiag(problem.K,zeros(NDofInt));
-    problem.C  = blkdiag(problem.C,zeros(NDofInt));
-    problem.M  = blkdiag(problem.M,zeros(NDofInt));
-    problem.F0 = [problem.F0; zeros(NDofInt,1)];
-end
+problem.Ku = [problem.Ku; zeros(NDofInt,size(problem.Ku,2))];
+problem.Cu = [problem.Cu; zeros(NDofInt,size(problem.Cu,2))];
+problem.Mu = [problem.Mu; zeros(NDofInt,size(problem.Mu,2))];
+problem.K  = blkdiag(problem.K,zeros(NDofInt));
+problem.C  = blkdiag(problem.C,zeros(NDofInt));
+problem.M  = blkdiag(problem.M,zeros(NDofInt));
+problem.F0 = [problem.F0; zeros(NDofInt,1)];
 
 if isfield(P.Model,'iDofPlot')
     problem.iDofPlot = P.Model.iDofPlot;

@@ -1,4 +1,4 @@
-function Jx = rotor_hbm_jacobian(dfhbm_dxhbm,dfhbm_dxalg,dfalg_dxhbm,dfalg_dxalg,hbm,problem,w0)
+function Jx = rotor_hbm_jacobian(dfhbm_dxhbm,hbm,problem,w0)
 
 NComp = hbm.harm.NComp;
 Nfft = hbm.harm.Nfft;
@@ -13,39 +13,20 @@ NInt = P.Model.Reduced.NDofInt;
 ijacobx = hbm.nonlin.hbm.ijacobx;
 
 if P.Model.bCompressREB
-    if P.Model.bUseAlgebraic
-        Jxx = sum(hbm.nonlin.hbm.Jx.*dfhbm_dxhbm(ijacobx,ijacobx,:),3);
-        
-        Jaxi0 = dfhbm_dxalg(ijacobx,:,:);
-        Jxa = catmat(hbm.nonlin.alg.Jf.*shift_balls_fast(Jaxi0,REB,iRot,hbm),2);
-        
-        Jax = catmat(hbm.nonlin.alg.Jx.*dfalg_dxhbm(:,ijacobx),1);
-        Jaa = blkmat(dfalg_dxalg);
-        Jx = [ Jxx   Jxa;
-               Jax   Jaa];
-                
-    else
-        K = dfhbm_dxhbm;
-        K(1:NDof,NDof+1:end,:) = 0; %remove Kqx
-        J = hbm.nonlin.hbm.Jx.*K(ijacobx,ijacobx,:);
-        
-        Kqx = 0*dfhbm_dxhbm;
-        Kqx(1:NDof,NDof+1:end,:) = dfhbm_dxhbm(1:NDof,NDof+1:end,:);
-        Jqxi0 = hbm.nonlin.hbm.Jifft.*Kqx(ijacobx,ijacobx,:);
-        Jqx = hbm.nonlin.hbm.Jfft.*shift_balls_fast(Jqxi0,REB,iRot,hbm);
-        Jx = J + Jqx;
-    end
+    K = dfhbm_dxhbm;
+    K(1:NDof,NDof+1:end,:) = 0; %remove Kqx
+    J = hbm.nonlin.hbm.Jx.*K(ijacobx,ijacobx,:);
+
+    Kqx = 0*dfhbm_dxhbm;
+    Kqx(1:NDof,NDof+1:end,:) = dfhbm_dxhbm(1:NDof,NDof+1:end,:);
+    Jqxi0 = hbm.nonlin.hbm.Jifft.*Kqx(ijacobx,ijacobx,:);
+    Jqx = hbm.nonlin.hbm.Jfft.*shift_balls_fast(Jqxi0,REB,iRot,hbm);
+    Jx = J + Jqx;
 else
     %shouldn't really use this, but for completeness
-    Jxx = sum(hbm.nonlin.hbm.Jx.*dfhbm_dxhbm(ijacobx,ijacobx),3);
-    Jxa = catmat(hbm.nonlin.alg.Jf.*dfhbm_dxalg(ijacobx,:),2);
-    Jax = catmat(hbm.nonlin.alg.Jx.*dfalg_dxhbm(:,ijacobx),1);
-    Jaa = blkmat(dfalg_dxalg);
-    Jx = [ Jxx   Jxa;
-           Jax   Jaa];
+    Jx = sum(hbm.nonlin.hbm.Jx.*dfhbm_dxhbm(ijacobx,ijacobx),3);
 end
 Jx = sum(Jx,3);
-
 
 function J = shift_balls_fast(J0,REB,iRot,hbm)
 J = 0*J0;
