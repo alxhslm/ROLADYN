@@ -118,7 +118,7 @@ for iMat = 1:2
             end
             if length(B.([mat{iMat} dof{iDof}])) == 1
                 if iMat == 1 %k
-                    B.([mat{iMat} dof{iDof}]){end+1} = diag([inf inf]);
+                    B.([mat{iMat} dof{iDof}]) = [{diag([inf inf])} B.([mat{iMat} dof{iDof}])];
                 else %c
                     B.([mat{iMat} dof{iDof}]){end+1} = zeros(2);
                 end
@@ -139,7 +139,7 @@ for iField = 1:2
         B.(model_fields{iField}) = {B.(model_fields{iField})};
     end
     if length(B.(model_fields{iField})) == 1
-        B.(model_fields{iField}){end+1} = '';
+        B.(model_fields{iField}) = [{''} B.(model_fields{iField})];
     end
 end
 
@@ -238,7 +238,7 @@ B.z = R{B.iRotor(end)}.Nodes(B.iNode(end));
 for j = 1:2
     if ~isnan(B.iRotor)
         if abs(B.z - R{B.iRotor(j)}.Nodes(B.iNode(j))) > 1E-6
-            error('The z position of Rotor %d, Node %d does not match that of Rotor %d, Node %d, leading to a misalignment for Bearing %d',B.iRotor(j),B.iNode(j),B.iRotor(1),B.iNode(1),i);
+            warning('The z position of Rotor %d, Node %d does not match that of Rotor %d, Node %d, leading to a misalignment for Bearing %d',B.iRotor(j),B.iNode(j),B.iRotor(1),B.iNode(1),i);
         end
     end
 
