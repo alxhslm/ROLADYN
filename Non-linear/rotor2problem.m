@@ -2,6 +2,9 @@ function problem = rotor2problem(P)
 problem.model = @rotor_hbm_model;
 problem.excite = @rotor_hbm_excite;
 
+if ~isfield(P.Model,'bCompressREB')
+    P.Model.bCompressREB = 0;
+end
 P.Model.Reduced = get_internal_indices(P.Bearing,P.Model.bCompressREB);
 
 NDofInt = P.Model.Reduced.NDofInt;
@@ -13,14 +16,6 @@ problem.NOutput = P.Model.NDof;
 problem.NInput = P.Mesh.NExcite;
 
 problem.NDof = problem.NDof + NDofInt;
-
-problem.res.iInput = 1;
-problem.res.iOutput = 1;
-problem.res.iHarm = 2;
-problem.res.input = 'fe';
-problem.res.output = 'fnl';
-
-problem.P = P;
 
 problem.Ku = P.Model.Excite.Kub*P.Mesh.Excite.Sub;
 problem.Cu = P.Model.Excite.Cub*P.Mesh.Excite.Sub;
@@ -45,6 +40,10 @@ else
     problem.iDofPlot = 1:P.Model.NDofTot;
 end
 
+if ~isfield(P.Model,'bUseGroups')
+    P.Model.bUseGroups = 0;
+end
+
 if P.Model.bUseGroups
     problem.iGroup = [1*ones(P.Model.NDof,1);
                       2*ones(NDofInt,1)];
@@ -52,6 +51,12 @@ else
     problem.iGroup = [1*ones(P.Model.NDof,1);
                       1*ones(NDofInt,1)];
 end
+
+if ~isfield(P.Model,'bAnalyticalDerivs')
+    P.Model.bAnalyticalDerivs = 1;
+end
+
+problem.P = P;
 
 % problem.Ku = [P.Model.Excite.Kub*P.Mesh.Excite.Sub; zeros(NDofInt,P.Mesh.NExcite)];
 % problem.Cu = [P.Model.Excite.Cub*P.Mesh.Excite.Sub; zeros(NDofInt,P.Mesh.NExcite)];
