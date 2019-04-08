@@ -244,13 +244,17 @@ for j = 1:2
 
 end
 
-%we can't have infs in the final bearing stiffness matrix as this breaks
-%the FE setup code, so we set to zero now. don't worry, we'll check Kxx etc
-%later to find the infs, so these values won't contribute to the final
-%stiffness matrix later anyway
+%We can't have infs in the final bearing stiffness matrix as this breaks
+%the FE setup code, so we set these terms to a small value. It must be 
+%non-zero so we can detect which direction they can exert forces, for the 
+%C-B model reduciton on the rotor
+
+%Don't worry, we'll check Kxx etc later to find the Infs to determine fixed
+%nodes. The values therefore won't contribute to the final stiffness matrix.
+
 for j = 1:2
-    ii = isinf(B.Kb{j}); B.Kb{j}(ii) = 0;
-    ii = isinf(B.Cb{j}); B.Cb{j}(ii) = 0;
+    ii = isinf(B.Kb{j}); B.Kb{j}(ii) = 100;
+    ii = isinf(B.Cb{j}); B.Cb{j}(ii) = 100;
     %         B.Kb{j}  = max(min(B.Kb{j},1E20),-1E20);
     %         B.Cb{j}  = max(min(B.Cb{j},1E20),-1E20);
 end
