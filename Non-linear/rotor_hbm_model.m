@@ -1,52 +1,31 @@
-function varargout = rotor_hbm_model(part,t,x,xdot,xddot,u,udot,uddot,hbm,problem,w0)
+function varargout = rotor_hbm_model(part,States,hbm,problem)
+O  = States.w0(1)/hbm.harm.rFreqRatio(1);
 P = problem.P;
-O  = w0(1)/hbm.harm.rFreqRatio(1);
-NPts = size(x,2);
-tRot = t(P.Model.iRot,:);
 
-NDof = size(x,1);
-NInput = size(u,1);
+NPts = size(States.x,2);
 
-
-xInt = x(P.Model.NDof+1:end,:);
-xCG = x(1:P.Model.NDof,:);
-xdotCG = xdot(1:P.Model.NDof,:);
-xddotCG = xddot(1:P.Model.NDof,:);
-
-if size(xInt,1) == P.Model.NDofInt
-    bReduced = 0;
-elseif size(xInt,1) == P.Model.Reduced.NDofInt && P.Model.bCompressREB
-    bReduced = 1;
-else
-    error('Wrong size')
-end
-
-States = getbearingstates(xCG,xdotCG,xddotCG,u,udot,uddot,xInt,O,P,hbm);
-States.A = O*tRot;
-States.O = O + 0*tRot;
-States.bSolve = 0;
-
-x = [xCG; States.xInt];
-xdot = [xdotCG; States.xdotInt];
-xddot = [xddotCG; States.xddotInt];
+bearing_states = getbearingstates(States,O,P,hbm);
+bearing_states.A = O*States.t(P.Model.iRot,:);
+bearing_states.O = O + 0*States.t(P.Model.iRot,:);
+bearing_states.bSolve = 0;
 
 varargout = {};
 switch part
     case  {'nl','all','output'}
-        Fgyro = O*P.Model.Rotor.G*xCG;
-        Forces = bearingforces(P,States);
+        Fgyro = O*P.Model.Rotor.G*States.x(1:P.Model.NDof,:);
+        Forces = bearingforces(P,bearing_states);
         
         if P.Model.bNL
-            Fb = P.Model.A'*Forces.F - P.Model.Bearing.C*xdotCG;
+            Fb = P.Model.A'*Forces.F - P.Model.Bearing.C*States.xdot(1:P.Model.NDof,:);
         else
-            Fb = P.Model.Bearing.F0 + P.Model.Bearing.K*(xCG-P.Model.x0);% + P.Model.Bearing.C*xdotCG;
+            Fb = P.Model.Bearing.F0 + P.Model.Bearing.K*(States.x(1:P.Model.NDof,:)-P.Model.x0);% + P.Model.Bearing.C*xdotCG;
         end
         
 %         Fnl = P.Model.A'*Forces.F;
 %         Flin = P.Model.Bearing.F0 + P.Model.Bearing.K*(xCG-P.Model.x0) + P.Model.Bearing.C*xdotCG;
         
         Fnl = Fb + Fgyro;
-        if bReduced
+        if P.Model.bCompressREB
             Fi = Forces.FInt(P.Model.Reduced.iInt,:);
         else
             Fi = Forces.FInt;
@@ -64,8 +43,8 @@ switch part
         end
     otherwise
         Cgyro = O*P.Model.Rotor.G;
-        if isfield(P.Model,'bAnalyticalDerivs') && P.Model.bAnalyticalDerivs
-            [Forces,Stiffness] = bearingforces(P,States);
+        if P.Model.bAnalyticalDerivs
+            [Forces,Stiffness] = bearingforces(P,bearing_states);
             
             Kqq =  mtimesx(P.Model.A',mtimesx(Stiffness.Kqq,P.Model.A));
             Kqx =  mtimesx(P.Model.A',Stiffness.Kqx);
@@ -83,27 +62,27 @@ switch part
             Cqu = mtimesx(P.Model.A',mtimesx(Stiffness.Cqu,P.Mesh.Excite.Sgd));
             Cxu = mtimesx(Stiffness.Cxu,P.Mesh.Excite.Sgd);
         else
-            f0 = rotor_hbm_model('all',t,x,xdot,xddot,u,udot,uddot,hbm,problem,w0);
+            f0 = rotor_hbm_model('all',States,hbm,problem);
             h = 1E-10;
             
             Kqq = zeros(P.Model.NDof,P.Model.NDof,NPts);
             Kxq = zeros(P.Model.NDofInt,P.Model.NDof,NPts);
             Cqq = zeros(P.Model.NDof,P.Model.NDof,NPts);
             Cxq = zeros(P.Model.NDofInt,P.Model.NDof,NPts);
-            x0 = x;
-            xdot0 = xdot;
+            x0 = States.x;
+            xdot0 = States.xdot;
             for i = 1:P.Model.NDof
-                x(i,:) = x(i,:) + h;
-                f = rotor_hbm_model('all',t,x,xdot,xddot,u,udot,uddot,hbm,problem,w0);
+                States.x(i,:) = States.x(i,:) + h;
+                f = rotor_hbm_model('all',States,hbm,problem);
                 Kqq(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
                 Kxq(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
-                x = x0;
+                States.x = x0;
                 
-                xdot(i,:) = xdot(i,:) + h;
-                f = rotor_hbm_model('all',t,x,xdot,xddot,u,udot,uddot,hbm,problem,w0);
+                States.xdot(i,:) = States.xdot(i,:) + h;
+                f = rotor_hbm_model('all',States,hbm,problem);
                 Cqq(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
                 Cxq(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
-                xdot = xdot0;
+                States.xdot = xdot0;
             end
 
             Kqx = zeros(P.Model.NDof,P.Model.NDofInt,NPts);
@@ -115,20 +94,20 @@ switch part
             Kxu = zeros(P.Model.NDofInt,P.Mesh.NExcite,NPts);
             Cqu = zeros(P.Model.NDof,P.Mesh.NExcite,NPts);
             Cxu = zeros(P.Model.NDofInt,P.Mesh.NExcite,NPts);
-            u0 = u;
-            udot0 = udot;
+            u0 = States.u;
+            udot0 = States.udot;
             for i = 1:P.Mesh.NExcite
-                u(i,:) = u(i,:) + h;
-                f = rotor_hbm_model('all',t,x,xdot,xddot,u,udot,uddot,hbm,problem,w0);
+                States.u(i,:) = States.u(i,:) + h;
+                f = rotor_hbm_model('all',States,hbm,problem);
                 Kqu(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
                 Kxu(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
-                u = u0;
+                States.u = u0;
                 
-                udot(i,:) = udot(i,:) + h;
-                f = rotor_hbm_model('all',t,x,xdot,xddot,u,udot,uddot,hbm,problem,w0);
+                States.udot(i,:) = States.udot(i,:) + h;
+                f = rotor_hbm_model('all',States,hbm,problem);
                 Cqu(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
                 Cxu(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
-                udot = udot0;
+                States.udot = udot0;
             end
         end
         

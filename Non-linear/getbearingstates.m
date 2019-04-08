@@ -1,15 +1,17 @@
-function States = getbearingstates(x,xdot,xddot,u,udot,uddot,xalg,O,P,hbm)
-States.x     = P.Model.A*x;
-States.xdot  = P.Model.A*xdot;
-States.xddot = P.Model.A*xddot;
+function bearing_states = getbearingstates(States,O,P,hbm)
+NPts = size(States.x,2);
 
-xB     = xalg;
-xdotB  = 0*xalg;
-xddotB = 0*xalg;
+bearing_states.x     = P.Model.A*States.x(1:P.Model.NDof,:);
+bearing_states.xdot  = P.Model.A*States.xdot(1:P.Model.NDof,:);
+bearing_states.xddot = P.Model.A*States.xddot(1:P.Model.NDof,:);
 
-States.xInt     = zeros(P.Model.NDofInt,size(x,2));
-States.xdotInt  = zeros(P.Model.NDofInt,size(x,2));
-States.xddotInt = zeros(P.Model.NDofInt,size(x,2));
+xB     = States.x(P.Model.NDof+1:end,:);
+xdotB  = 0*xB;
+xddotB = 0*xB;
+
+bearing_states.xInt     = zeros(P.Model.NDofInt,NPts);
+bearing_states.xdotInt  = zeros(P.Model.NDofInt,NPts);
+bearing_states.xddotInt = zeros(P.Model.NDofInt,NPts);
 
 iDofIn = 0;
 iDofOut = 0;
@@ -29,17 +31,17 @@ for i = 1:length(P.Bearing)
                 iDofIn  = iDofIn  + P.Bearing{i}.NDofInt(j);
             end
                                     
-            States.xInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)     = xInt;
-            States.xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)  = xdotInt;
-            States.xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:) = xddotInt;
+            bearing_states.xInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)     = xInt;
+            bearing_states.xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)  = xdotInt;
+            bearing_states.xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:) = xddotInt;
             
             iDofOut = iDofOut + P.Bearing{i}.NDofInt(j);
             
         else
             
-            States.xInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)     =  xB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
-            States.xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)  =  xdotB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
-            States.xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:) =  xddotB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
+            bearing_states.xInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)     =  xB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
+            bearing_states.xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)  =  xdotB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
+            bearing_states.xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:) =  xddotB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
             
             iDofIn  = iDofIn  + P.Bearing{i}.NDofInt(j);
             iDofOut = iDofOut + P.Bearing{i}.NDofInt(j);
@@ -47,9 +49,9 @@ for i = 1:length(P.Bearing)
     end
 end
 
-States.u     = P.Mesh.Excite.Sgd*u;
-States.udot  = P.Mesh.Excite.Sgd*udot;
-States.uddot = P.Mesh.Excite.Sgd*uddot;
+bearing_states.u     = P.Mesh.Excite.Sgd*States.u;
+bearing_states.udot  = P.Mesh.Excite.Sgd*States.udot;
+bearing_states.uddot = P.Mesh.Excite.Sgd*States.uddot;
 
 
 function [xInt,xdotInt,xddotInt] = shift_balls_fast(x,xdot,xddot,REB,iRot,hbm)
