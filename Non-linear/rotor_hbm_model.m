@@ -12,7 +12,7 @@ bearing_states.bSolve = 0;
 varargout = {};
 switch part
     case  {'nl','all','output'}
-        Fgyro = O*P.Model.Rotor.G*States.x(1:P.Model.NDof,:);
+        Fgyro = O*P.Model.Rotor.G*States.xdot(1:P.Model.NDof,:);
         Forces = bearingforces(P,bearing_states);
         
         if P.Model.bNL
@@ -35,7 +35,6 @@ switch part
             varargout{end+1} = P.Model.A'*Forces.F;
         elseif strcmp(part,'nl')
                 varargout{end+1} = [Fnl; Fi];
-       
         elseif strcmp(part,'all')
              varargout{end+1} = [Fnl; Fi];
         else
