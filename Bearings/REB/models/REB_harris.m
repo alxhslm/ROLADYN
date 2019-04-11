@@ -58,8 +58,8 @@ Xr0 = (Ar./A) .* ((B.Geometry.RRaceo-B.Geometry.D/2) + max(A - B.Geometry.A0,0)/
 [Ai0,Ao0,alpha_i0,alpha_o0] = race_geometry(Xz0,Xr0,Az,Ar);
 dbi0 = Ai0 - (B.Geometry.RRacei-B.Geometry.D/2) - wi;
 dbo0 = Ao0 - (B.Geometry.RRaceo-B.Geometry.D/2) - wo;
-Qi0 = hertz_contact(E.r*B.Contact.Inner.K,B.Contact.n,dbi0,0);
-Qo0 = hertz_contact(E.r*B.Contact.Outer.K,B.Contact.n,dbo0,0);
+Qi0 = hertz_contact(E.r*B.Contact.Inner.K,B.Contact.n,dbi0,B.Contact.tol);
+Qo0 = hertz_contact(E.r*B.Contact.Outer.K,B.Contact.n,dbo0,B.Contact.tol);
 
 %now find the ball forces
 if (B.Options.bCentrifugal || B.Options.bGyro)
@@ -72,8 +72,8 @@ if (B.Options.bCentrifugal || B.Options.bGyro)
     [Ai,Ao,alpha_i,alpha_o] = race_geometry(Xz,Xr,Az,Ar);
     dbi = Ai - (B.Geometry.RRacei-B.Geometry.D/2) - wi;
     dbo = Ao - (B.Geometry.RRaceo-B.Geometry.D/2) - wo;
-    Qi = hertz_contact(E.r*B.Contact.Inner.K,B.Contact.n,dbi,1E-14);
-    Qo = hertz_contact(E.r*B.Contact.Outer.K,B.Contact.n,dbo,1E-14);
+    Qi = hertz_contact(E.r*B.Contact.Inner.K,B.Contact.n,dbi,B.Contact.tol);
+    Qo = hertz_contact(E.r*B.Contact.Outer.K,B.Contact.n,dbo,B.Contact.tol);
 else
     Xz = Xz0;
     Xr = Xr0;

@@ -82,6 +82,9 @@ if strcmpi(B.Setup.Type,'roller_cylindrical')
 else
     B.Contact = setupPointContacts(B.Contact,B.Geometry,B.Material,B.Fluid);
 end
+if ~isfield(B.Contact,'tol')
+    B.Contact.tol = 1E-16;
+end
 
 %Race compliance
 B.Race = setupRaces(B.Race,B.Geometry,B.Setup,B.Material);

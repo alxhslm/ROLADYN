@@ -41,8 +41,7 @@ db0 = dn / (1 + lambda);
 dbi0 = dn-db0;
 dbo0 = db0;
 
-tol = 1E-8;
-Qi0 = E.r*hertz_contact(B.Contact.K,B.Contact.n,dn,tol);
+Qi0 = E.r*hertz_contact(B.Contact.K,B.Contact.n,dn,B.Contact.tol);
 Qo0 = Qi0;
 
 %contact angles are constant by definition
@@ -57,10 +56,10 @@ if B.Options.bCentrifugal
     db = vr;
     dbi = dn-db-wi;
     dbo = db-wo;
-    Qi = E.r * dynamic_contact(B.Contact,Fc/E.r,dn,tol);
+    Qi = E.r * dynamic_contact(B.Contact,Fc/E.r,dn,B.Contact.tol);
     Qo = Qi + Fc;
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
-    Qi = E.r*race_contact(B.Contact,B.Race,B.Options,dn,tol);
+    Qi = E.r*race_contact(B.Contact,B.Race,B.Options,dn,B.Contact.tol);
     Qo = Qi;
     db = dn/(1+lambda);
     dbo = db;

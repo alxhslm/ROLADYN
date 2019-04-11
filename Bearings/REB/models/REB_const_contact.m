@@ -63,16 +63,15 @@ alpha_i = E.alpha*x0;
 alpha_o = E.alpha*x0;
 
 %now find the ball forces
-tol = 1E-8;
 if B.Options.bCentrifugal
     db = vr;
     dbi = dn-db-wi;
     dbo = db-wo;
-    Qi = E.r*hertz_contact(B.Contact.Inner.K,B.Contact.n,dbi,tol);
-    Qo = E.r*hertz_contact(B.Contact.Outer.K,B.Contact.n,dbo,tol);
+    Qi = E.r*hertz_contact(B.Contact.Inner.K,B.Contact.n,dbi,B.Contact.tol);
+    Qo = E.r*hertz_contact(B.Contact.Outer.K,B.Contact.n,dbo,B.Contact.tol);
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
     dn_race =  (dn - (wo + wi));
-    Qi = E.r*hertz_contact(B.Contact.K,B.Contact.n,dn_race,tol);
+    Qi = E.r*hertz_contact(B.Contact.K,B.Contact.n,dn_race,B.Contact.tol);
     Qo = Qi;
     db = dn_race/(1+lambda);
     dbo = db;
