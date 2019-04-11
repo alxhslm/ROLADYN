@@ -45,7 +45,10 @@ lambda = (B.Contact.Outer.K / B.Contact.Inner.K)^(1/B.Contact.n);
 db0 = dn0  / (1 + lambda);
 dbi0 = dn0 - db0;
 dbo0 = db0;
-Qi0 = E.r*hertz_contact(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
+
+[Qi0,K0] = hertz_contact(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
+Qi0 = E.r*Qi0;
+K0 = E.r*K0;
 Qo0 = Qi0;
 
 %contact angles are constant by definition
@@ -58,21 +61,27 @@ Fc = E.r*dynamic_ball_loads(B,ai,ao,wons*Oi,wons*Oo);
 %now find the ball forces
 %TODO: this currently includes EITHER centrifugal loads OR race compliance. There needs to be an option to include both.
 if B.Options.bCentrifugal
-    [Qi,Qo,vr] = dynamic_contact(B.Contact,Fc/E.r,dn0,tol);
+    [Qi,Qo,vr,Ki,Ko] = dynamic_contact(B.Contact,Fc/E.r,dn0,tol);
     Qi = E.r * Qi;
     Qo = E.r * Qo;
+    Ki = E.r * Ki;
+    Ko = E.r * Ko;
+    
     db = vr;
     dbi = dn0-db;
     dbo = db;
     dn = dbi + dbo;
+
+    Ktot = 1./(1./Ki + 1./Ko);
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
-    [Qi,Qo,wi,wo] = race_contact(B.Contact,B.Race,B.Options,dn0,tol);
+    [Qi,Qo,wi,wo,Kri,Kro] = race_contact(B.Contact,B.Race,B.Options,dn0,tol);
     Qi = E.r*Qi;
     Qo = E.r*Qo;
     dbo = (dn0-wi-wo)/(1+lambda);
     db = dbo + wo;
     dbi = dn0-db-wi;
     dn = dn0 - (wo + wi);
+    Ktot = 1./(1./K0 + 1./Kri + 1./Kro);
 else
     db = db0;
     dn = dn0;
@@ -80,6 +89,7 @@ else
     dbo = dbo0;
     Qi = Qi0;
     Qo = Qo0;
+    Ktot = K0;
 end
 
 Az = B.Geometry.A0*sinALPHA + dn.*sinALPHA;
@@ -88,19 +98,22 @@ Xz = (B.Geometry.RRaceo-B.Geometry.D/2)*sinALPHA + db.*sinALPHA;
 Xr = (B.Geometry.RRaceo-B.Geometry.D/2)*cosALPHA + db.*cosALPHA;
 
 %% Race loads
-Wi = [sum(Qi.*cosALPHA.*cosPSI);
-      sum(Qi.*cosALPHA.*sinPSI);
-      sum( Qi.*sinALPHA);
-      sum( B.Geometry.rRacei.*Qi.*sinALPHA.*sinPSI - Z.*Qi.*cosALPHA.*sinPSI);
-      sum(-B.Geometry.rRacei.*Qi.*sinALPHA.*cosPSI + Z.*Qi.*cosALPHA.*cosPSI);
-      0*x0];
+Ki = permute(Ktot,[3 4 2 1]);
+cosPSI = permute(cosPSI,[3 4 2 1]);
+sinPSI = permute(sinPSI,[3 4 2 1]);
+cosALPHA = permute(cosALPHA,[3 4 2 1]);
+sinALPHA = permute(sinALPHA,[3 4 2 1]);
+Z = permute(Z,[3 4 2 1]);
 
-Wo =-[sum(Qo.*cosALPHA.*cosPSI);
-      sum(Qo.*cosALPHA.*sinPSI);
-      sum(Qo.*sinALPHA);
-      sum( B.Geometry.rRaceo.*Qo.*sinALPHA.*sinPSI - Z.*Qo.*cosALPHA.*sinPSI);
-      sum(-B.Geometry.rRaceo.*Qo.*sinALPHA.*cosPSI + Z.*Qo.*cosALPHA.*cosPSI);
-      0*x0];
+J = [cosALPHA.*cosPSI;
+     cosALPHA.*sinPSI;
+     sinALPHA;
+    - Z.*cosALPHA.*sinPSI + B.Geometry.rRacei*sinALPHA.*sinPSI
+      Z.*cosALPHA.*cosPSI - B.Geometry.rRacei*sinALPHA.*cosPSI;
+      0*Z];
+
+Wi =  permute(sum(J.*permute(Qi,[3 4 2 1]),4),[1 3 2]);
+Wo = -permute(sum(J.*permute(Qo,[3 4 2 1]),4),[1 3 2]);
 
 %forces
 F.Fi = Wi;
@@ -125,4 +138,29 @@ V.Fc = Fc;
 V.wi  = wi;  V.wo = wo;
 
 %stiffnesses
-S = struct([]);
+if nargout > 2
+    K = sum(J.*Ki.*permute(J,[2 1 3 4]),4);
+
+    S.Kqiqi = K;
+    S.Kqoqi = K;
+    S.Kqiqo = K;
+    S.Kqoqo = K;
+
+    S.Kxqi = zeros(0,N,NPts);
+    S.Kxqo = zeros(0,N,NPts);
+    S.Kqix = zeros(N,0,NPts);
+    S.Kqox = zeros(N,0,NPts);
+    S.Kxx  = [];
+
+    %damping
+    S.Cqiqi = zeros(N,N,NPts);
+    S.Cqoqi = zeros(N,N,NPts);
+    S.Cqiqo = zeros(N,N,NPts);
+    S.Cqoqo = zeros(N,N,NPts);
+
+    S.Cxqi = zeros(0,N,NPts);
+    S.Cxqo = zeros(0,N,NPts);
+    S.Cqix = zeros(N,0,NPts);
+    S.Cqox = zeros(N,0,NPts);
+    S.Cxx  = [];
+end
