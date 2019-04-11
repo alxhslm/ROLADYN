@@ -363,7 +363,7 @@ for i = 1:size(V,2)
     [db(:,i), C(:,i)] = empirical_ehd_contact(Contact,Material,Fluid,V(:,i),Q(:,i));
 end
 %verify we can just use a modified Hertzian model at each speed
-fun = @(p,x)hertz_contact(Contact.K,p(1),x+p(2)/1E6);
+fun = @(p,x)hertz_contactlaw(Contact.K,p(1),x+p(2)/1E6);
 p0 = [1.5 0];
 QiFit = 0*V;
 for i = 1:size(V,2)

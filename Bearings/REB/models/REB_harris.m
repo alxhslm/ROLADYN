@@ -66,7 +66,7 @@ Xr0 = (Ar./A) .* ((B.Geometry.RRaceo-B.Geometry.D/2) + max(A - B.Geometry.A0,0)/
 dn0 = A - B.Geometry.A0;
 dbi0 = Ai0 - (B.Geometry.RRacei-B.Geometry.D/2);
 dbo0 = Ao0 - (B.Geometry.RRaceo-B.Geometry.D/2);
-Qi0 = E.r*hertz_contact(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
+Qi0 = E.r*hertz_contactlaw(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
 Qo0 = Qi0;
 
 %now find the ball forces
@@ -78,8 +78,8 @@ if (B.Options.bCentrifugal || B.Options.bGyro)
        
     dbi = Ai - (B.Geometry.RRacei-B.Geometry.D/2) - wi;
     dbo = Ao - (B.Geometry.RRaceo-B.Geometry.D/2) - wo;
-    Qi = hertz_contact(E.r*B.Contact.Inner.K,B.Contact.n,dbi,B.Contact.tol);
-    Qo = hertz_contact(E.r*B.Contact.Outer.K,B.Contact.n,dbo,B.Contact.tol);
+    Qi = hertz_contactlaw(E.r*B.Contact.Inner.K,B.Contact.n,dbi,B.Contact.tol);
+    Qo = hertz_contactlaw(E.r*B.Contact.Outer.K,B.Contact.n,dbo,B.Contact.tol);
 
     dn = dbi + dbo;
 else
@@ -88,7 +88,7 @@ else
 
     if B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
         dn =  (dn0 - (wo + wi));
-        Qi = E.r*hertz_contact(B.Contact.K,B.Contact.n,dn,B.Contact.tol);
+        Qi = E.r*hertz_contactlaw(B.Contact.K,B.Contact.n,dn,B.Contact.tol);
         Qo = Qi;
         db = dn/(1+lambda);
         dbo = db;
@@ -127,12 +127,12 @@ end
 
 %race compliance
 if B.Options.bRaceCompliancei
-    Qri = race_compliance(B.Race.Inner,-wi);
+    Qri = race_compliance_loads(B.Race.Inner,-wi);
     fErr = [fErr;
             Qi.*cos(alpha_i) - Qri];
 end
 if B.Options.bRaceComplianceo
-    Qro = race_compliance(B.Race.Outer, wo);
+    Qro = race_compliance_loads(B.Race.Outer, wo);
     fErr = [fErr;
             Qo.*cos(alpha_o) - Qro];
 end

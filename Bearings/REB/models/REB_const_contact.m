@@ -59,7 +59,7 @@ lambda = (B.Contact.Outer.K / B.Contact.Inner.K)^(1/B.Contact.n);
 db0 = dn0  / (1 + lambda);
 dbi0 = dn0 - db0;
 dbo0 = db0;
-Qi0 = E.r*hertz_contact(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
+Qi0 = E.r*hertz_contactlaw(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
 Qo0 = Qi0;
 
 %contact angles are constant by definition
@@ -71,12 +71,12 @@ if B.Options.bCentrifugal
     db = vr;
     dbi = dn0-db-wi;
     dbo = db-wo;
-    Qi = E.r*hertz_contact(B.Contact.Inner.K,B.Contact.n,dbi,B.Contact.tol);
-    Qo = E.r*hertz_contact(B.Contact.Outer.K,B.Contact.n,dbo,B.Contact.tol);
+    Qi = E.r*hertz_contactlaw(B.Contact.Inner.K,B.Contact.n,dbi,B.Contact.tol);
+    Qo = E.r*hertz_contactlaw(B.Contact.Outer.K,B.Contact.n,dbo,B.Contact.tol);
     dn = dbi + dbo;
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
     dn =  (dn0 - (wo + wi));
-    Qi = E.r*hertz_contact(B.Contact.K,B.Contact.n,dn,B.Contact.tol);
+    Qi = E.r*hertz_contactlaw(B.Contact.K,B.Contact.n,dn,B.Contact.tol);
     Qo = Qi;
     db = dn/(1+lambda);
     dbo = db;
@@ -105,12 +105,12 @@ end
 
 % race compliance
 if B.Options.bRaceCompliancei
-    Qri = -E.r*race_compliance(B.Race.Inner,-wi);
+    Qri = -E.r*race_compliance_loads(B.Race.Inner,-wi);
     fErr = [fErr;
             Qi - Qri];
 end
 if B.Options.bRaceComplianceo
-    Qro = E.r*race_compliance(B.Race.Outer, wo);
+    Qro = E.r*race_compliance_loads(B.Race.Outer, wo);
     fErr = [fErr;
             Qo - Qro];
 end

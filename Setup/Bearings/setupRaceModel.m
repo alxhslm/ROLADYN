@@ -50,7 +50,7 @@ if REB.Options.bRaceComplianceo
     wo = x(count,:);
     count = count + 1;
 end
-Q_hertz = hertz_contact(REB.Contact.K,REB.Contact.n,r-wo-wi,1E-8);
+Q_hertz = hertz_contactlaw(REB.Contact.K,REB.Contact.n,r-wo-wi,1E-8);
 f = [];
 
 if REB.Options.bRaceCompliancei

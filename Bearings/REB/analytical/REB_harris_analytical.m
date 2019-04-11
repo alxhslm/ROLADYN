@@ -41,12 +41,12 @@ if B.bCentrifugal || B.bGyro
     dbi = Ai - (B.ri-B.D/2);
     dbo = Ao - (B.ro-B.D/2);
     if nargout > 8
-        [Qi,Ki] = hertz_contact(B.Inner.K,B.n,dbi);
-        [Qo,Ko] = hertz_contact(B.Outer.K,B.n,dbo);
+        [Qi,Ki] = hertz_contactlaw(B.Inner.K,B.n,dbi);
+        [Qo,Ko] = hertz_contactlaw(B.Outer.K,B.n,dbo);
         [Jb,Juu,Juv,Jvu,Jvv] = feval(['REB_harris_' B.Control],Ki,Ko,Ai,Ao,alpha_i,alpha_o,Qi,Qo,wons*Oi,wons*Oo,B);
     else
-        Qi = hertz_contact(B.Inner.K,B.n,dbi);
-        Qo = hertz_contact(B.Outer.K,B.n,dbo);
+        Qi = hertz_contactlaw(B.Inner.K,B.n,dbi);
+        Qo = hertz_contactlaw(B.Outer.K,B.n,dbo);
     end
     if 0
         [Fc,Fi,Fo,Mg] = dynamic_ball_loads(B,alpha_i,alpha_o,wons*Oi,wons*Oo);
@@ -63,14 +63,14 @@ else
     alpha = atan2(Az,Ar);
     db = A - B.A0;
     if nargout > 8
-        [Q,K] = hertz_contact(B.K,B.n,db);
+        [Q,K] = hertz_contactlaw(B.K,B.n,db);
         Jb = REB_harris_simple(K,A,alpha,Q);
         Juu = Jb;
         Juv = zeros([size(K) 2 0]); 
         Jvu = zeros([size(K) 0 2]);
         Jvv = zeros([size(K) 0 0]);
     else
-        Q = hertz_contact(B.K,B.n,db);
+        Q = hertz_contactlaw(B.K,B.n,db);
     end
     Gu = cat(3,Q.*sin(alpha), Q.*cos(alpha));
     Gv = zeros([size(Q),0]);

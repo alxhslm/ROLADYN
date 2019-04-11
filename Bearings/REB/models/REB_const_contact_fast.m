@@ -46,7 +46,7 @@ db0 = dn0  / (1 + lambda);
 dbi0 = dn0 - db0;
 dbo0 = db0;
 
-[Qi0,K0] = hertz_contact(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
+[Qi0,K0] = hertz_contactlaw(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
 Qi0 = E.r*Qi0;
 K0 = E.r*K0;
 Qo0 = Qi0;
@@ -61,7 +61,7 @@ Fc = E.r*dynamic_ball_loads(B,ai,ao,wons*Oi,wons*Oo);
 %now find the ball forces
 %TODO: this currently includes EITHER centrifugal loads OR race compliance. There needs to be an option to include both.
 if B.Options.bCentrifugal
-    [Qi,Qo,vr,Ki,Ko] = dynamic_contact(B.Contact,Fc/E.r,dn0,tol);
+    [Qi,Qo,vr,Ki,Ko] = dynamic_contactlaw(B.Contact,Fc/E.r,dn0,tol);
     Qi = E.r * Qi;
     Qo = E.r * Qo;
     Ki = E.r * Ki;
@@ -74,7 +74,7 @@ if B.Options.bCentrifugal
 
     Ktot = 1./(1./Ki + 1./Ko);
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
-    [Qi,Qo,wi,wo,Kri,Kro] = race_contact(B.Contact,B.Race,B.Options,dn0,tol);
+    [Qi,Qo,wi,wo,Kri,Kro] = race_compliance_contactlaw(B.Contact,B.Race,B.Options,dn0,tol);
     Qi = E.r*Qi;
     Qo = E.r*Qo;
     dbo = (dn0-wi-wo)/(1+lambda);
