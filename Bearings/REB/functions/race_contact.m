@@ -1,4 +1,4 @@
-function Qi = race_contact(Contact,Race,Options,dbi,tol)
+function [Qi,Qo,wi,wo,Kri,Kro] = race_contact(Contact,Race,Options,dbi,tol)
 if nargin < 3
     tol = 0;
 end
@@ -10,10 +10,15 @@ end
 
 % Qi = Ki*sgn_power(dbi,n).*(1+c*abs(dbi).^e);
 
-Qi = ball_newton(dbi,Contact,Race,Options,tol);
+[Qi,wi,wo] = ball_newton(dbi,Contact,Race,Options,tol);
+Qo = Qi;
+
+[~,Kri] = race_compliance(Race.Inner,-wi);
+[~,Kro] = race_compliance(Race.Outer,wo);
+ 
 % Qi = maxSmooth(Qi,0,tol);
 
-function [Q,iter] = ball_newton(r,Contact,Race,Options,tol)
+function [Qi,wi,wo,iter] = ball_newton(r,Contact,Race,Options,tol)
 sz = size(r);
 r = permute(r(:),[2 3 1]);
 w = [0*r; 0*r];
@@ -55,7 +60,9 @@ while any(abs(dQ(:))>1E-8)
         break
     end
 end
-Q = reshape(Qi,sz);
+Qi = reshape(Qi,sz);
+wi = reshape(w(1,:,:),sz);
+wo = reshape(w(2,:,:),sz);
 
 function I = minvx(M)
 if size(M,1) == 1

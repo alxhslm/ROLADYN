@@ -1,12 +1,7 @@
-function [Qi,Qo] = dynamic_contact(Contact,Fc,r,tol)
+function [Qi,Qo,u,Ki,Ko] = dynamic_contact(Contact,Fc,r,tol)
 if nargin < 4
     tol = 0;
 end
-
-% p = interp1q(Contact.O,Contact.p,O')';
-% r = r + p(3,:);
-% Qi = p(1,:).*sgn_power(r,p(2,:));
-% Qi = maxSmooth(Qi,0,tol);
 
 lambda = (Contact.Outer.K / Contact.Inner.K)^(1/Contact.n);
 u = r / (1 + lambda);
