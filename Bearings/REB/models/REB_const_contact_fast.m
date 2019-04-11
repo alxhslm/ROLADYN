@@ -59,29 +59,24 @@ ao = E.alpha*x0;
 Fc = E.r*dynamic_ball_loads(B,ai,ao,wons*Oi,wons*Oo);
 
 %now find the ball forces
-%TODO: this currently includes EITHER centrifugal loads OR race compliance. There needs to be an option to include both.
 if B.Options.bCentrifugal
-    [Qi,Qo,vr,Ki,Ko] = dynamic_contactlaw(B.Contact,Fc/E.r,dn0,tol);
+    [Qi,vr,wi,wo,Ktot] = dynamic_contactlaw(B.Contact,B.Race,B.Options,Fc/E.r,dn0);
     Qi = E.r * Qi;
-    Qo = E.r * Qo;
-    Ki = E.r * Ki;
-    Ko = E.r * Ko;
-    
+    Ktot = E.r * Ktot;
+    Qo = Qi + Fc;
     db = vr;
-    dbi = dn0-db;
-    dbo = db;
-    dn = dbi + dbo;
-
-    Ktot = 1./(1./Ki + 1./Ko);
+    dbi = dn0-db-wi;
+    dbo = db-wo;
+    dn = dn0 - (wo + wi);
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
-    [Qi,Qo,wi,wo,Kri,Kro] = race_compliance_contactlaw(B.Contact,B.Race,B.Options,dn0,tol);
+    [Qi,wi,wo,Ktot] = race_compliance_contactlaw(B.Contact,B.Race,B.Options,dn0);
     Qi = E.r*Qi;
-    Qo = E.r*Qo;
+    Qo = Qi;
+    Ktot = E.r * Ktot;
     dbo = (dn0-wi-wo)/(1+lambda);
     db = dbo + wo;
     dbi = dn0-db-wi;
     dn = dn0 - (wo + wi);
-    Ktot = 1./(1./K0 + 1./Kri + 1./Kro);
 else
     db = db0;
     dn = dn0;

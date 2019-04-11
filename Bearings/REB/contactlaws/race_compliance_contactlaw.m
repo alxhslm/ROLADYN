@@ -1,27 +1,17 @@
-function [Qi,Qo,wi,wo,Kri,Kro] = race_compliance_contactlaw(Contact,Race,Options,dbi,tol)
-if nargin < 3
-    tol = 0;
-end
+function [Q,wi,wo,K] = race_compliance_contactlaw(Contact,Race,Options,dn)
 
-% Ki = Contact.K;
-% n = Contact.n;
-% c = Contact.c;
-% e = Contact.e;
+[wi,wo] = ball_newton(Contact,Race,Options,dn);
 
-% Qi = Ki*sgn_power(dbi,n).*(1+c*abs(dbi).^e);
-
-[Qi,wi,wo] = ball_newton(dbi,Contact,Race,Options,tol);
-Qo = Qi;
-
+[Q,Kh] = hertz_contactlaw(Contact.K,Contact.n,dn,Contact.tol);
 [~,Kri] = race_compliance_loads(Race.Inner,-wi);
 [~,Kro] = race_compliance_loads(Race.Outer,wo);
- 
-% Qi = maxSmooth(Qi,0,tol);
 
-function [Qi,wi,wo,iter] = ball_newton(r,Contact,Race,Options,tol)
-sz = size(r);
-r = permute(r(:),[2 3 1]);
-w = [0*r; 0*r];
+K = 1./(1./Kh + 1./Kri + 1./Kro);
+
+function [wi,wo,iter] = ball_newton(Contact,Race,Options,dn)
+sz = size(dn);
+dn = permute(dn(:),[2 3 1]);
+w = [0*dn; 0*dn];
 dQ = w + Inf;
 iter = 0;
 
@@ -33,11 +23,11 @@ if Options.bRaceComplianceo
     iFlex(end+1) = 2;
 end
 
-Qri = r + NaN; Kri = r + NaN;
-Qro = r + NaN; Kro = r + NaN;
+Qri = dn + NaN; Kri = dn + NaN;
+Qro = dn + NaN; Kro = dn + NaN;
 
 while any(abs(dQ(:))>1E-8)
-    [Qi,Ki] = hertz_contactlaw(Contact.K,Contact.n,r-w(1,:,:)-w(2,:,:),tol);
+    [Qi,Ki] = hertz_contactlaw(Contact.K,Contact.n,dn-w(1,:,:)-w(2,:,:),Contact.tol);
     Qo = Qi; Ko = Ki;
     
     if Options.bRaceCompliancei
@@ -56,19 +46,9 @@ while any(abs(dQ(:))>1E-8)
     w(iFlex,:,:) = w(iFlex,:,:) + mtimesx(minvx(Kmat(iFlex,iFlex,:)),dQ(iFlex,:,:));
     iter = iter + 1;
     if iter > 100
-        Qi = Qi + NaN;
         break
     end
 end
-Qi = reshape(Qi,sz);
+
 wi = reshape(w(1,:,:),sz);
 wo = reshape(w(2,:,:),sz);
-
-function I = minvx(M)
-if size(M,1) == 1
-    I = 1./M;
-elseif size(M,1) == 2
-    det = M(1,1,:).*M(2,2,:) - M(1,2,:).*M(2,1,:);
-    I = [M(2,2,:) -M(1,2,:);
-        -M(2,1,:)  M(1,1,:)]./det;
-end
