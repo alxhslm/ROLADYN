@@ -41,8 +41,7 @@ dz  = wons*q(3,:) + B.Geometry.rRacei*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5
 dr  = cosPSI.*(wons*q(1,:)) + sinPSI.*(wons*q(2,:)) - Z.*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cr;
 
 dn0 = dr .* cosALPHA + dz .* sinALPHA;
-lambda = (B.Contact.Outer.K / B.Contact.Inner.K)^(1/B.Contact.n);
-db0 = dn0  / (1 + lambda);
+db0 = dn0  / (1 + B.Contact.lambda);
 dbi0 = dn0 - db0;
 dbo0 = db0;
 

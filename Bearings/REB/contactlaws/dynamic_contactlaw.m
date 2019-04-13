@@ -17,8 +17,7 @@ end
 K = 1./(1./Ki + 1./Ko + 1./Kri + 1./Kro);
 
 function [wi,wo,vr,iter] = ball_newton(Contact,Race,Options,Fc,dn)
-lambda = (Contact.Outer.K / Contact.Inner.K)^(1/Contact.n);
-vr = dn / (1 + lambda);
+vr = dn / (1 + B.Contact.lambda);
 
 %find elements out of contact
 db_crit = (Fc/Contact.Outer.K).^(1/Contact.n);

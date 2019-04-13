@@ -75,9 +75,8 @@ else
     Gu = cat(3,Q.*sin(alpha), Q.*cos(alpha));
     Gv = zeros([size(Q),0]);
     
-    lambda = (B.Outer.K / B.Inner.K)^(1/B.n);
-    Xz = (Az./A) .* ((B.ro-B.D/2) + max(A - B.A0,0) /(1 + lambda));
-    Xr = (Ar./A) .* ((B.ro-B.D/2) + max(A - B.A0,0) /(1 + lambda));
+    Xz = (Az./A) .* ((B.ro-B.D/2) + max(A - B.A0,0) /(1 + B.Contact.lambda));
+    Xr = (Ar./A) .* ((B.ro-B.D/2) + max(A - B.A0,0) /(1 + B.Contact.lambda));
     Qi = Q;
     Qo = Q;
     alpha_i = alpha;
