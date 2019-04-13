@@ -108,7 +108,7 @@ B.Model.NDofTot = B.Model.NDof * B.Elements.N;
 % B = setupDynamicModel(B);
 
 %find stiffness/damping in equilibrium position
-psi = linspace(0,2*pi/B.Elements.N/B.Kinematics.rCagei,201);
+psi = 0;%linspace(0,2*pi/B.Elements.N/B.Kinematics.rCagei,201);
 wons = 0*psi + 1;
 States.qi = qi*wons;
 States.qo = qo*wons;
@@ -160,6 +160,8 @@ end
 function Model = setupModel(Model,Options)
 Model.fun = str2func(['REB_', Model.Name]);
 switch Model.Name
+    case 'harris_fast'
+        Model.NDof = 0;
     case 'harris'
         Model.NDof = 0;
         if Options.bCentrifugal || Options.bGyro

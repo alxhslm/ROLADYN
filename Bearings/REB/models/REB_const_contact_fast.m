@@ -59,20 +59,19 @@ Fc = E.r*dynamic_ball_loads(B,ai,ao,wons*Oi,wons*Oo);
 
 %now find the ball forces
 if B.Options.bCentrifugal
-    [Qi,vr,wi,wo,Ktot] = dynamic_contactlaw(B.Contact,B.Race,B.Options,Fc/E.r,dn0);
+    [Qi,Qo,vr,wi,wo,Ktot] = dynamic_contactlaw(B.Contact,(Fc./cosALPHA)/E.r,dn0);
     Qi = E.r * Qi;
+    Qo = E.r * Qo;
     Ktot = E.r * Ktot;
-    Qo = Qi + Fc;
     db = vr;
     dbi = dn0-db-wi;
     dbo = db-wo;
     dn = dn0 - (wo + wi);
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
-    [Qi,wi,wo,Ktot] = race_compliance_contactlaw(B.Contact,B.Race,B.Options,dn0);
+    [Qi,Qo,wi,wo,Ktot] = race_compliance_contactlaw(B.Contact,B.Race,B.Options,dn0);
     Qi = E.r*Qi;
-    Qo = Qi;
-    Ktot = E.r * Ktot;
-    dbo = (dn0-wi-wo)/(1+lambda);
+    Qo = E.r*Qo;
+    dbo = (dn0-wi-wo)/(1+B.Contact.lambda);
     db = dbo + wo;
     dbi = dn0-db-wi;
     dn = dn0 - (wo + wi);
