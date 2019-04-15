@@ -27,8 +27,10 @@ wi = 0*wons*x0;
 wo = 0*wons*x0;
 
 sgn = sign(E.z/(E.z(1)+eps));
-z = B.Geometry.zRacei*sgn;
-Z = z*x0;
+zi = B.Geometry.zRacei*sgn;
+Zi = zi*x0;
+zo = B.Geometry.zRacei*sgn;
+Zo = zo*x0;
 
 PSI = E.psi*x0 + wons*Acage;
 cosPSI = cos(PSI);
@@ -39,7 +41,7 @@ cosALPHA = cos(ALPHA);
 sinALPHA = sin(ALPHA);
 
 dz  = wons*q(3,:) + B.Geometry.rRacei*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cz;
-dr  = cosPSI.*(wons*q(1,:)) + sinPSI.*(wons*q(2,:)) - Z.*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cr;
+dr  = cosPSI.*(wons*q(1,:)) + sinPSI.*(wons*q(2,:)) - Zi.*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cr;
 
 Az = B.Geometry.A0*sinALPHA + dz;
 Ar = B.Geometry.A0*cosALPHA + dr;
@@ -52,35 +54,24 @@ dn0 = A - B.Geometry.A0;
 dbi0 = Ai0 - (B.Geometry.RRacei-B.Geometry.D/2);
 dbo0 = Ao0 - (B.Geometry.RRaceo-B.Geometry.D/2);
 [Qi0,K0] = hertz_contactlaw(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
-Qi0 = E.r*Qi0;
-K0 = E.r*K0;
 Qo0 = Qi0;
 
 %dynamic loads
 [Fc,Fi,Fo,Mg] = dynamic_ball_loads(B,ai0,ao0,wons*Oi,wons*Oo);
-Fc = E.r*Fc;
-Fi = E.r*Fi;
-Fo = E.r*Fo;
-Mg = E.r*Mg;
 
 %now find the ball forces
 if (B.Options.bCentrifugal || B.Options.bGyro) 
-    [Qi,Qo,Xr,Xz,wi,wo,Ktot] = dynamic_contactlaw_harris(B.Contact,B.Geometry,B.Race,B.Options,Fc,Fi,Fo,Ar,Az);
-    Qi = E.r*Qi;
-    Qo = E.r*Qo;
+    [Qi,Qo,Xr,Xz,wi,wo,Ktoti,Ktoto] = dynamic_contactlaw_harris(B.Contact,B.Geometry,B.Race,B.Options,Fc,Fi,Fo,Ar,Az);
     [Ai,Ao,ai,ao] = race_geometry(Xz,Xr,Az,Ar);
     dbi = Ai - (B.Geometry.RRacei-B.Geometry.D/2) - wi;
     dbo = Ao - (B.Geometry.RRaceo-B.Geometry.D/2) - wo;
     dn = dbi + dbo;
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
-    [Qi,Qo,wi,wo,Ktot] = race_compliance_contactlaw(B.Contact,B.Race,B.Options,dn0);
-    Qi = E.r*Qi;
-    Qo = E.r*Qo;
-    Ktot = E.r * Ktot;
-    dbo = (dn0-wi-wo)/(1+B.Contact.lambda);
-    db = dbo + wo;
-    dbi = dn0-db-wi;
+    [Qi,Qo,wi,wo,Ktoti,Ktoto] = race_compliance_contactlaw(B.Contact,B.Race,B.Options,dn0);
     dn = dn0 - (wo + wi);
+    dbo = dn/(1+B.Contact.lambda);
+    dbi = dn-dbo;
+    db = dbo + wo;
     Xz = (B.Geometry.RRaceo-B.Geometry.D/2 + db).*sin(ai0);
     Xr = (B.Geometry.RRaceo-B.Geometry.D/2 + db).*cos(ai0);
     ai = ai0;
@@ -97,10 +88,26 @@ else
     dn = dn0;
     ai = ai0;
     ao = ao0;
-    Ktot = K0;
+    Ktoti = K0;
+    Ktoto = K0;
     Fi = 0*Fi;
     Fo = 0*Fo;
 end
+
+%% Introduce scaling factor to account for Sjovall
+Qi0 = E.r*Qi0;
+Qo0 = E.r*Qo0;
+
+Qi = E.r * Qi;
+Qo = E.r * Qo;
+
+Ktoti = E.r * Ktoti;
+Ktoto = E.r * Ktoto;
+
+Fc = E.r*Fc;
+Fi = E.r*Fi;
+Fo = E.r*Fo;
+Mg = E.r*Mg;
 
 %% Race loads
 cosALPHAI = cos(ai);
@@ -108,28 +115,32 @@ sinALPHAI = sin(ai);
 cosALPHAO = cos(ao);
 sinALPHAO = sin(ao);
 
-K = permute(Ktot,[3 4 2 1]);
 cosPSI = permute(cosPSI,[3 4 2 1]);
 sinPSI = permute(sinPSI,[3 4 2 1]);
+
+Ki = permute(Ktoti,[3 4 2 1]);
 cosALPHAI = permute(cosALPHAI,[3 4 2 1]);
 sinALPHAI = permute(sinALPHAI,[3 4 2 1]);
+Zi = permute(Zi,[3 4 2 1]);
+
+Ko = permute(Ktoto,[3 4 2 1]);
 cosALPHAO = permute(cosALPHAO,[3 4 2 1]);
 sinALPHAO = permute(sinALPHAO,[3 4 2 1]);
-Z = permute(Z,[3 4 2 1]);
+Zo = permute(Zo,[3 4 2 1]);
 
 Ji = [cosALPHAI.*cosPSI;
       cosALPHAI.*sinPSI;
       sinALPHAI;
-    - Z.*cosALPHAI.*sinPSI + B.Geometry.rRacei*sinALPHAI.*sinPSI
-      Z.*cosALPHAI.*cosPSI - B.Geometry.rRacei*sinALPHAI.*cosPSI;
-      0*Z];
+    - Zi.*cosALPHAI.*sinPSI + B.Geometry.rRacei*sinALPHAI.*sinPSI
+      Zi.*cosALPHAI.*cosPSI - B.Geometry.rRacei*sinALPHAI.*cosPSI;
+      0*Zi];
 
 Jo = [cosALPHAO.*cosPSI;
       cosALPHAO.*sinPSI;
       sinALPHAO;
-    - Z.*cosALPHAO.*sinPSI + B.Geometry.rRacei*sinALPHAO.*sinPSI
-      Z.*cosALPHAO.*cosPSI - B.Geometry.rRacei*sinALPHAO.*cosPSI;
-      0*Z];
+    - Zo.*cosALPHAO.*sinPSI + B.Geometry.rRaceo*sinALPHAO.*sinPSI
+      Zo.*cosALPHAO.*cosPSI - B.Geometry.rRaceo*sinALPHAO.*cosPSI;
+      0*Zo];
 
 Wi =  permute(sum(Ji.*permute(Qi,[3 4 2 1]),4),[1 3 2]);
 Wo = -permute(sum(Jo.*permute(Qo,[3 4 2 1]),4),[1 3 2]);
@@ -158,12 +169,15 @@ V.Mg = Mg;
 %race compliance
 V.wi  = wi;  V.wo = wo;
 
+%contact stiffness
+V.Ki = Ktoti; V.Ko = Ktoto;
+
 %stiffnesses
 if nargout > 2
-    S.Kqiqi = sum(Ji.*K.*permute(Ji,[2 1 3 4]),4); 
-    S.Kqoqi = sum(Jo.*K.*permute(Ji,[2 1 3 4]),4);
-    S.Kqiqo = sum(Ji.*K.*permute(Jo,[2 1 3 4]),4);
-    S.Kqoqo = sum(Jo.*K.*permute(Jo,[2 1 3 4]),4);
+    S.Kqiqi = sum(Ji.*Ki.*permute(Ji,[2 1 3 4]),4); 
+    S.Kqoqi = sum(Jo.*Ko.*permute(Ji,[2 1 3 4]),4);
+    S.Kqiqo = sum(Ji.*Ki.*permute(Jo,[2 1 3 4]),4);
+    S.Kqoqo = sum(Jo.*Ko.*permute(Jo,[2 1 3 4]),4);
 
     S.Kxqi = zeros(0,N,NPts);
     S.Kxqo = zeros(0,N,NPts);

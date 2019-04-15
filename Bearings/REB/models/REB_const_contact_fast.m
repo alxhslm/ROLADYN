@@ -46,8 +46,6 @@ dbi0 = dn0 - db0;
 dbo0 = db0;
 
 [Qi0,K0] = hertz_contactlaw(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
-Qi0 = E.r*Qi0;
-K0 = E.r*K0;
 Qo0 = Qi0;
 
 %contact angles are constant by definition
@@ -55,26 +53,21 @@ ai = E.alpha*x0;
 ao = E.alpha*x0;
 
 %dynamic loads
-Fc = E.r*dynamic_ball_loads(B,ai,ao,wons*Oi,wons*Oo);
+Fc = dynamic_ball_loads(B,ai,ao,wons*Oi,wons*Oo);
 
 %now find the ball forces
 if B.Options.bCentrifugal
-    [Qi,Qo,vr,wi,wo,Ktot] = dynamic_contactlaw(B.Contact,(Fc./cosALPHA)/E.r,dn0);
-    Qi = E.r * Qi;
-    Qo = E.r * Qo;
-    Ktot = E.r * Ktot;
+    [Qi,Qo,vr,wi,wo,Ktot] = dynamic_contactlaw(B.Contact,B.Race,B.Options,(Fc./cosALPHA),dn0);
     db = vr;
     dbi = dn0-db-wi;
     dbo = db-wo;
     dn = dn0 - (wo + wi);
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
     [Qi,Qo,wi,wo,Ktot] = race_compliance_contactlaw(B.Contact,B.Race,B.Options,dn0);
-    Qi = E.r*Qi;
-    Qo = E.r*Qo;
-    dbo = (dn0-wi-wo)/(1+B.Contact.lambda);
-    db = dbo + wo;
-    dbi = dn0-db-wi;
     dn = dn0 - (wo + wi);
+    dbo = dn/(1+B.Contact.lambda);
+    dbi = dn - dbo;
+    db = dbo + wo;
 else
     db = db0;
     dn = dn0;
@@ -84,6 +77,19 @@ else
     Qo = Qo0;
     Ktot = K0;
 end
+
+%% Introduce scaling factor to account for Sjovall
+Qi0 = E.r*Qi0;
+Qo0 = E.r*Qo0;
+
+Qi = E.r * Qi;
+Qo = E.r * Qo;
+
+Ktot = E.r * Ktot;
+
+Fc = E.r*Fc;
+
+%% Geometric parameters
 
 Az = B.Geometry.A0*sinALPHA + dn.*sinALPHA;
 Ar = B.Geometry.A0*cosALPHA + dn.*cosALPHA;
@@ -129,6 +135,9 @@ V.Fc = Fc;
 
 %race compliance
 V.wi  = wi;  V.wo = wo;
+
+%contact stiffness
+V.Ki = Ktot; V.Ko = Ktot;
 
 %stiffnesses
 if nargout > 2
