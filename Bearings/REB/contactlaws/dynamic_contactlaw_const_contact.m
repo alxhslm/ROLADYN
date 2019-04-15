@@ -1,4 +1,4 @@
-function [Qi,Qo,vr,wi,wo,K] = dynamic_contactlaw(Contact,Race,Options,Fc,dn)
+function [Qi,Qo,vr,wi,wo,K] = dynamic_contactlaw_const_contact(Contact,Race,Options,Fc,dn)
 
 [wi,wo,vr] = ball_newton(Contact,Race,Options,Fc,dn);
 [~,~,Qi,Qo,Kri,Kro,Ki,Ko] = get_forces(Contact,Race,Options,dn,wi,wo,vr);

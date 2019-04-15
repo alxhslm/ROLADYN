@@ -57,7 +57,7 @@ Fc = dynamic_ball_loads(B,ai,ao,wons*Oi,wons*Oo);
 
 %now find the ball forces
 if B.Options.bCentrifugal
-    [Qi,Qo,vr,wi,wo,Ktot] = dynamic_contactlaw(B.Contact,B.Race,B.Options,(Fc./cosALPHA),dn0);
+    [Qi,Qo,vr,wi,wo,Ktot] = dynamic_contactlaw_const_contact(B.Contact,B.Race,B.Options,(Fc./cosALPHA),dn0);
     db = vr;
     dbi = dn0-db-wi;
     dbo = db-wo;
