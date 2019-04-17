@@ -34,10 +34,10 @@ problem.C  = blkdiag(problem.C,zeros(NDofInt));
 problem.M  = blkdiag(problem.M,zeros(NDofInt));
 problem.F0 = [problem.F0; zeros(NDofInt,1)];
 
-if isfield(P.Model,'iDofPlot')
+if isfield(P.Model,'RDofPlot')
+    problem.RDofPlot = P.Model.RDofPlot;
+elseif isfield(P.Model,'iDofPlot')
     problem.iDofPlot = P.Model.iDofPlot;
-else
-    problem.iDofPlot = 1:P.Model.NDofTot;
 end
 
 if ~isfield(P.Model,'bUseGroups')
