@@ -29,7 +29,7 @@ wo = 0*wons*x0;
 sgn = sign(E.z/(E.z(1)+eps));
 zi = B.Geometry.zRacei*sgn;
 Zi = zi*x0;
-zo = B.Geometry.zRacei*sgn;
+zo = B.Geometry.zRaceo*sgn;
 Zo = zo*x0;
 
 PSI = E.psi*x0 + wons*Acage;
