@@ -80,7 +80,7 @@ S.Ae = A;
 S.Ie = I;
 
 S.M = diag([S.m S.m S.Id S.Id]);
-S.G = blkdiag(zeros(2),antidiag(S.Ip*[1 -1]));
+S.G = S.bGyro*blkdiag(zeros(2),antidiag(S.Ip*[1 -1]));
 
 S.iLocal = ((S.iNodes(:)-1)*4 + (1:4))';
 S.iLocal = S.iLocal(:);

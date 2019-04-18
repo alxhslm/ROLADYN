@@ -192,7 +192,7 @@ D.Id = D.IdHub + D.IdDisc;
 D.Ip = D.IpHub + D.IpDisc;
 
 D.MHub = diag([D.m D.m D.IdHub D.IdHub]);
-D.GHub = blkdiag(zeros(2),D.IpHub*antidiag([1 -1]));
+D.GHub = D.bGyro*blkdiag(zeros(2),D.IpHub*antidiag([1 -1]));
 
 %% Root compliance
 D.SRoot = zeros(NRoot,NDofTot); D.SRoot(:,1:NRoot) = eye(NRoot);
@@ -233,4 +233,4 @@ end
 D.M = diag([D.m D.m D.Id D.Id]);
 
 %gyroscopic terms
-D.G = blkdiag(zeros(2),D.Ip*antidiag([1 -1]));
+D.G = D.bGyro*blkdiag(zeros(2),D.Ip*antidiag([1 -1]));
