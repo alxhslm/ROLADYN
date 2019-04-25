@@ -86,7 +86,6 @@ for i = 1:length(P.Bearing)
         Forces.Fb = Forces.Fb + Ru'*ForcesB.F;
                         
         if nargout>1
-            
             %assemble stiffness structure      
             Stiffness.K   = Stiffness.K   + mtimesx(Rq',mtimesx(StiffnessB.K,Rq));
 
@@ -112,13 +111,13 @@ for i = 1:length(P.Bearing)
 end
 
 function StatesB = states_init_j(B,j,Oshaft,Ashaft,States)
-StatesB.qo     = B.Ro{j} * B.So{j} * States.x;
-StatesB.qodot  = B.Ro{j} * B.So{j} * States.xdot;
-StatesB.qoddot = B.Ro{j} * B.So{j} * States.xddot;
+StatesB.qo     = B.Ro{j} * (B.So{j} * States.x     + B.Uo{j} * States.u);
+StatesB.qodot  = B.Ro{j} * (B.So{j} * States.xdot  + B.Uo{j} * States.udot);
+StatesB.qoddot = B.Ro{j} * (B.So{j} * States.xddot + B.Uo{j} * States.uddot);
 
-StatesB.qi     = B.Ri{j} * B.Si{j} * States.x;
-StatesB.qidot  = B.Ri{j} * B.Si{j} * States.xdot;
-StatesB.qiddot = B.Ri{j} * B.Si{j} * States.xddot;
+StatesB.qi     = B.Ri{j} * (B.Si{j} * States.x     + B.Ui{j} * States.u);
+StatesB.qidot  = B.Ri{j} * (B.Si{j} * States.xdot  + B.Ui{j} * States.udot);
+StatesB.qiddot = B.Ri{j} * (B.Si{j} * States.xddot + B.Ui{j} * States.uddot);
 
 StatesB.Oo = Oshaft(j,:); StatesB.Oi = Oshaft(j+1,:); 
 StatesB.Ao = Ashaft(j,:); StatesB.Ai = Ashaft(j+1,:); 
