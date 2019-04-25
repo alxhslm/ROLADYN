@@ -22,7 +22,7 @@ problem.Cu = P.Model.Excite.Cub*P.Mesh.Excite.Sub;
 problem.Mu = P.Model.Excite.Mub*P.Mesh.Excite.Sub;
 
 problem.M  = P.Model.Rotor.M;
-problem.C  = P.Model.Rotor.C + P.Model.Bearing.C;
+problem.C  = P.Model.Rotor.C;
 problem.K  = P.Model.Rotor.K;
 problem.F0 = -P.Model.Fg + P.Model.Rotor.F0 - P.Model.Rotor.K*P.Model.x0;
 

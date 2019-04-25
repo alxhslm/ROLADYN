@@ -16,13 +16,16 @@ switch part
         Forces = bearingforces(P,bearing_states);
         
         if P.Model.bNL
-            Fb = P.Model.A'*Forces.F - P.Model.Bearing.C*States.xdot(1:P.Model.NDof,:);
+            Fb = P.Model.A'*Forces.F;
         else
-            Fb = P.Model.Bearing.F0 + P.Model.Bearing.K*(States.x(1:P.Model.NDof,:)-P.Model.x0);% + P.Model.Bearing.C*xdotCG;
+            Fb = P.Model.Bearing.F0 + ...
+                 P.Model.Bearing.K*(States.x(1:P.Model.NDof,:)-P.Model.x0) + ...
+                 P.Model.Bearing.C*States.xdot(1:P.Model.NDof,:);
         end
         
-%         Fnl = P.Model.A'*Forces.F;
-%         Flin = P.Model.Bearing.F0 + P.Model.Bearing.K*(xCG-P.Model.x0) + P.Model.Bearing.C*xdotCG;
+        Flin = P.Model.Bearing.F0 + ...
+               P.Model.Bearing.K*(States.x(1:P.Model.NDof,:)-P.Model.x0) + ...
+               P.Model.Bearing.C*States.xdot(1:P.Model.NDof,:);
         
         Fnl = Fb + Fgyro;
         if P.Model.bCompressREB
@@ -66,7 +69,7 @@ switch part
             
             Kqq = zeros(P.Model.NDof,P.Model.NDof,NPts);
             Kxq = zeros(P.Model.NDofInt,P.Model.NDof,NPts);
-            Cqq = zeros(P.Model.NDof,P.Model.NDof,NPts);
+            Cqq = zeros(P.Model.NDof,P.Model.NDof,NPts) + Cgyro;
             Cxq = zeros(P.Model.NDofInt,P.Model.NDof,NPts);
             x0 = States.x;
             xdot0 = States.xdot;
@@ -124,7 +127,8 @@ switch part
             case 'nl_uddot'
                 varargout{end+1} = 0*[Kqu; Kxu];
             case 'nl_w'
-                varargout{end+1} = [];
+                dF_dO = [P.Model.Rotor.G*States.xdot(1:P.Model.NDof,:)/hbm.harm.rFreqRatio(1); zeros(P.Model.NDofInt,NPts)];
+                varargout{end+1} = {dF_dO; 0*States.x};
                 %too complicated to do analytically
         end
 end
