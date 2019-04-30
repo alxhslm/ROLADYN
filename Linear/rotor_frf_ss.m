@@ -1,4 +1,4 @@
-function q = rotor_frf(S,R,F,O,w)
+function q = rotor_frf_ss(S,R,F,O,w)
 NDof = size(S,1)/2;
 
 assert(length(O) == size(S,3));
