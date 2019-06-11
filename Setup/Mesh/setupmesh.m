@@ -56,7 +56,7 @@ for i = 1:NRotor
                         
             %stiffness/damping
             P.Rotor{i}.K = P.Rotor{i}.K + Se'*P.Rotor{i}.Shaft{j}.R{k}'*P.Rotor{i}.Shaft{j}.Ke{k}*P.Rotor{i}.Shaft{j}.R{k}*Se;
-            P.Rotor{i}.C = P.Rotor{i}.C + Se'*P.Rotor{i}.Shaft{j}.R{k}'*P.Rotor{i}.Shaft{j}.Ke{k}*P.Rotor{i}.Shaft{j}.R{k}*Se * P.Rotor{i}.Shaft{j}.material.eta;
+            P.Rotor{i}.C = P.Rotor{i}.C + Se'*P.Rotor{i}.Shaft{j}.R{k}'*P.Rotor{i}.Shaft{j}.Ke{k}*P.Rotor{i}.Shaft{j}.R{k}*Se * P.Rotor{i}.Shaft{j}.Material.eta;
             
             %inertia
             P.Rotor{i}.M = P.Rotor{i}.M + Se'*P.Rotor{i}.Shaft{j}.R{k}'*P.Rotor{i}.Shaft{j}.Me{k}*P.Rotor{i}.Shaft{j}.R{k}*Se;
@@ -81,7 +81,7 @@ for i = 1:NRotor
                 Re = P.Rotor{i}.Disc{j}.Re{k,l};
                 %stiffness/damping
                 P.Rotor{i}.K = P.Rotor{i}.K + Se'*Re'*P.Rotor{i}.Disc{j}.Ke{k,l}*Re*Se;
-                P.Rotor{i}.C = P.Rotor{i}.C + Se'*Re'*P.Rotor{i}.Disc{j}.Ke{k,l}*Re*Se * P.Rotor{i}.Disc{j}.material.eta;
+                P.Rotor{i}.C = P.Rotor{i}.C + Se'*Re'*P.Rotor{i}.Disc{j}.Ke{k,l}*Re*Se * P.Rotor{i}.Disc{j}.Material.eta;
                 
                 %only intertia terms
                 P.Rotor{i}.M = P.Rotor{i}.M + Se'*Re'*P.Rotor{i}.Disc{j}.Me{k,l}*Re*Se;

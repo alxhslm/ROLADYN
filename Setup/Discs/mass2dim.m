@@ -21,10 +21,10 @@ if ~isfield(D,'R')
 else
     ri = D.R(1);
     ro = D.R(2);
-    t = D.m/(D.material.rho*pi*(ro^2 - ri^2));
+    t = D.m/(D.Material.rho*pi*(ro^2 - ri^2));
 end
 
-[D.m,D.Id,D.Ip] = disc_properties(D.material.rho,ri,ro,t);
+[D.m,D.Id,D.Ip] = disc_properties(D.Material.rho,ri,ro,t);
 D.R = [ri ro];
 D.t =  t;
     
@@ -35,7 +35,7 @@ ri = X(1);
 ro = X(2);
 t =  X(3);
 
-[m,Id,Ip] = disc_properties(D.material.rho,ri,ro,t);
+[m,Id,Ip] = disc_properties(D.Material.rho,ri,ro,t);
 
 f(1) = m  - D.m;
 f(2) = (Id - D.Id)/R0^2;

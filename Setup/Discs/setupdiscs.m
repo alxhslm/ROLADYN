@@ -17,16 +17,16 @@ end
 
 function D = setup_each_disc(D,N,x0)
 
-if ~isfield(D,'material')
-    error('Missing field material');
+if ~isfield(D,'Material')
+    error('Missing field Material');
 end
 
 D.z   = N(D.iNode);
 
-D.material = setupmaterial(D.material);
+D.Material = setupmaterial(D.Material);
 
 if isfield(D,'m') 
-    if isnan(D.material.rho)
+    if isnan(D.Material.rho)
         if isfield(D,'R') && isfield(D,'t')
             %only know geometric properties
             D = dim2mass(D);
@@ -37,7 +37,7 @@ if isfield(D,'m')
         %only know inertia properties
         D = mass2dim(D);   
     end
-elseif isnan(D.material.rho) && ~isfield(D,'R')
+elseif isnan(D.Material.rho) && ~isfield(D,'R')
     error('Disc not fully defined');
 end
 
@@ -65,7 +65,7 @@ if ~isfield(D,'Nt')
     D.Nt = 4;
 end
 
-required_fields = {'material'};
+required_fields = {'Material'};
 for i = 1:length(required_fields)
     if ~isfield(D,required_fields{i})
         error('Missing field %s from Disc',required_fields{i});
@@ -75,7 +75,7 @@ end
 D.r = D.R(1);
 D.iSegment = [];
 for i = 1:D.NSegments
-    [D.mSegment(i),D.IdSegment(i),D.IpSegment(i)] = disc_properties(D.material.rho,D.R(i),D.R(i+1),D.t(i));
+    [D.mSegment(i),D.IdSegment(i),D.IpSegment(i)] = disc_properties(D.Material.rho,D.R(i),D.R(i+1),D.t(i));
     rSeg = linspace(D.R(i),D.R(i+1),D.NrSegment(i)+1);
     D.r = [D.r rSeg(2:end)];
     D.iSegment = [D.iSegment i*ones(1,D.NrSegment(i))];
@@ -127,7 +127,7 @@ for i = 1:D.Nt
         A = D.beta(i)/2*((D.r(j)+D.dr(j))^2 - D.r(j)^2);
         iSeg = D.iSegment(j);
         
-        D.me(i,j) = D.material.rho*A*D.t(iSeg);
+        D.me(i,j) = D.Material.rho*A*D.t(iSeg);
         
         D.Se{i,j} = [D.SNode{i,j};
                      D.SNode{i,j+1};
@@ -136,7 +136,7 @@ for i = 1:D.Nt
         
         D.Re{i,j} = eye(NDofe*NEle);
         
-        [D.Ke{i,j},D.Me{i,j},D.Ge{i,j}] = annular(D.material,D.t(iSeg),D.theta(i),D.r(j),D.beta(i),D.dr(j));
+        [D.Ke{i,j},D.Me{i,j},D.Ge{i,j}] = annular(D.Material,D.t(iSeg),D.theta(i),D.r(j),D.beta(i),D.dr(j));
         if ~D.bGyro
             D.Ge{i,j} = 0*D.Ge{i,j};
         end
