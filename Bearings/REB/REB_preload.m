@@ -81,7 +81,7 @@ if nargout > 2
 else
     [F,V] = REB_model(Params, States);
 end
-F.qi = States.qi;
+F.q = States.qi;
 
 function States = getjthpoint(States,j)
 prefix = {'q','q','q','O','A'};
