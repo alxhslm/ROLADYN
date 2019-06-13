@@ -2,7 +2,7 @@ function varargout = plot_REB(varargin)
 
 nargs = nargin;
 if ishandle(varargin{1})
-    bPlot = 0;
+    bNewFig = 0;
     fig = varargin{1};
     varargin = varargin(2:end);
     nargs = nargs - 1;
@@ -11,7 +11,7 @@ if ishandle(varargin{1})
     hBall = U.hBall;
     hRace = U.hRace;
 else
-    bPlot = 1;
+    bNewFig = 1;
 end
 
 if nargs > 5
@@ -45,7 +45,7 @@ else
 end
  
 
-if bPlot
+if bNewFig
     fig = figure;
     xlabel('z (mm)');
     ylabel('x (mm)');
@@ -83,14 +83,14 @@ U.hBall = hBall;
 U.hRace = hRace;
 set(fig,'UserData',U);
 
-if bPlot
+if bNewFig
     cb = colorbar('Location','EastOutside');
     ylabel(cb,'Qi (kN)')
-    caxis([0 max(Q)]*N2kN);
+    caxis([0 max(Q(:))]*N2kN);
     view(3);
 end
 
-if nargout > 1
+if nargout > 0
     varargout{1} = fig;
 end
 

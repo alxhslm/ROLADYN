@@ -21,7 +21,7 @@ else
     REB = varargin{1};
     q = zeros(4,1);
     U.Xz = REB.z;
-    U.Xr = 0*REB.psi;
+    U.Xr = 0*REB.Elements.psi;
     U.Q = 0*U.Xz;
     iPlot = 1;
 end
@@ -42,7 +42,7 @@ end
  
 q = R*q;
 U.q = q;
-U.aBall = REB.rPivot_lat.*(q(1).*cos(REB.psi) + q(2).*sin(REB.psi)) + REB.rPivot_ax*q(3) + REB.rPivot_rot*(q(4).*sin(REB.psi) - q(5).*cos(REB.psi));
+U.aBall = REB.Kinematics.rPivot_lat.*(q(1).*cos(REB.Elements.psi) + q(2).*sin(REB.Elements.psi)) + REB.Kinematics.rPivot_ax*q(3) + REB.Kinematics.rPivot_rot*(q(4).*sin(REB.Elements.psi) - q(5).*cos(REB.Elements.psi));
 U.q(1:3,:) = U.q(1:3,:)*m2mm;
 
 if bPlot
@@ -52,17 +52,17 @@ if bPlot
     axis equal
     hold on   
 
-    U.hBall = NaN(REB.Z,1);
+    U.hBall = NaN(REB.Setup.Z,1);
     U.hRace = NaN(2,1);
 
-    U.hControl = uicontrol('parent',fig,'Style','popupmenu','Units','Normalized','Position',[0.78  0.94  0.14  0.05],'String',num2cellstr(1:REB.Z), 'Callback', @controlcb,'Value',iPlot);       
-    [U.hBall,U.hRace] = plot_ball_and_races(U.hBall,U.hRace,REB,U.q,U.Xr(iPlot),U.Xz(iPlot),U.aBall(iPlot),U.Q(iPlot),REB.z(iPlot),REB.psi(iPlot),m2mm,N2kN);
+    U.hControl = uicontrol('parent',fig,'Style','popupmenu','Units','Normalized','Position',[0.78  0.94  0.14  0.05],'String',num2cellstr(1:REB.Setup.Z), 'Callback', @controlcb,'Value',iPlot);       
+    [U.hBall,U.hRace] = plot_ball_and_races(U.hBall,U.hRace,REB,U.q,U.Xr(iPlot),U.Xz(iPlot),U.aBall(iPlot),U.Q(iPlot),REB.Elements.z(iPlot),REB.Elements.psi(iPlot),m2mm,N2kN);
     
     U.m2mm = m2mm;
     U.N2kN = m2mm;
 else
     iPlot = get(U.hControl,'Value');
-    plot_ball_and_races(U.hBall,U.hRace,REB,U.q,U.Xr(iPlot),U.Xz(iPlot),U.aBall(iPlot),U.Q(iPlot),REB.z(iPlot),REB.psi(iPlot),m2mm,N2kN);
+    plot_ball_and_races(U.hBall,U.hRace,REB,U.q,U.Xr(iPlot),U.Xz(iPlot),U.aBall(iPlot),U.Q(iPlot),REB.z(iPlot),REB.Elements.psi(iPlot),m2mm,N2kN);
 end
 U.REB = REB;
 set(fig,'UserData',U);
@@ -70,19 +70,19 @@ set(fig,'UserData',U);
 if bPlot
     cb = colorbar('Location','EastOutside');
     ylabel(cb,'Qi (kN)')
-    caxis([0 max(U.Q)]*N2kN)
+    caxis([0 max(U.Q(:))]*N2kN)
 end
 
 function controlcb(source,event)
 i = get(source,'Value');
 fig = get(source,'Parent');
 U = get(fig,'UserData');
-plot_ball_and_races(U.hBall,U.hRace,U.REB,U.q,U.Xr(i),U.Xz(i),U.aBall(i),U.Q(i),U.REB.z(i),U.REB.psi(i),U.m2mm,U.N2kN);
+plot_ball_and_races(U.hBall,U.hRace,U.REB,U.q,U.Xr(i),U.Xz(i),U.aBall(i),U.Q(i),U.REB.Elements.z(i),U.REB.Elements.psi(i),U.m2mm,U.N2kN);
 
 function [hBall,hRace] = plot_ball_and_races(hBall,hRace,REB,q,Xr,Xz,aBall,Q,z,psi,m2mm,N2kN)
-hBall = plot_ball(hBall,(REB.zo*sign(z)+Xz)*m2mm,(REB.Ro+Xr)*m2mm,REB.D/2*m2mm,aBall,N2kN*Q);
-hRace(1) = plot_race(hRace(1), q  ,sign(z)*REB.zi*m2mm, REB.ri*m2mm,REB.Ri*m2mm,z*m2mm,REB.D*m2mm,psi,'Color','k');
-hRace(2) = plot_race(hRace(2), 0*q,sign(z)*REB.zo*m2mm,-REB.ro*m2mm,REB.Ro*m2mm,z*m2mm,REB.D*m2mm,psi,'Color','k');
+hBall = plot_ball(hBall,(REB.Geometry.zRaceo*sign(z)+Xz)*m2mm,(REB.Geometry.rRaceo+Xr)*m2mm,REB.Geometry.D/2*m2mm,aBall,N2kN*Q);
+hRace(1) = plot_race(hRace(1), q  ,sign(z)*REB.Geometry.zRacei*m2mm, REB.Geometry.RRacei*m2mm,REB.Geometry.rRacei*m2mm,z*m2mm,REB.Geometry.D*m2mm,psi,'Color','k');
+hRace(2) = plot_race(hRace(2), 0*q,sign(z)*REB.Geometry.zRaceo*m2mm,-REB.Geometry.RRaceo*m2mm,REB.Geometry.rRaceo*m2mm,z*m2mm,REB.Geometry.D*m2mm,psi,'Color','k');
 
 function h = plot_ball(h,z,R,r,a,Q,varargin)
 lat = linspace(0,2*pi,100); lat(end+1) = pi;
