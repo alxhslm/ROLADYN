@@ -285,26 +285,26 @@ end
 Race.K = Race.Kax/Race.R + Race.Kfl/Race.R^3;
 
 function Contact = setupPointContacts(Contact,Geometry,Material,Fluid)
-Rr = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRacei);
+Rri = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRacei);
 if 0.5*Geometry.Dr > Geometry.RRacei
     error('The inner contact is non-conforming')
 end
-Rz = 1/(1/(0.5*Geometry.Dz) + 1/(0.5*Geometry.di/cos(Geometry.alpha0)));
+Rzi = 1/(1/(0.5*Geometry.Dz) + 1/(0.5*Geometry.di/cos(Geometry.alpha0)));
 if Geometry.Dz > (0.5*Geometry.di/cos(Geometry.alpha0))
     error('The inner contact is non-conforming')
 end
-Contact.Inner = setupHertzPointContact(Contact.Inner,Material,Rr,Rz);
+Contact.Inner = setupHertzPointContact(Contact.Inner,Material,Rri,Rzi);
 % Contact.Inner.EHD = setupEHDcontact(Contact.Inner,Material,Fluid);
 
-Rr = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRaceo);
+Rro = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRaceo);
 if 0.5*Geometry.Dr > Geometry.RRaceo
     error('The outer contact is non-conforming')
 end
-Rz = 1/(1/(0.5*Geometry.Dz) - 1/(0.5*Geometry.do/cos(Geometry.alpha0)));
+Rzo = 1/(1/(0.5*Geometry.Dz) - 1/(0.5*Geometry.do/cos(Geometry.alpha0)));
 if Geometry.Dz > (0.5*Geometry.do/cos(Geometry.alpha0))
     error('The outer contact is non-conforming')
 end
-Contact.Outer = setupHertzPointContact(Contact.Outer,Material,Rr,Rz);
+Contact.Outer = setupHertzPointContact(Contact.Outer,Material,Rro,Rzo);
 % Contact.Outer.EHD = setupEHDcontact(Contact.Outer,Material,Fluid);
 
 Contact.n = 1.5;
@@ -317,7 +317,7 @@ function Contact = setupHertzPointContact(Contact,Material,Rx,Ry)
 
 Contact.n = 3/2;
 
-if ~isfield(Contact,'K')
+if 1%~isfield(Contact,'K')
 
     Sp = (1/Rx + 1/Ry);
     Fp = abs(1/Rx - 1/Ry) / Sp;
