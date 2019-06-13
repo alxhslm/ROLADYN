@@ -229,8 +229,8 @@ for i = 1:length(default_fields)
 end
 
 if isfield(Geometry,'cr') && isfield(Geometry,'dm')
-    Geometry.do = Geometry.dm + Geometry.cr + Geometry.D*cos(Geometry.alpha0);
-    Geometry.di = Geometry.dm - Geometry.cr - Geometry.D*cos(Geometry.alpha0);
+    Geometry.do = Geometry.dm + Geometry.D*cos(Geometry.alpha0);% +  Geometry.cr
+    Geometry.di = Geometry.dm - Geometry.D*cos(Geometry.alpha0); % -  Geometry.cr
 elseif isfield(Geometry,'do') && isfield(Geometry,'di')
     Geometry.cr = 0.5*(Geometry.do - Geometry.di - 2*Geometry.D*cos(Geometry.alpha0));
     Geometry.dm = 0.5*(Geometry.di + Geometry.do);    
