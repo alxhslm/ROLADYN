@@ -285,59 +285,56 @@ end
 Race.K = Race.Kax/Race.R + Race.Kfl/Race.R^3;
 
 function Contact = setupPointContacts(Contact,Geometry,Material,Fluid)
-Rr = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRacei);
+Contact.Inner.Rr  = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRacei);
 if 0.5*Geometry.Dr > Geometry.RRacei
     error('The inner contact is non-conforming')
 end
-Rz = 1/(1/(0.5*Geometry.Dz) + 1/(0.5*Geometry.di/cos(Geometry.alpha0)));
+Contact.Inner.Rz = 1/(1/(0.5*Geometry.Dz) + 1/(0.5*Geometry.di/cos(Geometry.alpha0)));
 if Geometry.Dz > (0.5*Geometry.di/cos(Geometry.alpha0))
     error('The inner contact is non-conforming')
 end
-Contact.Inner = setupHertzPointContact(Contact.Inner,Material,Rr,Rz);
+Contact.Inner = setupHertzPointContact(Contact.Inner,Material);
 % Contact.Inner.EHD = setupEHDcontact(Contact.Inner,Material,Fluid);
 
-Rr = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRaceo);
+Contact.Outer.Rr = 1/(1/(0.5*Geometry.Dr) - 1/Geometry.RRaceo);
 if 0.5*Geometry.Dr > Geometry.RRaceo
     error('The outer contact is non-conforming')
 end
-Rz = 1/(1/(0.5*Geometry.Dz) - 1/(0.5*Geometry.do/cos(Geometry.alpha0)));
+Contact.Outer.Rz = 1/(1/(0.5*Geometry.Dz) - 1/(0.5*Geometry.do/cos(Geometry.alpha0)));
 if Geometry.Dz > (0.5*Geometry.do/cos(Geometry.alpha0))
     error('The outer contact is non-conforming')
 end
-Contact.Outer = setupHertzPointContact(Contact.Outer,Material,Rr,Rz);
+Contact.Outer = setupHertzPointContact(Contact.Outer,Material);
 % Contact.Outer.EHD = setupEHDcontact(Contact.Outer,Material,Fluid);
 
 Contact.n = 1.5;
 Contact.K = (Contact.Inner.K ^ (-1/Contact.n) + Contact.Outer.K ^ (-1/Contact.n)) ^ (-Contact.n);
 Contact.lambda = (Contact.Outer.K / Contact.Inner.K)^(1/Contact.n);
 
-function Contact = setupHertzPointContact(Contact,Material,Rx,Ry)
+function Contact = setupHertzPointContact(Contact,Material)
 %x is radial (ie. inf for roller)
 %y is axial
 
 Contact.n = 3/2;
+Rr = Contact.Rr;
+Rz = Contact.Rz;
 
-if ~isfield(Contact,'K')
+Sp = (1/Rr + 1/Rz);
+Fp = abs(1/Rr - 1/Rz) / Sp;
+k = solve_elliptical_contact(Fp);
+[F,E] = ellipke(1-1/k^2);
 
-    Sp = (1/Rx + 1/Ry);
-    Fp = abs(1/Rx - 1/Ry) / Sp;
-    k = solve_elliptical_contact(Fp);
-    [F,E] = ellipke(1-1/k^2);
+astar = (2*k^2*E/pi)^(1/3);
+bstar = (2*E/pi/k)^(1/3);
+dstar = 2*F/pi * (pi/(2*k^2*E))^(1/3);
 
-    astar = (2*k^2*E/pi)^(1/3);
-    bstar = (2*E/pi/k)^(1/3);
-    dstar = 2*F/pi * (pi/(2*k^2*E))^(1/3);
+Contact.R  = 1/Sp;
 
-    Contact.Rx = Rx;
-    Contact.Ry = Ry;
-    Contact.R  = 1/Sp;
-    
-    Contact.k  = k;
-    Contact.Kap = F;
-    Contact.Eps = E;
-    
-    Contact.K  = (2*Sp*Material.Estar)/3 * (2/(Sp * dstar))^(3/2);
-end
+Contact.k  = k;
+Contact.Kap = F;
+Contact.Eps = E;
+
+Contact.K  = (2*Sp*Material.Estar)/3 * (2/(Sp * dstar))^(3/2);
 
 function k = solve_elliptical_contact(Fp)
 if Fp == 0
