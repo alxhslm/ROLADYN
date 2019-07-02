@@ -206,7 +206,7 @@ for i = 1:NBearings
             KFixed = P.Bearing{i}.R{j}'*P.Bearing{i}.Kb{j}*P.Bearing{i}.R{j};
             P.Rotor{iRotor}.Bearing{end}.iFixed = [];
             for k = 1:4
-                if any(abs(KFixed(k+(j-1)*4,:))>0)
+                if any(abs(KFixed(k+(j-1)*4,:))>1E-2)
                     P.Rotor{iRotor}.Bearing{end}.iFixed(end+1,1) = k;
                 end
             end
