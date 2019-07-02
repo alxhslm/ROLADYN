@@ -42,8 +42,7 @@ if B.Options.bRaceComplianceo
 end
 
 sgn = sign(E.z/(E.z(1)+eps));
-z = B.Geometry.zRacei*sgn;
-Z = z*x0;
+Z = B.Geometry.zRacei*sgn*x0;
 
 PSI = E.psi*x0 + wons*Acage;
 cosPSI = cos(PSI);
@@ -53,8 +52,17 @@ ALPHA = E.alpha*x0;
 cosALPHA = cos(ALPHA);
 sinALPHA = sin(ALPHA);
 
-dz  = wons*q(3,:) + B.Geometry.rRacei*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cz;
-dr  = cosPSI.*(wons*q(1,:)) + sinPSI.*(wons*q(2,:)) - Z.*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cr;
+axial = wons*q(3,:);
+radial = cos(PSI).*(wons*q(1,:)) + sin(PSI).*(wons*q(2,:));
+theta = (sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:)));
+
+z = axial + B.Geometry.rRacei * sin(theta) + Z.*cos(theta)  - B.Geometry.cz;
+r = radial + B.Geometry.rRacei * cos(theta) - Z.*sin(theta) - B.Geometry.cr;
+% dz  = axial + B.Geometry.rRacei*theta - B.Geometry.cz;
+% dr  = radial - Z.*theta - B.Geometry.cr;
+
+dz = z - Z;
+dr = r - B.Geometry.rRacei;
 
 Az = B.Geometry.A0*sinALPHA + dz;
 Ar = B.Geometry.A0*cosALPHA + dr;
@@ -63,10 +71,10 @@ A = sqrt(Az.^2 + Ar.^2);
 Xz0 = (Az./A) .* ((B.Geometry.RRaceo-B.Geometry.D/2) + max(A - B.Geometry.A0,0)/(1 + B.Contact.lambda));
 Xr0 = (Ar./A) .* ((B.Geometry.RRaceo-B.Geometry.D/2) + max(A - B.Geometry.A0,0)/(1 + B.Contact.lambda));
 [Ai0,Ao0,alpha_i0,alpha_o0] = race_geometry(Xz0,Xr0,Az,Ar);
-dn0 = A - B.Geometry.A0;
-dbi0 = Ai0 - (B.Geometry.RRacei-B.Geometry.D/2);
-dbo0 = Ao0 - (B.Geometry.RRaceo-B.Geometry.D/2);
-Qi0 = E.r*hertz_contactlaw(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
+dbi0 = Ai0 - (B.Geometry.RRacei-B.Geometry.D/2) - wi;
+dbo0 = Ao0 - (B.Geometry.RRaceo-B.Geometry.D/2) - wo;
+db0 = A-B.Geometry.A0-wi-wo;
+Qi0 = hertz_contact(E.r*B.Contact.K,B.Contact.n,db0,B.Contact.tol);
 Qo0 = Qi0;
 
 %now find the ball forces

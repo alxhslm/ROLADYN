@@ -12,7 +12,7 @@ for i = 1:length(Rotor)
         %lock out shaft DOF if shaft is rigid
         SShaft = Rotor{i}.Shaft{j}.S;
         
-        if isinf(Rotor{i}.Shaft{j}.material.E)
+        if isinf(Rotor{i}.Shaft{j}.Material.E)
             %enforce the displacement of each node to be a
             %rigid body transformations from the previous
             for k = 1:Rotor{i}.Shaft{j}.Nz-1
@@ -31,7 +31,7 @@ for i = 1:length(Rotor)
         SRoot = Rotor{i}.Disc{j}.SRoot*SDisc;
         
         D = Rotor{i}.Disc{j};
-        if isinf(Rotor{i}.Disc{j}.material.E)
+        if isinf(Rotor{i}.Disc{j}.Material.E)
             %enforce the displacement of each node to be a
             %rigid body transformations from the hub          
             for k = 1:Rotor{i}.Disc{j}.Nt

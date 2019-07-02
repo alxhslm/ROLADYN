@@ -12,7 +12,7 @@ for i = 1:length(S)
 end
 
 function S = setup_each_shaft(S,N,x0)
-defaultable_fields = {'Element',        'material','ri', 'ro'};
+defaultable_fields = {'Element',        'Material','ri', 'ro'};
 defaultable_values = {'euler_bernoulli', 'rigid',    0,    0};
 for i = 1:length(defaultable_fields)
     if ~isfield(S,defaultable_fields{i})
@@ -27,7 +27,7 @@ if ~isfield(S,'bGyro')
     S.bGyro = 1;
 end
 
-S.material = setupmaterial(S.material);
+S.Material = setupmaterial(S.Material);
 
 % params_required = {'ro'};
 % for i = 1:length(params_required)
@@ -56,8 +56,8 @@ for i = 1:length(S.iNodes)
     S.SNode{i} = IMap((i-1)*4 + (1:4),:);
 end
 for k = 1:length(S.iNodes)-1
-   [S.Ke{k},S.Me{k},S.Ge{k}] = feval(S.Element,S.material,S.ri,S.ro,S.le(k));
-   S.me(k) = S.material.rho*A*S.le(k);
+   [S.Ke{k},S.Me{k},S.Ge{k}] = feval(S.Element,S.Material,S.ri,S.ro,S.le(k));
+   S.me(k) = S.Material.rho*A*S.le(k);
    S.R{k} = RShaft;
    if ~isempty(x0)
        S.F0{k} = S.Ke{k}*S.R{k}*S.Se{k}*x0;
@@ -73,14 +73,14 @@ end
 L = sum(S.le);
 S.m  = sum(S.me);
 
-S.Id = S.m/12*L^2 + S.material.rho*I*L;
-S.Ip = 2*S.material.rho*I*L;
+S.Id = S.m/12*L^2 + S.Material.rho*I*L;
+S.Ip = 2*S.Material.rho*I*L;
 
 S.Ae = A;
 S.Ie = I;
 
 S.M = diag([S.m S.m S.Id S.Id]);
-S.G = blkdiag(zeros(2),antidiag(S.Ip*[1 -1]));
+S.G = S.bGyro*blkdiag(zeros(2),antidiag(S.Ip*[1 -1]));
 
 S.iLocal = ((S.iNodes(:)-1)*4 + (1:4))';
 S.iLocal = S.iLocal(:);

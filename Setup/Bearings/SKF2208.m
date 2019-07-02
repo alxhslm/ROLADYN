@@ -1,23 +1,29 @@
 function REB = SKF2208(model)
 
 REB.Setup.Type = 'ball';
-REB.Setup.Arrangement = 'double_inline';
+REB.Setup.Arrangement = 'double_alternating';
 REB.Setup.Z = 18*2;
 % REB.Setup.CbParallel = diag([0 0 0 0]);
 % REB.Setup.KbParallel = diag([Inf 0 Inf 0]);
 
 D = 2*4.3655E-3;
 dm = 60.146E-3;
+z0 = (11.5E-3)/2;
+
 REB.Geometry.D  = D;
 REB.Geometry.dm = dm;
+REB.Geometry.z0 = z0;
 
-Ro = 68.06923234E-3;
-Ri = D/2 + 0.0001E-3;
-
-REB.Geometry.alpha0 = 0.5*10.37*pi/180;
-REB.Geometry.z0 = (11.5E-3)/2;
 REB.Geometry.cr = 0.07928474E-3;
 REB.Geometry.cz = 0;
+
+Ri = D/2 + 0.01E-3;
+
+% REB.Geometry.alpha0 = 0.5*10.37*pi/180;
+% Ro = 68.06923234E-3;
+
+REB.Geometry.alpha0 = atan(z0/(dm/2)); 
+Ro = hypot(REB.Geometry.dm/2 + REB.Geometry.D/2*cos(REB.Geometry.alpha0), z0 + D/2*sin(REB.Geometry.alpha0));
 
 REB.Geometry.RRaceo = Ro;
 REB.Geometry.RRacei = Ri;

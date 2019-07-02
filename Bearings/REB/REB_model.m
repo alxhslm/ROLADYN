@@ -52,6 +52,8 @@ Forces.xInt = States.xInt;
 Forces.xdotInt = States.xdotInt;
 Forces.xddotInt = States.xddotInt;
 
+Forces.q = R'*(States.qi - States.qo);
+
 function States = default_int(States,REB,NPts)
 if ~isfield(States,'bSolve')
     States.bSolve = 1;
