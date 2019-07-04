@@ -1,7 +1,8 @@
 function REB = SKF6002(model,cr)
 
-REB.Setup.Type = 'ball';
-REB.Setup.Arrangement = 'single';
+REB.Setup.Type = 'radial';
+REB.Setup.ElementType = 'ball';
+REB.Setup.ElementArrangement = 'single';
 REB.Setup.Z = 9;
 
 REB.Geometry.D  = 4.76E-3;

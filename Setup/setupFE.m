@@ -87,7 +87,7 @@ for i = 1:length(Rotor)
         iFixed = [];
         for j = 1:length(Rotor{i}.Bearing)
             iFixed = [iFixed;
-                (Rotor{i}.Bearing{j}.iNode-1)*NDofe + Rotor{i}.Bearing{j}.iFixed];
+                (Rotor{i}.Bearing{j}.iNode-1)*NDofe + Rotor{i}.Bearing{j}.iActive];
         end
         
         %compute modes of rotor subsystem

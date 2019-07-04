@@ -1,7 +1,8 @@
 function REB = SKF1208(model)
 
-REB.Setup.Type = 'ball';
-REB.Setup.Arrangement = 'double_alternating';
+REB.Setup.Type = 'selfaligning';
+REB.Setup.ElementType = 'ball';
+REB.Setup.ElementArrangement = 'double_alternating';
 REB.Setup.Z = 18*2;
 % REB.Setup.CbParallel = diag([0 0 0 0]);
 % REB.Setup.KbParallel = diag([Inf 0 Inf 0]);

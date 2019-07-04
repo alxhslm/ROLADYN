@@ -8,31 +8,39 @@ if nargin < 4
     Oo = 0;
 end
 
-if strcmpi(B.Setup.Type,'ball')
-    if ~isfield(B.Geometry,'D')
-        error('Need ball diameter')
-    end
-    B.Geometry.Dz = B.Geometry.D;
-    B.Geometry.Dr = B.Geometry.D;
-elseif strcmpi(B.Setup.Type,'roller_spherical')
-    if ~isfield(B.Geometry,'Dz')
-        error('Need roller diameter')
-    end
-    if ~isfield(B.Geometry,'Dr')
-        error('Need roller curvature radius')
-    end
-elseif strcmpi(B.Setup.Type,'roller_cylindrical')
-    if ~isfield(B.Geometry,'D')
-        error('Need roller diameter')
-    end
-    if ~isfield(B.Geometry,'L')
-         error('Need roller length')
-    end
-    if ~isfield(B.Geometry,'alphaR')
-         error('Need roller-included angle')
-    end
-else
-    error('Unknown bearing type')
+switch B.Setup.Type
+    case 'radial'
+        B.bActive = true(4,1);
+    case 'selfaligning'
+        B.bActive = [true false true false]';
+end
+
+switch B.Setup.ElementType
+    case 'ball'
+        if ~isfield(B.Geometry,'D')
+            error('Need ball diameter')
+        end
+        B.Geometry.Dz = B.Geometry.D;
+        B.Geometry.Dr = B.Geometry.D;
+    case 'roller_spherical'
+        if ~isfield(B.Geometry,'Dz')
+            error('Need roller diameter')
+        end
+        if ~isfield(B.Geometry,'Dr')
+            error('Need roller curvature radius')
+        end
+    case 'roller_cylindrical'
+        if ~isfield(B.Geometry,'D')
+            error('Need roller diameter')
+        end
+        if ~isfield(B.Geometry,'L')
+            error('Need roller length')
+        end
+        if ~isfield(B.Geometry,'alphaR')
+            error('Need roller-included angle')
+        end
+otherwise
+    error('Unknown bearing element type')
 end
 
 B.Options  = setupOptions(B.Options);
@@ -49,14 +57,14 @@ if ~isfield(B.Elements,'N')
     end   
 end
 B.Elements.r = B.Setup.Z/B.Elements.N; %force ratio
-switch B.Setup.Arrangement
+switch B.Setup.ElementArrangement
     case {'single','double_alternating'}
         B.Elements.psi = B.Geometry.psi0 + (0:(B.Elements.N-1))'*(2*pi/B.Elements.N);
     case 'double_inline'
         B.Elements.psi = B.Geometry.psi0 + floor(0:0.5:(B.Elements.N/2-0.5))'*(4*pi/B.Elements.N);
 end
     
-B.Elements = createArrangement(B.Setup.Arrangement,B.Geometry,B.Elements);
+B.Elements = createArrangement(B.Setup.ElementArrangement,B.Geometry,B.Elements);
 
 if ~isfield(B.Setup,'KbParallel')
     B.Setup.KbParallel = zeros(4);
@@ -77,7 +85,7 @@ end
 if ~isfield(B.Contact,'Outer')
     B.Contact.Outer = struct();
 end
-if strcmpi(B.Setup.Type,'roller_cylindrical')
+if strcmpi(B.Setup.ElementType,'roller_cylindrical')
     B.Contact = setupLineContacts(B.Contact,B.Geometry,B.Material,B.Fluid);
 else
     B.Contact = setupPointContacts(B.Contact,B.Geometry,B.Material,B.Fluid);

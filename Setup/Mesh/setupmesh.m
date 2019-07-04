@@ -203,13 +203,7 @@ for i = 1:NBearings
         if ~isnan(iRotor)
             P.Rotor{iRotor}.Bearing{end+1}.iBearing = i;
             P.Rotor{iRotor}.Bearing{end}.iNode = iNode;
-            KFixed = P.Bearing{i}.R{j}'*P.Bearing{i}.Kb{j}*P.Bearing{i}.R{j};
-            P.Rotor{iRotor}.Bearing{end}.iFixed = [];
-            for k = 1:4
-                if any(abs(KFixed(k+(j-1)*4,:))>1E-2)
-                    P.Rotor{iRotor}.Bearing{end}.iFixed(end+1,1) = k;
-                end
-            end
+            P.Rotor{iRotor}.Bearing{end}.iActive = findrows(P.Bearing{i}.Ri{j}(P.Bearing{i}.bActive{j},:));
         end
     end
 end

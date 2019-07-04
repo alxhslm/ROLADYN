@@ -151,6 +151,7 @@ for j = 1:2
     if strncmp(B.Model{j},'REB',3)
         [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupREB(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo); 
         B.NDofInt(j) = B.Params{j}.Model.NDofTot;       
+        B.bActive{j} = B.Params{j}.bActive;       
 
         B.Kxx{j} = B.Kb{j}(1:2,1:2);
         B.Kxy{j} = B.Kb{j}(1:2,3:4);
@@ -162,6 +163,7 @@ for j = 1:2
     elseif strncmp(B.Model{j},'SFD',3)
         [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupSFD(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo);
         B.NDofInt(j) = 0;
+        B.bActive{j} = true(4,1);
 
         B.Kxx{j} = B.Kb{j}(1:2,1:2);
         B.Kxy{j} = B.Kb{j}(1:2,3:4);
@@ -190,6 +192,8 @@ for j = 1:2
                
         B.Kb{j} = [B.Kxx{j} B.Kxy{j};
                    B.Kxy{j} B.Kyy{j}];
+                   
+        B.bActive{j} = abs(diag(B.Kb{j})) > 0;
         
         B.Kb{j} = kron([1 -1; -1 1],B.Kb{j});
                
