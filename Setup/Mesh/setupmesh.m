@@ -294,6 +294,15 @@ P.Mesh.Excite.Ce = P.Mesh.Excite.Cub*P.Mesh.Excite.Sub + P.Mesh.Excite.Cgd*P.Mes
 P.Mesh.Excite.Me = P.Mesh.Excite.Mub*P.Mesh.Excite.Sub + P.Mesh.Excite.Mgd*P.Mesh.Excite.Sgd;
 P.Mesh.Excite.ue = uub + ugd;
 
+%% Combined
+P.Mesh.M  = P.Mesh.Rotor.M  + P.Mesh.Bearing.M;
+P.Mesh.G  = P.Mesh.Rotor.G;                    
+P.Mesh.K  = P.Mesh.Rotor.K  + P.Mesh.Bearing.K;
+P.Mesh.C  = P.Mesh.Rotor.C  + P.Mesh.Bearing.C;
+P.Mesh.Fg = P.Mesh.Rotor.Fg + P.Mesh.Bearing.Fg;
+P.Mesh.F0 = P.Mesh.Rotor.F0 + P.Mesh.Bearing.F0;
+P.Mesh.A  = eye(NDofTot);
+
 %% Store some useful numbers
 P.Mesh.NDofInt = NInternalTot;
 P.Mesh.NDof = NDofTot;

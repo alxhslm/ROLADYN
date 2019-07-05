@@ -45,9 +45,6 @@ end
 %% Now find equilibrium position & resetup
 x0 = rotor_equib(P,x0,O,A);
 
-P.Model.x0 = x0(1:P.Model.NDof);
-P.Model.xInt = x0(P.Model.NDof+1:end);
-
 P.Mesh.x0 = P.Model.A * x0(1:P.Model.NDof);
 P.Mesh.xInt = x0(P.Model.NDof+1:end);
 
@@ -60,3 +57,6 @@ P = setupmesh(P);
 
 % Assemble the matrices for the rigid shaft model
 P = setupmodel(P,type);
+
+P.Model.x0 = x0(1:P.Model.NDof);
+P.Model.xInt = x0(P.Model.NDof+1:end);
