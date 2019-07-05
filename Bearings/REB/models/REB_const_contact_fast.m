@@ -37,8 +37,15 @@ ALPHA = E.alpha*x0;
 cosALPHA = cos(ALPHA);
 sinALPHA = sin(ALPHA);
 
-dz  = wons*q(3,:) + B.Geometry.rRacei*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cz;
-dr  = cosPSI.*(wons*q(1,:)) + sinPSI.*(wons*q(2,:)) - Z.*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cr;
+axial = wons*q(3,:);
+radial = cos(PSI).*(wons*q(1,:)) + sin(PSI).*(wons*q(2,:));
+theta = (sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:)));
+
+z = axial  + B.Geometry.rRacei * sin(theta) + Zi.*cos(theta) - B.Geometry.cz;
+r = radial + B.Geometry.rRacei * cos(theta) - Zi.*sin(theta) - B.Geometry.cr;
+
+dz = z - Z;
+dr = r - B.Geometry.rRacei;
 
 dn0 = dr .* cosALPHA + dz .* sinALPHA;
 db0 = dn0  / (1 + B.Contact.lambda);
@@ -143,10 +150,10 @@ V.Ki = Ktot; V.Ko = Ktot;
 if nargout > 2
     K = sum(J.*Ki.*permute(J,[2 1 3 4]),4);
 
-    S.Kqiqi = K;
-    S.Kqoqi = K;
-    S.Kqiqo = K;
-    S.Kqoqo = K;
+    S.Kqiqi =  K;
+    S.Kqoqi = -K;
+    S.Kqiqo = -K;
+    S.Kqoqo =  K;
 
     S.Kxqi = zeros(0,N,NPts);
     S.Kxqo = zeros(0,N,NPts);

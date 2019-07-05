@@ -51,14 +51,21 @@ ALPHA = E.alpha*x0;
 cosALPHA = cos(ALPHA);
 sinALPHA = sin(ALPHA);
 
-dz  = wons*q(3,:) + B.Geometry.rRacei*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cz;
-dr  = cosPSI.*(wons*q(1,:)) + sinPSI.*(wons*q(2,:)) - Z.*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cr;
+axial = wons*q(3,:);
+radial = cos(PSI).*(wons*q(1,:)) + sin(PSI).*(wons*q(2,:));
+theta = (sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:)));
+
+z = axial  + B.Geometry.rRacei * sin(theta) + Zi.*cos(theta) - B.Geometry.cz;
+r = radial + B.Geometry.rRacei * cos(theta) - Zi.*sin(theta) - B.Geometry.cr;
+
+dz = z - Z;
+dr = r - B.Geometry.rRacei;
 
 dn0 = dr .* cosALPHA + dz .* sinALPHA;
 db0 = dn0  / (1 + B.Contact.lambda);
 dbi0 = dn0 - db0;
 dbo0 = db0;
-Qi0 = E.r*hertz_contactlaw(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
+Qi0 = hertz_contactlaw(B.Contact.K,B.Contact.n,dn0,B.Contact.tol);
 Qo0 = Qi0;
 
 %contact angles are constant by definition
@@ -70,12 +77,12 @@ if B.Options.bCentrifugal
     db = vr;
     dbi = dn0-db-wi;
     dbo = db-wo;
-    Qi = E.r*hertz_contactlaw(B.Contact.Inner.K,B.Contact.n,dbi,B.Contact.tol);
-    Qo = E.r*hertz_contactlaw(B.Contact.Outer.K,B.Contact.n,dbo,B.Contact.tol);
+    Qi = hertz_contactlaw(B.Contact.Inner.K,B.Contact.n,dbi,B.Contact.tol);
+    Qo = hertz_contactlaw(B.Contact.Outer.K,B.Contact.n,dbo,B.Contact.tol);
     dn = dbi + dbo;
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
     dn =  (dn0 - (wo + wi));
-    Qi = E.r*hertz_contactlaw(B.Contact.K,B.Contact.n,dn,B.Contact.tol);
+    Qi = hertz_contactlaw(B.Contact.K,B.Contact.n,dn,B.Contact.tol);
     Qo = Qi;
     db = dn/(1+B.Contact.lambda);
     dbo = db;
@@ -95,7 +102,7 @@ Xz = (B.Geometry.RRaceo-B.Geometry.D/2)*sinALPHA + db.*sinALPHA;
 Xr = (B.Geometry.RRaceo-B.Geometry.D/2)*cosALPHA + db.*cosALPHA;
 
 %dynamic loads
-Fc = E.r*dynamic_ball_loads(B,ai,ao,wons*Oi,wons*Oo);
+Fc = dynamic_ball_loads(B,ai,ao,wons*Oi,wons*Oo);
 if B.Options.bCentrifugal 
     fErr = Qi - Qo + Fc./cos(ao);
 else
@@ -104,15 +111,24 @@ end
 
 % race compliance
 if B.Options.bRaceCompliancei
-    Qri = -E.r*race_compliance_loads(B.Race.Inner,-wi);
+    Qri = -race_compliance_loads(B.Race.Inner,-wi);
     fErr = [fErr;
             Qi - Qri];
 end
 if B.Options.bRaceComplianceo
-    Qro = E.r*race_compliance_loads(B.Race.Outer, wo);
+    Qro = race_compliance_loads(B.Race.Outer, wo);
     fErr = [fErr;
             Qo - Qro];
 end
+
+%% Introduce scaling factor to account for Sjovall
+Qi0 = E.r*Qi0;
+Qo0 = E.r*Qo0;
+
+Qi = E.r * Qi;
+Qo = E.r * Qo;
+
+Fc = E.r*Fc;
 
 %% Race loads
 Wi = [sum(Qi.*cosALPHA.*cosPSI);

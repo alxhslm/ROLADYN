@@ -40,8 +40,15 @@ ALPHA = E.alpha*x0;
 cosALPHA = cos(ALPHA);
 sinALPHA = sin(ALPHA);
 
-dz  = wons*q(3,:) + B.Geometry.rRacei*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cz;
-dr  = cosPSI.*(wons*q(1,:)) + sinPSI.*(wons*q(2,:)) - Zi.*(sinPSI.*(wons*q(4,:)) - cosPSI.*(wons*q(5,:))) - B.Geometry.cr;
+axial = wons*q(3,:);
+radial = cos(PSI).*(wons*q(1,:)) + sin(PSI).*(wons*q(2,:));
+theta = (sin(PSI).*(wons*q(4,:)) - cos(PSI).*(wons*q(5,:)));
+
+z = axial  + B.Geometry.rRacei * sin(theta) + Zi.*cos(theta) - B.Geometry.cz;
+r = radial + B.Geometry.rRacei * cos(theta) - Zi.*sin(theta) - B.Geometry.cr;
+
+dz = z - Zi;
+dr = r - B.Geometry.rRacei;
 
 Az = B.Geometry.A0*sinALPHA + dz;
 Ar = B.Geometry.A0*cosALPHA + dr;
@@ -135,7 +142,7 @@ Ji = [cosALPHAI.*cosPSI;
       Zi.*cosALPHAI.*cosPSI - B.Geometry.rRacei*sinALPHAI.*cosPSI;
       0*Zi];
 
-Jo = [cosALPHAO.*cosPSI;
+Jo =-[cosALPHAO.*cosPSI;
       cosALPHAO.*sinPSI;
       sinALPHAO;
     - Zo.*cosALPHAO.*sinPSI + B.Geometry.rRaceo*sinALPHAO.*sinPSI
@@ -143,7 +150,7 @@ Jo = [cosALPHAO.*cosPSI;
       0*Zo];
 
 Wi =  permute(sum(Ji.*permute(Qi,[3 4 2 1]),4),[1 3 2]);
-Wo = -permute(sum(Jo.*permute(Qo,[3 4 2 1]),4),[1 3 2]);
+Wo =  permute(sum(Jo.*permute(Qo,[3 4 2 1]),4),[1 3 2]);
 
 %forces
 F.Fi = Wi;
@@ -178,7 +185,7 @@ if nargout > 2
     S.Kqoqi = sum(Jo.*Ko.*permute(Ji,[2 1 3 4]),4);
     S.Kqiqo = sum(Ji.*Ki.*permute(Jo,[2 1 3 4]),4);
     S.Kqoqo = sum(Jo.*Ko.*permute(Jo,[2 1 3 4]),4);
-
+    
     S.Kxqi = zeros(0,N,NPts);
     S.Kxqo = zeros(0,N,NPts);
     S.Kqix = zeros(N,0,NPts);
