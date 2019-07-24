@@ -148,64 +148,77 @@ RBear = RBear([1 4 2 3],:);
 RBear(4,:) = -RBear(4,:);
 
 for j = 1:2
-    if strncmp(B.Model{j},'REB',3)
-        [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupREB(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo); 
-        B.NDofInt(j) = B.Params{j}.Model.NDofTot;       
-        B.bActive{j} = B.Params{j}.bActive;       
+    switch B.Model{j}
+        case 'REB'
+            [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupREB(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo); 
+            B.NDofInt(j) = B.Params{j}.Model.NDofTot;       
+            B.bActive{j} = B.Params{j}.bActive;       
 
-        B.Kxx{j} = B.Kb{j}(1:2,1:2);
-        B.Kxy{j} = B.Kb{j}(1:2,3:4);
-        B.Kyy{j} = B.Kb{j}(3:4,3:4);
-        
-        B.Cxx{j} = B.Cb{j}(1:2,1:2);
-        B.Cxy{j} = B.Cb{j}(1:2,3:4);
-        B.Cyy{j} = B.Cb{j}(3:4,3:4);
-    elseif strncmp(B.Model{j},'SFD',3)
-        [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupSFD(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo);
-        B.NDofInt(j) = 0;
-        B.bActive{j} = true(4,1);
+            B.Kxx{j} = B.Kb{j}(1:2,1:2);
+            B.Kxy{j} = B.Kb{j}(1:2,3:4);
+            B.Kyy{j} = B.Kb{j}(3:4,3:4);
 
-        B.Kxx{j} = B.Kb{j}(1:2,1:2);
-        B.Kxy{j} = B.Kb{j}(1:2,3:4);
-        B.Kyy{j} = B.Kb{j}(3:4,3:4);
-        
-        B.Cxx{j} = B.Cb{j}(1:2,1:2);
-        B.Cxy{j} = B.Cb{j}(1:2,3:4);
-        B.Cyy{j} = B.Cb{j}(3:4,3:4);
-    else
-        %throw error if we don't have stiffess
-        params_required = {'Kxx','Kyy','Cxx','Cyy'};
-        for i = 1:length(params_required)
-            if ~isfield(B,params_required{i})
-                error('Cannot find parameter "%s" in the B structure',params_required{i});
+            B.Cxx{j} = B.Cb{j}(1:2,1:2);
+            B.Cxy{j} = B.Cb{j}(1:2,3:4);
+            B.Cyy{j} = B.Cb{j}(3:4,3:4);
+        case 'radial'
+            [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupRadial(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo); 
+            B.NDofInt(j) = 0;
+            B.bActive{j} = B.Params{j}.bActive;   
+
+            B.Kxx{j} = B.Kb{j}(1:2,1:2);
+            B.Kxy{j} = B.Kb{j}(1:2,3:4);
+            B.Kyy{j} = B.Kb{j}(3:4,3:4);
+
+            B.Cxx{j} = B.Cb{j}(1:2,1:2);
+            B.Cxy{j} = B.Cb{j}(1:2,3:4);
+            B.Cyy{j} = B.Cb{j}(3:4,3:4);
+        case 'SFD'
+            [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupSFD(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo);
+            B.NDofInt(j) = 0;
+            B.bActive{j} = true(4,1);
+
+            B.Kxx{j} = B.Kb{j}(1:2,1:2);
+            B.Kxy{j} = B.Kb{j}(1:2,3:4);
+            B.Kyy{j} = B.Kb{j}(3:4,3:4);
+
+            B.Cxx{j} = B.Cb{j}(1:2,1:2);
+            B.Cxy{j} = B.Cb{j}(1:2,3:4);
+            B.Cyy{j} = B.Cb{j}(3:4,3:4);
+        otherwise
+            %throw error if we don't have stiffess
+            params_required = {'Kxx','Kyy','Cxx','Cyy'};
+            for i = 1:length(params_required)
+                if ~isfield(B,params_required{i})
+                    error('Cannot find parameter "%s" in the B structure',params_required{i});
+                end
             end
-        end
-        
-        params2default = {'Kxy','Cxy'}; %off-diagonal stiffness terms
-        for i = 1:length(params2default)
-            if ~isfield(B,params2default{i})
-                [B.(params2default{i})] = deal(repmat({zeros(2)},1,2));
+
+            params2default = {'Kxy','Cxy'}; %off-diagonal stiffness terms
+            for i = 1:length(params2default)
+                if ~isfield(B,params2default{i})
+                    [B.(params2default{i})] = deal(repmat({zeros(2)},1,2));
+                end
             end
-        end
-          
-        B.NDofInt(j) = 0;
-               
-        B.Kb{j} = [B.Kxx{j} B.Kxy{j};
-                   B.Kxy{j} B.Kyy{j}];
-                   
-        B.bActive{j} = abs(diag(B.Kb{j})) > 0;
-        
-        B.Kb{j} = kron([1 -1; -1 1],B.Kb{j});
-               
-        B.Cb{j} = [B.Cxx{j} B.Cxy{j};
-                   B.Cxy{j} B.Cyy{j}];
-       
-        B.Cb{j} = kron([1 -1; -1 1],B.Cb{j});
-        
-        Kb = max(-1E20,min(B.Kb{j},1E20));
-        B.Fb{j} = Kb*[xi{j}+B.ui{j};xo{j}+B.uo{j}];
-        
-        B.xInt{j} = [];
+
+            B.NDofInt(j) = 0;
+
+            B.Kb{j} = [B.Kxx{j} B.Kxy{j};
+                       B.Kxy{j} B.Kyy{j}];
+
+            B.bActive{j} = abs(diag(B.Kb{j})) > 0;
+
+            B.Kb{j} = kron([1 -1; -1 1],B.Kb{j});
+
+            B.Cb{j} = [B.Cxx{j} B.Cxy{j};
+                       B.Cxy{j} B.Cyy{j}];
+
+            B.Cb{j} = kron([1 -1; -1 1],B.Cb{j});
+
+            Kb = max(-1E20,min(B.Kb{j},1E20));
+            B.Fb{j} = Kb*[xi{j}+B.ui{j};xo{j}+B.uo{j}];
+
+            B.xInt{j} = [];
     end
     B.Mb{j} = zeros(8);
     B.R{j} = blkdiag(RBear,RBear);

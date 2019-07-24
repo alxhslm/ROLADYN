@@ -58,6 +58,7 @@ for i = 1:length(P.Bearing)
                 else
                     ForcesB = radial_model(P.Bearing{i}.Params{j},StatesB);
                 end
+                ForcesB.F = ForcesB.F + P.Bearing{i}.Params{j}.KPar*[StatesB.qi; StatesB.qo];
             case 'linear'
                 if nargout > 1
                     [ForcesB,~,StiffnessB] = linear_model(P.Bearing{i},j,StatesB);
