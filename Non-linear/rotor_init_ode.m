@@ -1,4 +1,4 @@
-function init = rotor_init_ode(harm,P,O,A)
+function init = rotor_init_ode(harm,P,O,A,x0)
 %work out frequencies
 w0 = O*harm.rFreqRatio;
 
@@ -7,7 +7,10 @@ N = 100;
 dt = T/N;
 time = 0:dt:50*T;
 
-[t0, x0] = rotor_ode(P, time, O, w0(2), A);
+if nargin < 5
+    x0 = [];
+end
+[t0, x0] = rotor_ode(P, time, O, w0(2), A, x0);
 
 iKeep = find(t0 < floor(t0(end)/T)*T,1,'last');
 Nkeep = floor(0.5*t0(end)/T);
