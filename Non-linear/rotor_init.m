@@ -2,9 +2,9 @@ function [X,x,t] = rotor_init(hbm,P,w0,A)
 O = w0;
 
 NDof  = P.Model.NDof;
-NHarm = hbm.harm.NHarm;
+NHarm = hbm.harm.NHarm(1);
 NFreq = hbm.harm.NFreq;
-Nfft  = hbm.harm.Nfft;
+Nfft  = hbm.harm.Nfft(1);
 
 Fe = excitation_hbm(P);
 U = A*packharm(Fe{1},NHarm);
@@ -43,9 +43,6 @@ Uddot = Udot.*Wu;
 
 %create the time series from the fourier series
 xCG     = freq2time(X,NHarm,Nfft)';
-%     xCG2    = real(hbm.aft.IFFT*X)';
-%     X2      = hbm.aft.FFT*xCG2';
-
 xdotCG  = freq2time(Xdot,NHarm,Nfft)';
 xddotCG = freq2time(Xddot,NHarm,Nfft)';
 
@@ -85,8 +82,8 @@ fNL = P.Model.A'*Forces.F + Fgyro;
 xInt = Forces.xInt;
 
 
-FNL = time2freq(fNL',NHarm,hbm.harm.iSub,Nfft);   
-FNL2 = hbm.aft.FFT*fNL'; 
+% FNL = time2freq(fNL',NHarm,Nfft);   
+% FNL2 = hbm.nonlin.FFT*fNL'; 
 % Nf = size(fNL,1);
 % 
 % figure
