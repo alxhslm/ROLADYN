@@ -41,6 +41,7 @@ end
 
 m = 0;
 Ip = 0;
+mz = 0;
 
 R.NDof = length(R.Nodes)*4;
 
@@ -49,6 +50,7 @@ R.Shaft = setupshafts(R.Shaft, R.Nodes, x0);
 for i = 1:length(R.Shaft)
     m = m + R.Shaft{i}.m;
     Ip = Ip + R.Shaft{i}.Ip;
+    mz = mz + R.Shaft{i}.m * mean(R.Shaft{i}.z);
 end
 
 %and now the discs
@@ -57,6 +59,7 @@ if isfield(R,'Disc')
     for i = 1:length(R.Disc)
         m = m + R.Disc{i}.m;
         Ip = Ip + R.Disc{i}.Ip;
+        mz = mz + R.Disc{i}.m * R.Disc{i}.z;
         R.NDof = R.NDof + R.Disc{i}.NDof;
     end
 else
@@ -65,6 +68,7 @@ end
 
 R.m = m;
 R.Ip = Ip;
+R.z = mz/m;
 
 IMap = eye(R.NDof);
 for i = 1:length(R.Nodes)
