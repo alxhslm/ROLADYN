@@ -1,43 +1,61 @@
 function D = mass2dim(D)
-
-if D.m == 0
-    D.R = [0 0.1];
-    D.t = 0;
-    return;
+fields_for_inertia = {'Geometry','Ri';
+                      'Geometry','Ro';
+                      'Geometry','t';
+                      'Inertia','m';
+                      'Inertia','Id';
+                      'Inertia','Ip'};
+bKnown = false(6,1);
+Xknown = zeros(6,1);        
+for i = 1:size(fields_for_inertia,1)
+    if isfield(D.(fields_for_inertia{i,1}),fields_for_inertia{i,2})
+        field = D.(fields_for_inertia{i,1}).(fields_for_inertia{i,2});
+        if ~isnan(field)
+            bKnown(i) = true;
+            Xknown(i) = field;
+        end
+    end
 end
 
-if ~isfield(D,'R')
-    ri = 0.001;
-    ro = sqrt(2*D.Ip/D.m);
-    t = sqrt(12*D.Ip/D.m - 3*ro^2);
+Xscale = [1E-3;1E-3;1E-3;1;1E-6;1E-6];
+fscale = [1;1E-6;1E-6];
 
-    X0 = [ri;ro;t];
-    R0 = ro;
-    X = fsolve(@(X)objfun(X,D,R0),X0,optimoptions('fsolve','StepTolerance',1E-14,'FunctionTolerance',1E-14));
-    
-    ri = X(1);
-    ro = X(2);
-    t =  X(3);
+Xscale = Xscale(~bKnown);
+
+if ~all(bKnown)
+    X0 = rand(sum(~bKnown),1);
+    [X,~,flag] = fsolve(@(X)objfun(X,Xscale,fscale,Xknown,bKnown,D.Material.rho),X0,optimoptions('fsolve','Display','none','StepTolerance',1E-14,'FunctionTolerance',1E-14));
+    if flag ~=1
+        X = X + NaN;
+    end
 else
-    ri = D.R(1);
-    ro = D.R(2);
-    t = D.m/(D.Material.rho*pi*(ro^2 - ri^2));
+    X = [];
 end
 
-[D.m,D.Id,D.Ip] = disc_properties(D.Material.rho,ri,ro,t);
-D.R = [ri ro];
-D.t =  t;
+Xsol = Xknown;
+Xsol(~bKnown) = X.*Xscale;
+
+[D.Geometry.Ri,D.Geometry.Ro,D.Geometry.t] = X2props(Xsol);
+[D.Inertia.m,D.Inertia.Id,D.Inertia.Ip] = disc_properties(D.Material.rho,D.Geometry.Ri,D.Geometry.Ro,D.Geometry.t);
+
     
+function f = objfun(X,Xscale,fscale,Xknown,bKnown,rho)
+Xtest = Xknown;
+Xtest(~bKnown) = X.*Xscale;
 
+[ri,ro,t,m0,Id0,Ip0] = X2props(Xtest);
+[m,Id,Ip] = disc_properties(rho,ri,ro,t);
 
-function f = objfun(X,D,R0)
-ri = X(1);
-ro = X(2);
-t =  X(3);
+f = [m  -  m0;
+     Id - Id0;
+     Ip - Ip0];
+ 
+ f = f ./ fscale;
 
-[m,Id,Ip] = disc_properties(D.Material.rho,ri,ro,t);
-
-f(1) = m  - D.m;
-f(2) = (Id - D.Id)/R0^2;
-f(3) = (Ip - D.Ip)/R0^2;
-
+function [ri,ro,t,m,Id,Ip] = X2props(X)
+ri   = X(1);
+ro   = X(2);
+t    = X(3);
+m    = X(4);
+Id   = X(5);
+Ip   = X(6);

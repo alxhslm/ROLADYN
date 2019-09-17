@@ -27,45 +27,44 @@ for i = 1:length(Rotor)
     for j = 1:length(Rotor{i}.Disc)
         %lock out disc DOF if shaft is rigid
         SDisc = Rotor{i}.Disc{j}.S;
-        SHub  = Rotor{i}.Disc{j}.SHub*SDisc;
-        SRoot = Rotor{i}.Disc{j}.SRoot*SDisc;
+        SHub  = Rotor{i}.Disc{j}.Hub.S*SDisc;
+        SRoot = Rotor{i}.Disc{j}.Root.S*SDisc;
         
-        D = Rotor{i}.Disc{j};
         if isinf(Rotor{i}.Disc{j}.Material.E)
             %enforce the displacement of each node to be a
             %rigid body transformations from the hub          
-            for k = 1:Rotor{i}.Disc{j}.Nt
-                for l = 1:Rotor{i}.Disc{j}.Nr
-                    AConstr = [AConstr; D.RHub{k,l}*SHub - D.SNode{k,l}*SDisc];
+            for k = 1:Rotor{i}.Disc{j}.Mesh.Nt
+                for l = 1:Rotor{i}.Disc{j}.Mesh.Nr
+                    AConstr = [AConstr; Rotor{i}.Disc{j}.Mesh.RHub{k,l}*SHub - Rotor{i}.Disc{j}.Mesh.SNode{k,l}*SDisc];
                 end
             end
         end
         
         %hub
-        for k = 1:Rotor{i}.Disc{j}.Nt
-            SEdge = (Rotor{i}.Disc{j}.RHub{k,1}*SHub - Rotor{i}.Disc{j}.SNode{k,1}*SDisc);       
+        for k = 1:Rotor{i}.Disc{j}.Mesh.Nt
+            SEdge = (Rotor{i}.Disc{j}.Mesh.RHub{k,1}*SHub - Rotor{i}.Disc{j}.Mesh.SNode{k,1}*SDisc);       
             
             %axially
-            if isinf(Rotor{i}.Disc{j}.KEdge_zz)
+            if isinf(Rotor{i}.Disc{j}.Edge.Kzz)
                AConstr = [AConstr; SEdge(1,:)];
             end
             
             %circumferentially
-            if isinf(Rotor{i}.Disc{j}.KEdge_tt)
+            if isinf(Rotor{i}.Disc{j}.Edge.Ktt)
                 AConstr = [AConstr; SEdge(2,:)];
             end
             
             %radially
-            if isinf(Rotor{i}.Disc{j}.KEdge_rr)
+            if isinf(Rotor{i}.Disc{j}.Edge.Krr)
                 AConstr = [AConstr; SEdge(3,:)];
             end
         end
         
         %root
-        if isinf(Rotor{i}.Disc{j}.KRoot_rr)                
+        if isinf(Rotor{i}.Disc{j}.Root.Krr)                
             AConstr = [AConstr; SHub([1 2],:)-SRoot([1 2],:)];
         end
-        if isinf(Rotor{i}.Disc{j}.KRoot_tt)                
+        if isinf(Rotor{i}.Disc{j}.Root.Ktt)                
             AConstr = [AConstr; SHub([3 4],:)-SRoot([3 4],:)];
         end
     end
@@ -76,7 +75,7 @@ for i = 1:length(Rotor)
     else
         A = null(AConstr,'r');
     end
-    
+       
     Kr   = A'*Rotor{i}.K*A;
     Mr   = A'*Rotor{i}.M*A;
     Fgr  = A'*Rotor{i}.Fg;

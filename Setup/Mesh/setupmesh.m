@@ -75,40 +75,40 @@ for i = 1:NRotor
         P.Rotor{i}.Disc{j}.S = SDisc;
         
         %disc compliance
-        for k = 1:P.Rotor{i}.Disc{j}.Nt
-            for l = 1:(P.Rotor{i}.Disc{j}.Nr-1)
-                Se = P.Rotor{i}.Disc{j}.Se{k,l} * SDisc;
-                Re = P.Rotor{i}.Disc{j}.Re{k,l};
+        for k = 1:P.Rotor{i}.Disc{j}.Mesh.Nt
+            for l = 1:(P.Rotor{i}.Disc{j}.Mesh.Nr-1)
+                Se = P.Rotor{i}.Disc{j}.Element{k,l}.S * SDisc;
+                Re = P.Rotor{i}.Disc{j}.Element{k,l}.R;
                 %stiffness/damping
-                P.Rotor{i}.K = P.Rotor{i}.K + Se'*Re'*P.Rotor{i}.Disc{j}.Ke{k,l}*Re*Se;
-                P.Rotor{i}.C = P.Rotor{i}.C + Se'*Re'*P.Rotor{i}.Disc{j}.Ke{k,l}*Re*Se * P.Rotor{i}.Disc{j}.Material.eta;
+                P.Rotor{i}.K = P.Rotor{i}.K + Se'*Re'*P.Rotor{i}.Disc{j}.Element{k,l}.K*Re*Se;
+                P.Rotor{i}.C = P.Rotor{i}.C + Se'*Re'*P.Rotor{i}.Disc{j}.Element{k,l}.K*Re*Se * P.Rotor{i}.Disc{j}.Material.eta;
                 
                 %only intertia terms
-                P.Rotor{i}.M = P.Rotor{i}.M + Se'*Re'*P.Rotor{i}.Disc{j}.Me{k,l}*Re*Se;
-                P.Rotor{i}.G = P.Rotor{i}.G + Se'*Re'*P.Rotor{i}.Disc{j}.Ge{k,l}*Re*Se * P.Rotor{i}.Speed;
+                P.Rotor{i}.M = P.Rotor{i}.M + Se'*Re'*P.Rotor{i}.Disc{j}.Element{k,l}.M*Re*Se;
+                P.Rotor{i}.G = P.Rotor{i}.G + Se'*Re'*P.Rotor{i}.Disc{j}.Element{k,l}.G*Re*Se * P.Rotor{i}.Speed;
                 
-                P.Rotor{i}.F0 = P.Rotor{i}.F0 + Se'*Re'*P.Rotor{i}.Disc{j}.Fe0{k,l};
+                P.Rotor{i}.F0 = P.Rotor{i}.F0 + Se'*Re'*P.Rotor{i}.Disc{j}.Element{k,l}.F0;
             end
         end
         
         %edge stiffness
-        SHub = P.Rotor{i}.Disc{j}.SHub*SDisc;
-        for k = 1:P.Rotor{i}.Disc{j}.Nt
-            SEdge = (P.Rotor{i}.Disc{j}.RHub{k,1}*SHub - P.Rotor{i}.Disc{j}.SNode{k,1}*SDisc);
-            P.Rotor{i}.K = P.Rotor{i}.K + SEdge'*P.Rotor{i}.Disc{j}.KEdge*SEdge;
-            P.Rotor{i}.C = P.Rotor{i}.C + SEdge'*P.Rotor{i}.Disc{j}.CEdge*SEdge;
+        SHub = P.Rotor{i}.Disc{j}.Hub.S*SDisc;
+        for k = 1:P.Rotor{i}.Disc{j}.Mesh.Nt
+            SEdge = (P.Rotor{i}.Disc{j}.Mesh.RHub{k,1}*SHub - P.Rotor{i}.Disc{j}.Mesh.SNode{k,1}*SDisc);
+            P.Rotor{i}.K = P.Rotor{i}.K + SEdge'*P.Rotor{i}.Disc{j}.Edge.K*SEdge;
+            P.Rotor{i}.C = P.Rotor{i}.C + SEdge'*P.Rotor{i}.Disc{j}.Edge.C*SEdge;
         end
         
         %lump inertia at hub
-        P.Rotor{i}.Fg = P.Rotor{i}.Fg + SHub'*P.Rotor{i}.Disc{j}.MHub*[P.g;0;0];
-        P.Rotor{i}.M  = P.Rotor{i}.M  + SHub'*P.Rotor{i}.Disc{j}.MHub*SHub;
-        P.Rotor{i}.G  = P.Rotor{i}.G  + SHub'*P.Rotor{i}.Disc{j}.GHub*SHub;
+        P.Rotor{i}.Fg = P.Rotor{i}.Fg + SHub'*(P.Rotor{i}.Disc{j}.Hub.M + P.Rotor{i}.Disc{j}.Ring.M)*[P.g;0;0];
+        P.Rotor{i}.M  = P.Rotor{i}.M  + SHub'*(P.Rotor{i}.Disc{j}.Hub.M + P.Rotor{i}.Disc{j}.Ring.M)*SHub;
+        P.Rotor{i}.G  = P.Rotor{i}.G  + SHub'*P.Rotor{i}.Disc{j}.Hub.G*SHub;
         
         %root stiffness
-        SRoot = P.Rotor{i}.Disc{j}.SRoot*SDisc;
-        P.Rotor{i}.K  = P.Rotor{i}.K  + (SHub-SRoot)'*P.Rotor{i}.Disc{j}.KRoot*(SHub-SRoot);
-        P.Rotor{i}.C  = P.Rotor{i}.C  + (SHub-SRoot)'*P.Rotor{i}.Disc{j}.CRoot*(SHub-SRoot);
-        P.Rotor{i}.F0 = P.Rotor{i}.F0 + (SHub-SRoot)'*P.Rotor{i}.Disc{j}.F0Root;
+        SRoot = P.Rotor{i}.Disc{j}.Root.S*SDisc;
+        P.Rotor{i}.K  = P.Rotor{i}.K  + (SHub-SRoot)'*P.Rotor{i}.Disc{j}.Root.K*(SHub-SRoot);
+        P.Rotor{i}.C  = P.Rotor{i}.C  + (SHub-SRoot)'*P.Rotor{i}.Disc{j}.Root.C*(SHub-SRoot);
+        P.Rotor{i}.F0 = P.Rotor{i}.F0 + (SHub-SRoot)'*P.Rotor{i}.Disc{j}.Root.F0;
     end
     
     Mr  = Mr  + P.Rotor{i}.S'*P.Rotor{i}.M*P.Rotor{i}.S;

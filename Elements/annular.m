@@ -1,4 +1,4 @@
-function [Ke,Me,Ge,Kc] = annular(material,t,th,r,beta,dR)
+function [Ke,Me,Ge,Kc] = annular(material,t,r,dTheta,dR)
 if isinf(material.E)
     E = 0;
 else
@@ -11,7 +11,7 @@ tensor = E/(1-v^2) * [ 1     v        0;
 rho = material.rho;
 
 NInt = [10 12];
-uth = linspace(0,beta,NInt(1)+1);
+uth = linspace(0,dTheta,NInt(1)+1);
 dth = diff(uth);
 uth = 0.5*(uth(1:end-1)+uth(2:end));
 
@@ -26,10 +26,9 @@ uth = permute(uth(:),[2 3 1]); ur = permute(ur(:),[2 3 1]);
 dth = permute(dth(:),[2 3 1]); dr = permute(dr(:),[2 3 1]);
 
 r = r + ur;
-th = th + uth;
 
 %extract displacements/derivatives from shape fun
-C = quad_rect_shapefun('coeff',beta,dR);
+C = quad_rect_shapefun('coeff',dTheta,dR);
 [P,Deriv,Deriv2] = quad_rect_shapefun({'fun','jac','hess'},uth,ur);
 invC = inv(C);
 
@@ -52,7 +51,7 @@ Me = Mlat + Mrot;
 NB = mtimesx(mtransposex(Bt),N) - mtimesx(mtransposex(N),Bt);
 Ge = -rho*t*sum(r.*NB.*dA,3);
 
-zer = 0*th;
+zer = 0*r;
 won = zer + 1;
 Strain = [zer     1./r  1/r.^2 zer  zer;
           zer     zer   zer    won  zer;
