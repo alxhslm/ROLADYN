@@ -1,61 +1,82 @@
 function D = mass2dim(D)
-fields_for_inertia = {'Geometry','Ri';
-                      'Geometry','Ro';
-                      'Geometry','t';
-                      'Inertia','m';
-                      'Inertia','Id';
-                      'Inertia','Ip'};
-bKnown = false(6,1);
-Xknown = zeros(6,1);        
-for i = 1:size(fields_for_inertia,1)
-    if isfield(D.(fields_for_inertia{i,1}),fields_for_inertia{i,2})
-        field = D.(fields_for_inertia{i,1}).(fields_for_inertia{i,2});
+dims = {'Ri';
+        'Ro';
+        't'};
+
+bKnownX = false(3,1);
+Xknown = zeros(3,1);        
+for i = 1:size(dims,1)
+    if isfield(D.Geometry,dims{i})
+        field = D.Geometry.(dims{i});
         if ~isnan(field)
-            bKnown(i) = true;
+            bKnownX(i) = true;
             Xknown(i) = field;
         end
     end
 end
 
-Xscale = [1E-3;1E-3;1E-3;1;1E-6;1E-6];
-fscale = [1;1E-6;1E-6];
+inta = {'m';
+        'Id';
+        'Ip'};
+    
+bKnownF = false(3,1);
+Fknown = zeros(3,1);        
+for i = 1:size(inta,1)
+    if isfield(D.Inertia,inta{i})
+        field = D.Inertia.(inta{i});
+        if ~isnan(field)
+            bKnownF(i) = true;
+            Fknown(i) = field;
+        end
+    end
+end
 
-Xscale = Xscale(~bKnown);
+Xscale = [1E-3;1E-2;1E-2];
+fscale = [1;1E-4;1E-4];
 
-if ~all(bKnown)
-    X0 = rand(sum(~bKnown),1);
-    [X,~,flag] = fsolve(@(X)objfun(X,Xscale,fscale,Xknown,bKnown,D.Material.rho),X0,optimoptions('fsolve','Display','none','StepTolerance',1E-14,'FunctionTolerance',1E-14));
+Xscale = Xscale(~bKnownX);
+fscale = fscale(bKnownF);
+
+if ~all(bKnownX)
+    X0 = rand(sum(~bKnownX),1);
+    [X,~,flag] = fmincon(@(X)0,X0,[],[],[],[],0*X0,X0+Inf,@(X)confun(X,Xscale,fscale,Xknown,Fknown,bKnownX,bKnownF,D.Material.rho),optimoptions('fmincon','Display','iter','StepTolerance',1E-14,'FunctionTolerance',1E-14));
     if flag ~=1
-        X = X + NaN;
+         X = X + NaN;
     end
 else
     X = [];
 end
 
 Xsol = Xknown;
-Xsol(~bKnown) = X.*Xscale;
+Xsol(~bKnownX) = X.*Xscale;
 
-[D.Geometry.Ri,D.Geometry.Ro,D.Geometry.t] = X2props(Xsol);
-[D.Inertia.m,D.Inertia.Id,D.Inertia.Ip] = disc_properties(D.Material.rho,D.Geometry.Ri,D.Geometry.Ro,D.Geometry.t);
+[ri,ro,t] = X2props(Xsol);
+[m,Id,Ip] = disc_properties(D.Material.rho,ri,ro,t);
+f = [m;Id;Ip];
 
-    
-function f = objfun(X,Xscale,fscale,Xknown,bKnown,rho)
+for i = 1:size(dims,1)
+    if ~bKnownX(i)
+        D.Geometry.(dims{i}) = Xsol(i);
+    end
+end
+
+for i = 1:size(inta,1)
+    if ~bKnownF(i)
+        D.Inertia.(inta{i}) = f(i);
+    end
+end
+
+function [dummy,err] = confun(X,Xscale,fscale,Xknown,Fknown,bKnownX,bKnownF,rho)
 Xtest = Xknown;
-Xtest(~bKnown) = X.*Xscale;
-
-[ri,ro,t,m0,Id0,Ip0] = X2props(Xtest);
+Xtest(~bKnownX) = X.*Xscale;
+[ri,ro,t] = X2props(Xtest);
 [m,Id,Ip] = disc_properties(rho,ri,ro,t);
+f = [m;Id;Ip];
+err = f - Fknown;
+err = err(bKnownF) ./ fscale;
+dummy = [];
 
-f = [m  -  m0;
-     Id - Id0;
-     Ip - Ip0];
- 
- f = f ./ fscale;
-
-function [ri,ro,t,m,Id,Ip] = X2props(X)
+function [ri,ro,t] = X2props(X)
 ri   = X(1);
 ro   = X(2);
 t    = X(3);
-m    = X(4);
-Id   = X(5);
-Ip   = X(6);
