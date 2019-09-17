@@ -44,6 +44,12 @@ if ~isfield(D.Options,'bGyro')
 end
 
 %% Compute mass of each ring
+if ~isfield(D,'Ring')
+    D.Ring = struct();
+end
+if ~isfield(D.Ring,'t')
+    D.Ring.t = [];
+end
 NSegments = length(D.Ring.t);
 
 %number of radial points per ring
@@ -54,78 +60,91 @@ if length(D.Ring.Nr) == 1
     D.Ring.Nr = D.Ring.Nr*ones(1,NSegments);
 end
 
+D.Ring.m = zeros(NSegments,1);
+D.Ring.Id = zeros(NSegments,1);
+D.Ring.Ip = zeros(NSegments,1);
 for i = 1:NSegments
     [D.Ring.m(i),D.Ring.Id(i),D.Ring.Ip(i)] = disc_properties(D.Material.rho,D.Ring.R(i),D.Ring.R(i+1),D.Ring.t(i));
 end
 
 %need to store radial inertia of each ring, as this is not accounted for by FE model
-D.Ring.M = diag([sum(D.Ring.m(i)) sum(D.Ring.m(i)) 0 0]);
+D.Ring.M = diag([sum(D.Ring.m) sum(D.Ring.m) 0 0]);
 
-%% Create mesh
-D.Mesh.r = D.Ring.R(1);
-D.Mesh.t = [];
-
-for i = 1:NSegments
-    rSeg = linspace(D.Ring.R(i),D.Ring.R(i+1),D.Ring.Nr(i)+1);
-    tSeg = ones(1,D.Ring.Nr(i))*D.Ring.t(i);
-    D.Mesh.r = [D.Mesh.r rSeg(2:end)];
-    D.Mesh.t = [D.Mesh.t tSeg];
-end
-D.Mesh.dr = diff(D.Mesh.r);
-D.Mesh.Nr = length(D.Mesh.r);
-
-if ~isfield(D.Mesh,'Nt')
-    D.Mesh.Nt = 4;
-end
-
-%% Finite elements
-NDofe = 3;
-NEle = 4;
+%% Finite element model
 NHub = 4;
 NRoot = 4;
-D.NDof = D.Mesh.Nt * D.Mesh.Nr * NDofe + NHub;
-NDofTot = D.NDof + NRoot;
+if NSegments > 0
+    %create mesh
+    D.Mesh.r = D.Ring.R(1);
+    D.Mesh.t = [];
 
-theta = linspace(0,2*pi,D.Mesh.Nt+1);
-D.Mesh.dtheta = diff(theta);
-D.Mesh.theta  = theta(1:end-1);
-
-for i = 1:D.Mesh.Nt
-    for j = 1:D.Mesh.Nr
-      D.Mesh.SNode{i,j} = zeros(NDofe,NDofTot);
-      D.Mesh.SNode{i,j}(:,NHub+NRoot+((i-1)*D.Mesh.Nr   + j - 1)*NDofe+(1:NDofe)) = eye(NDofe);
-        
-      %rotation matrix from Hub -> Disc Node coords
-      D.Mesh.RHub{i,j} = [0        0    D.Mesh.r(j)*sin(D.Mesh.theta(i))    -D.Mesh.r(j)*cos(D.Mesh.theta(i)); %w
-                          0        0    D.Mesh.r(j)*cos(D.Mesh.theta(i))     D.Mesh.r(j)*sin(D.Mesh.theta(i))  %dw_dt
-                          0        0     sin(D.Mesh.theta(i))                -cos(D.Mesh.theta(i))];      %dw_dr
+    for i = 1:NSegments
+        rSeg = linspace(D.Ring.R(i),D.Ring.R(i+1),D.Ring.Nr(i)+1);
+        tSeg = ones(1,D.Ring.Nr(i))*D.Ring.t(i);
+        D.Mesh.r = [D.Mesh.r rSeg(2:end)];
+        D.Mesh.t = [D.Mesh.t tSeg];
     end
-end
-for i = 1:D.Mesh.Nt
-    iNext = mod(i,D.Mesh.Nt)+1;
-    for j = 1:(D.Mesh.Nr-1)
-        A = D.Mesh.dtheta(i)/2*(D.Mesh.r(j+1)^2 - D.Mesh.r(j)^2);
-        
-        D.Element{i,j}.m = D.Material.rho*A*D.Mesh.t(j);
-        
-        D.Element{i,j}.S = [D.Mesh.SNode{i,j};
-                            D.Mesh.SNode{i,j+1};
-                            D.Mesh.SNode{iNext,j+1};
-                            D.Mesh.SNode{iNext,j}];
-        
-        D.Element{i,j}.R = eye(NDofe*NEle);
-        
-        [D.Element{i,j}.K,D.Element{i,j}.M,D.Element{i,j}.G] = annular(D.Material,D.Mesh.t(j),D.Mesh.r(j),D.Mesh.dtheta(i),D.Mesh.dr(j));
-        
-        D.Element{i,j}.G = D.Options.bGyro*D.Element{i,j}.G;
-        
-        if ~isempty(x0)
-            D.Element{i,j}.F0 = D.Element{i,j}.K*D.Element{i,j}.R*D.Element{i,j}.S*x0;
-        else
-            D.Element{i,j}.F0 = zeros(NDofe*NEle,1);
+    D.Mesh.dr = diff(D.Mesh.r);
+    D.Mesh.Nr = length(D.Mesh.r);
+
+    if ~isfield(D.Mesh,'Nt')
+        D.Mesh.Nt = 4;
+    end
+
+    % transformation matrices
+    NDofe = 3;
+    NEle = 4;
+    D.NDof = D.Mesh.Nt * D.Mesh.Nr * NDofe + NHub;
+    NDofTot = D.NDof + NRoot;
+
+    theta = linspace(0,2*pi,D.Mesh.Nt+1);
+    D.Mesh.dtheta = diff(theta);
+    D.Mesh.theta  = theta(1:end-1);
+
+    for i = 1:D.Mesh.Nt
+        for j = 1:D.Mesh.Nr
+          D.Mesh.SNode{i,j} = zeros(NDofe,NDofTot);
+          D.Mesh.SNode{i,j}(:,NHub+NRoot+((i-1)*D.Mesh.Nr   + j - 1)*NDofe+(1:NDofe)) = eye(NDofe);
+
+          %rotation matrix from Hub -> Disc Node coords
+          D.Mesh.RHub{i,j} = [0        0    D.Mesh.r(j)*sin(D.Mesh.theta(i))    -D.Mesh.r(j)*cos(D.Mesh.theta(i)); %w
+                              0        0    D.Mesh.r(j)*cos(D.Mesh.theta(i))     D.Mesh.r(j)*sin(D.Mesh.theta(i))  %dw_dt
+                              0        0     sin(D.Mesh.theta(i))                -cos(D.Mesh.theta(i))];      %dw_dr
         end
-    end   
-end    
+    end
+    
+    % elements mass etc
+    for i = 1:D.Mesh.Nt
+        iNext = mod(i,D.Mesh.Nt)+1;
+        for j = 1:(D.Mesh.Nr-1)
+            A = D.Mesh.dtheta(i)/2*(D.Mesh.r(j+1)^2 - D.Mesh.r(j)^2);
+
+            D.Element{i,j}.m = D.Material.rho*A*D.Mesh.t(j);
+
+            D.Element{i,j}.S = [D.Mesh.SNode{i,j};
+                                D.Mesh.SNode{i,j+1};
+                                D.Mesh.SNode{iNext,j+1};
+                                D.Mesh.SNode{iNext,j}];
+
+            D.Element{i,j}.R = eye(NDofe*NEle);
+
+            [D.Element{i,j}.K,D.Element{i,j}.M,D.Element{i,j}.G] = annular(D.Material,D.Mesh.t(j),D.Mesh.r(j),D.Mesh.dtheta(i),D.Mesh.dr(j));
+
+            D.Element{i,j}.G = D.Options.bGyro*D.Element{i,j}.G;
+
+            if ~isempty(x0)
+                D.Element{i,j}.F0 = D.Element{i,j}.K*D.Element{i,j}.R*D.Element{i,j}.S*x0;
+            else
+                D.Element{i,j}.F0 = zeros(NDofe*NEle,1);
+            end
+        end   
+    end    
+else
+    D.Mesh.Nt = [];
+    D.Mesh.Nr = [];
+    D.NDof = NHub;
+    NDofTot = D.NDof + NRoot;
+end
 
 %% Hub
 %stiffness and damping
