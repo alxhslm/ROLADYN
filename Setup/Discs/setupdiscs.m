@@ -21,7 +21,8 @@ if ~isfield(D,'iNode')
     error('Missing field iNode');
 end
 if ~isfield(D,'Material')
-    error('Missing field Material');
+    warning('Missing field Material: Defaulting to "rigid"');
+    D.Material.name = 'rigid';
 end
 if ~isfield(D,'Options')
     D.Options = struct();

@@ -17,11 +17,7 @@ a   = repmat(a,4,1);
 w   = repmat(w,4,1);
 dw  = repmat(dw,4,1);
 
-if 0%isMultiHarmonic(wShaft)
-    wons = 1;
-else
-    wons = a(1,:)*0 + 1;
-end
+wons = a(1,:)*0 + 1;
 
 ph = [E.aUnbalancePh;E.aSkewPh]*wons;
 mag = [E.eUnbalance; E.aSkew];

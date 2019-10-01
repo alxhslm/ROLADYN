@@ -120,7 +120,7 @@ for iMat = 1:2
                 if iMat == 1 %k
                     B.([mat{iMat} dof{iDof}]) = [{diag([inf inf])} B.([mat{iMat} dof{iDof}])];
                 else %c
-                    B.([mat{iMat} dof{iDof}]){end+1} = zeros(2);
+                    B.([mat{iMat} dof{iDof}]) = [{zeros(2)} B.([mat{iMat} dof{iDof}])];
                 end
             end
         else

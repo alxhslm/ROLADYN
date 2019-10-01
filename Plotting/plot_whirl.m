@@ -12,6 +12,8 @@ NRows = ceil(NModes/NCols);
 
 aLocus = linspace(0,2*pi,20);
 
+modes = mtimesx(P.Model.A,modes);
+
 %extract the useful formation from the modeshapes
 NNodes = [];
 iNodesIn = [];
@@ -79,19 +81,19 @@ for i = 1:NModes
             zDisc = Nodes(Disc.iNode);
             
             SDisc = Disc.S * SRotor;
-            qd = Disc.SRoot * SDisc * modes(:,i,1);
+            qd = Disc.Root.S * SDisc * modes(:,i,1);
             ud = qd(1); vd = qd(2);
             
             %circle to denote where disc is
             han.DiscRoot{i,j}(k) = plot3(zDisc, real(ud),real(vd),'color',col(j,:),'marker','o');
                         
             %shape of disc
-            qDisc = Disc.SHub * SDisc * modes(:,i,1);
+            qDisc = Disc.Hub.S * SDisc * modes(:,i,1);
             uDisc = qDisc(1); vDisc = qDisc(2);
-            for m = 1:Disc.Nt
-                for n = 1:(Disc.Nr-1)
+            for m = 1:Disc.Mesh.Nt
+                for n = 1:(Disc.Mesh.Nr-1)
                     qe = Disc.Se{m,n} * SDisc * modes(:,i,1);
-                    [xDisc,yDisc,wDisc] = disc_disp_field(qe,Disc.r(n),Disc.theta(m),Disc.dr(n),Disc.beta(m),10);
+                    [xDisc,yDisc,wDisc] = disc_disp_field(qe,Disc.Mesh.r(n),Disc.Mesh.theta(m),Disc.Mesh.dr(n),Disc.Mesh.dtheta(m),10);
                     han.Disc{i,j}{k}(m,n) = surf(zDisc+real(wDisc),xDisc+real(uDisc),yDisc+real(vDisc));
                 end
             end
@@ -202,19 +204,19 @@ for i = 1:NModes
             zDisc = P.Rotor{j}.Nodes(Disc.iNode);
             
             SDisc = Disc.S * SRotor;
-            qRoot = Disc.SRoot * SDisc * modes(:,i,iPlot);
+            qRoot = Disc.Root.S * SDisc * modes(:,i,iPlot);
             uRoot = qRoot(1); vRoot = qRoot(2);
             
             %circle to denote where disc is
             set(han.DiscRoot{i,j}(k),'ydata', real(uRoot), 'zdata', real(vRoot));
             
             %shape of disc
-            qHub = Disc.SHub * SDisc * modes(:,i,iPlot);
+            qHub = Disc.Hub.S * SDisc * modes(:,i,iPlot);
             uHub = qHub(1); vHub = qHub(2);
-            for m = 1:Disc.Nt
-                for n = 1:(Disc.Nr-1)
+            for m = 1:Disc.Mesh.Nt
+                for n = 1:(Disc.Mesh.Nr-1)
                     qe = Disc.Se{m,n} * SDisc * modes(:,i,iPlot);
-                    [xElem,yElem,wElem] = disc_disp_field(qe,Disc.r(n),Disc.theta(m),Disc.dr(n),Disc.beta(m),10);
+                    [xElem,yElem,wElem] = disc_disp_field(qe,Disc.Mesh.r(n),Disc.Mesh.theta(m),Disc.Mesh.dr(n),Disc.Mesh.dtheta(m),10);
                     set(han.Disc{i,j}{k}(m,n),'ydata',xElem+real(uHub),'zdata',yElem+real(vHub),'xdata',zDisc+real(wElem));
                 end
             end

@@ -257,7 +257,7 @@ for i = 1:length(P.Excite)
             iBearing = P.Excite{i}.iBearing;
             
             %TODO: this needs updating to add deflection to inner/outer race
-            Ub = P.Bearing{iBearing}.U;
+            Ub = P.Bearing{iBearing}.Uo;
             
             Sgnd = IMapExcite(P.Excite{i}.iExcite,:);
             
@@ -266,11 +266,11 @@ for i = 1:length(P.Excite)
                 
                 Sgd = Sgd + Ub{j}'*P.Excite{i}.U{j};
 
-                Kgd = Kgd + P.Bearing{iBearing}.S{j}'*P.Bearing{i}.R{j}'*P.Bearing{iBearing}.Kb{j}*P.Bearing{i}.R{j}*Ub{j};
-                Cgd = Cgd + P.Bearing{iBearing}.S{j}'*P.Bearing{i}.R{j}'*P.Bearing{iBearing}.Cb{j}*P.Bearing{i}.R{j}*Ub{j};
-                Mgd = Mgd + P.Bearing{iBearing}.S{j}'*P.Bearing{i}.R{j}'*P.Bearing{iBearing}.Mb{j}*P.Bearing{i}.R{j}*Ub{j};
+                Kgd = Kgd + P.Bearing{iBearing}.S{j}'*P.Bearing{i}.R{j}'*P.Bearing{iBearing}.Kb{j}(:,1:4)*P.Bearing{i}.Ro{j}*Ub{j};
+                Cgd = Cgd + P.Bearing{iBearing}.S{j}'*P.Bearing{i}.R{j}'*P.Bearing{iBearing}.Cb{j}(:,1:4)*P.Bearing{i}.Ro{j}*Ub{j};
+                Mgd = Mgd + P.Bearing{iBearing}.S{j}'*P.Bearing{i}.R{j}'*P.Bearing{iBearing}.Mb{j}(:,1:4)*P.Bearing{i}.Ro{j}*Ub{j};
                 
-                ugd = ugd + P.Excite{i}.U'*P.Excite{i}.u;
+                ugd = ugd + P.Excite{i}.U{j}'*P.Excite{i}.u(4*(j-1)+(1:4));
             end
     end
 end

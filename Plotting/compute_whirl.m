@@ -20,7 +20,7 @@ NNodesTot = sum(NNodes);
 kappa = zeros([NNodes,sz(2:end)]);
 ampl =  zeros([NNodes,sz(2:end)]);
 
-modes = modes(iNodesIn,:,:);
+modes = mtimesx(P.Model.A(iNodesIn,:),modes);
 
 %we need to scale the modes such that the outer rotor is (arbitrarily) 
 %aligned with the real axis which will then allow comparions across all

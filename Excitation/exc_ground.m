@@ -11,11 +11,8 @@ if nargin  < 5
     end
 end
 
-if isMultiHarmonic(w)
-    wons = 1;
-else
-    wons = 0*w + 1;
-end
+wons = 0*w + 1;
+
 
 ph = repmat(ph,4,1);
 w  = repmat(w,4,1);
