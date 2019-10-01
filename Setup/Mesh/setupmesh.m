@@ -242,7 +242,7 @@ for i = 1:length(P.Excite)
             iRotor = P.Excite{i}.iRotor;
             iDisc  = P.Excite{i}.iDisc;
 
-            Sd = P.Rotor{iRotor}.Disc{iDisc}.SHub*P.Rotor{iRotor}.Disc{iDisc}.S*P.Rotor{iRotor}.S;
+            Sd = P.Rotor{iRotor}.Disc{iDisc}.Hub.S*P.Rotor{iRotor}.Disc{iDisc}.S*P.Rotor{iRotor}.S;
            
             P.Excite{i}.S = IMapExcite(P.Excite{i}.iExcite,:);
             

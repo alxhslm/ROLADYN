@@ -186,6 +186,16 @@ if nargout > 2
     S.Kqiqo = sum(Ji.*Ki.*permute(Jo,[2 1 3 4]),4);
     S.Kqoqo = sum(Jo.*Ko.*permute(Jo,[2 1 3 4]),4);
     
+    S.Kqiqi(:,[4 5],:) = 0;
+    S.Kqoqi(:,[4 5],:) = 0;
+    S.Kqiqo(:,[4 5],:) = 0;
+    S.Kqoqo(:,[4 5],:) = 0;
+    
+    S.Kqiqi([4 5],:,:) = 0;
+    S.Kqoqi([4 5],:,:) = 0;
+    S.Kqiqo([4 5],:,:) = 0;
+    S.Kqoqo([4 5],:,:) = 0;
+
     S.Kxqi = zeros(0,N,NPts);
     S.Kxqo = zeros(0,N,NPts);
     S.Kqix = zeros(N,0,NPts);

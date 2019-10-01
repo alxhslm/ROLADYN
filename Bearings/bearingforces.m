@@ -140,7 +140,7 @@ if ~isfield(States,'xddot')
     States.xddot = 0*States.x;
 end
 if ~isfield(States,'u')
-    States.u = zeros(P.Mesh.NExcite,NPts);
+    States.u = zeros(size(P.Mesh.Excite.Sgd,1),NPts);
 end
 if ~isfield(States,'udot')
     States.udot = 0*States.u;
