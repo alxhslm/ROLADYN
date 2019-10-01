@@ -13,16 +13,26 @@ if nargin < 4
 end
 
 % Rotors - first setup the mass related parameters for all of the rotors
+if ~isfield(P,'Rotor')
+    P.Rotor = {};
+end
 P.Rotor = setuprotors(P.Rotor);
 
 % Bearings - now setup the bearing stiffness matrices etc
-if isfield(P,'Bearing')
-    P.Bearing = setupbearings(P.Bearing,P.Rotor,O);
-else
+if ~isfield(P,'Bearing')
     P.Bearing = {};
 end
+P.Bearing = setupbearings(P.Bearing,P.Rotor,O);
+
+if ~isfield(P,'Stator')
+    P.Stator = {};
+end
+P.Stator = setupstators(P.Stator);
 
 % Excitation - now define how the rotor will be excited
+if ~isfield(P,'Excite')
+    P.Excite = {};
+end
 P = setupexcitation(P);
 
 %% Do the initial setup at x0 = 0

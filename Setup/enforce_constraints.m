@@ -16,21 +16,17 @@ T.Rotor.K = A'*S.Rotor.K*A;
 T.Rotor.Fg = A'*S.Rotor.Fg;
 T.Rotor.F0 = A'*S.Rotor.F0;
 
+T.Stator.M = A'*S.Stator.M*A;
+T.Stator.C = A'*S.Stator.C*A;
+T.Stator.K = A'*S.Stator.K*A;
+T.Stator.Fg = A'*S.Stator.Fg;
+T.Stator.F0 = A'*S.Stator.F0;
+
 T.Bearing.K = A'*S.Bearing.K*A;
 T.Bearing.C = A'*S.Bearing.C*A;
-T.Bearing.M = A'*S.Bearing.M*A;
-T.Bearing.Fg = A'*S.Bearing.Fg;
 T.Bearing.F0 = A'*S.Bearing.F0;
 
 %and finally the excitation matrices
-T.Excite.Kgd = A'*S.Excite.Kgd;
-T.Excite.Cgd = A'*S.Excite.Cgd;
-T.Excite.Mgd = A'*S.Excite.Mgd;
-
-T.Excite.Kub = A'*S.Excite.Kub;
-T.Excite.Cub = A'*S.Excite.Cub;
-T.Excite.Mub = A'*S.Excite.Mub;
-
 T.Excite.Ke = A'*S.Excite.Ke;
 T.Excite.Ce = A'*S.Excite.Ce;
 T.Excite.Me = A'*S.Excite.Me;

@@ -1,8 +1,4 @@
 function P = setupexcitation(P)
-if ~isfield(P,'Excite')
-    P.Excite{1}.Name = '';
-end
-
 E = P.Excite;
 Speed = getrotorspeeds(P.Rotor);
 

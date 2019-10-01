@@ -56,12 +56,10 @@ wons = (0*A+1);
 N = length(A);
 
 [xCG,xInt] = unpack_vector(x,P,N);
-uGnd = P.Mesh.Bearing.u0;     
      
 States.O = O*wons; 
 States.A = A;
 States.x = (P.Model.A*xCG)*wons;
-States.u = uGnd*wons;
 States.xInt = xInt;
 States.bSolve = 0;
 
@@ -83,12 +81,10 @@ if 1
     wons = (0*A+1);
 
     [xCG,xInt] = unpack_vector(x,P,N);
-    uGnd = P.Mesh.Bearing.u0;     
 
     States.O = O*wons; 
     States.A = A;               
     States.x = (P.Model.A*xCG)*wons;
-    States.u = uGnd*wons;
     States.xInt = xInt;
     States.bSolve = 0;
 
@@ -119,13 +115,11 @@ J = sparse(J);
 function Sparsity = get_sparsity(B)
 Sparsity = cell(length(B),2);
 for i = 1:length(B)
-    for j = 1:2
-        if strcmp(B{i}.Model{j},'REB')
-            REB = B{i}.Params{j};
-            Sparsity{i,j} = repmat(eye(REB.Setup.Z),B{i}.Params{j}.Model.NDof);
-        else
-            Sparsity{i,j} = ones(B{i}.NDofInt(j));
-        end
+    if strcmp(B{i}.Model,'REB')
+        REB = B{i}.Params;
+        Sparsity{i} = repmat(eye(REB.Setup.Z),B{i}.Params.Model.NDof);
+    else
+        Sparsity{i} = ones(B{i}.NDofInt);
     end
 end
 

@@ -1,8 +1,8 @@
-function [F,V,S] = linear_model(B, j, States) 
+function [F,V,S] = linear_model(B, States) 
 xBearing = [States.qi; States.qo];
 dxBearing = [States.qidot; States.qodot];
 
-fb = B.Kb{j}*xBearing + B.Cb{j}*dxBearing;
+fb = B.Kb*xBearing + B.Cb*dxBearing;
 
 NPts = size(xBearing,2);
 F.F = fb;
@@ -16,8 +16,8 @@ F.xddotInt = zeros(0,NPts);
 V = struct();
 
 if nargout > 2
-    S.K = repmat(B.Kb{j},1,1,NPts);
-    S.C = repmat(B.Cb{j},1,1,NPts);
+    S.K = repmat(B.Kb,1,1,NPts);
+    S.C = repmat(B.Cb,1,1,NPts);
     
     S.Kqq = S.K;
     S.Cqq = S.C;
