@@ -20,10 +20,6 @@ function D = setup_each_disc(D,N,x0)
 if ~isfield(D,'iNode')
     error('Missing field iNode');
 end
-if ~isfield(D,'Material')
-    warning('Missing field Material: Defaulting to "rigid"');
-    D.Material.name = 'rigid';
-end
 if ~isfield(D,'Options')
     D.Options = struct();
 end
@@ -33,13 +29,31 @@ end
 
 D.z = N(D.iNode);
 
+if ~isfield(D,'Material')
+    error('Missing field "Material" from disc "%s"',D.Name);
+end
 D.Material = setupmaterial(D.Material);
 
-if isfield(D,'Geometry')
-    D = mass2dim(D);
-    D.Ring.R = [D.Geometry.Ri D.Geometry.Ro];
-    D.Ring.t = D.Geometry.t;
+if ~isfield(D,'Ring')
+    D.Ring = struct();
 end
+if ~isfield(D.Ring,'R')
+    D.Ring.R = NaN(1,2);
+end
+if ~isfield(D.Ring,'t')
+    D.Ring.t = NaN;
+end
+
+if any(isnan(D.Ring.R)) || any(isnan(D.Ring.t))
+    if length(D.Ring.t) > 1
+        error('Unable to compute disc geometry for disc "%s"',D.Name);
+    elseif isfield(D,'Inertia')
+        D = mass2dim(D);
+    else
+        error('Need either field "Inertia" or "Ring" for disc "%s"',D.Name);
+    end
+end
+
 if ~isfield(D.Options,'bGyro')
     D.Options.bGyro = 1;
 end
