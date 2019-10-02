@@ -16,12 +16,12 @@ end
 
 function S = setup_each_stator(S,ind,x0)
 
-if ~isfield(S,'NDof')
-    S.NDof = size(S.M,1);
-end
-
 if ~isfield(S, 'Name')
     S.Name = sprintf('Rotor %d',ind);
+end
+
+if ~isfield(S,'NDof')
+    S.NDof = size(S.M,1);
 end
 
 if ~isempty(x0)
@@ -30,7 +30,13 @@ else
     S.F0 = zeros(S.NDof,1);
 end
 
-S.Ks = S.K;
+fields = {'M','K','C'};
+for i = 1:length(fields)
+    if ~isfield(S,fields{i})
+        S.(fields{i}) = zeros(S.NDof);
+    end
+end
 
+S.Ks = S.K;
 ii = isinf(S.K); S.K(ii) = 100;
 ii = isinf(S.C); S.C(ii) = 100;

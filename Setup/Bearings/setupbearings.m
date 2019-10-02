@@ -17,7 +17,6 @@ end
 iForceCount = 0;
 iInternalCount = 0;
 for i = 1:length(B)
-
     B{i} = setup_each_bearing(B{i},i,qi{i},qo{i},R,O);
     B{i}.iForceo = iForceCount + (1:4);
     B{i}.iForcei = iForceCount + (5:8);
@@ -41,13 +40,20 @@ for j = 1:length(Node)
             Node{j}.Speed = Rotor{Node{j}.iRotor}.Speed;
         case 'stator'
             Node{j}.Speed = 0;
+        otherwise
+            error('Unknown connection type "%s"',Node{j}.Type)
     end
+    
 end
 
 function B = setup_each_bearing(B,ind,xi,xo,R,O)
+if ~isfield(B, 'Name')
+    B.Name = sprintf('Bearing %d',ind);
+end
+
 %error if we don't have the connection details
 if ~isfield(B,'Node')
-    error('Cannot find parameter "%s" for %s','Node',B.Name);
+    error('Cannot find parameter "Node" for bearing "%s"',B.Name);
 end
 
 B.Node = setupnodes(B.Node,R);
@@ -74,10 +80,6 @@ end
 %thickness for plotting
 if ~isfield(B,'t')
     B.t = 0.01;
-end
-
-if ~isfield(B, 'Name')
-    B.Name = sprintf('Bearing %d',ind);
 end
 
 %convert any linear stiffness properties (kxx) into stiffness matrices (Kxx)
