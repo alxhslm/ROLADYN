@@ -17,6 +17,7 @@ NDofRotorTot = sum(NDofRotor);
 NStator = length(P.Stator);
 NDofStator = zeros(NStator,1);
 for i = 1:NStator
+   P.Stator{i}.Bearing = {};
    NDofStator(i) = P.Stator{i}.NDof;
    P.Stator{i}.iGlobal = iDofCount + (1:P.Stator{i}.NDof);
    iDofCount = iDofCount + P.Stator{i}.NDof;
@@ -210,23 +211,51 @@ for i = 1:NBearings
         
     %and finally work out the boundary nodes of the rotors
     Rb = {P.Bearing{i}.Ro,P.Bearing{i}.Ri};
-    for j=1:2
+    zBear = NaN(1,2);
+    for j = 1:2
         switch P.Bearing{i}.Node{j}.Type
-            case 'Rotor'
+            case 'rotor'
                 iRotor = P.Bearing{i}.Node{j}.iRotor;
                 iNode  = P.Bearing{i}.Node{j}.iNode(1);
                 
                 P.Rotor{iRotor}.Bearing{end+1}.iBearing = i;
                 P.Rotor{iRotor}.Bearing{end}.iNode = iNode;
                 P.Rotor{iRotor}.Bearing{end}.iActive = findrows(Rb{j}(P.Bearing{i}.bActive,:));
-            case 'Stator'
+                
+                zBear(j) = P.Rotor{iRotor}.Nodes(iNode);
+            case 'stator'
                 iStator = P.Bearing{i}.Node{j}.iStator;
                 
                 P.Stator{iStator}.Bearing{end+1}.iBearing = i;
                 P.Stator{iStator}.Bearing{end}.iActive = findrows(Rb{j}(P.Bearing{i}.bActive,:));
+                
+                if isfield(P.Stator{iStator},'z')
+                    zBear(j) = P.Stator{iStator}.z;
+                end
         end
     end
     
+    P.Bearing{i}.z = mean(zBear,'omitnan');
+    if ~isnan(P.Bearing{i}.z)
+        for j = 1:2
+            switch P.Bearing{i}.Node{j}.Type
+                case 'rotor'
+                    iRotor = P.Bearing{i}.Node{j}.iRotor;
+                    iNode  = P.Bearing{i}.Node{j}.iNode(1);
+                    %do nothing, as has z already
+                    if P.Rotor{iRotor}.Nodes(iNode) ~= P.Bearing{i}.z
+                        error('Invalid connectivity specified for bearing "%s"',P.Bearing{i}.Name)
+                    end
+                case 'stator'
+                    iStator = P.Bearing{i}.Node{j}.iStator;
+                    if ~isfield(P.Stator{iStator},'z')
+                        P.Stator{iStator}.z = P.Bearing{i}.z;
+                    elseif P.Stator{iStator}.z ~= P.Bearing{i}.z
+                        error('Invalid connectivity specified for bearing "%s"',P.Bearing{i}.Name)
+                    end
+            end
+        end
+    end
 end
 
 P.Mesh.Bearing.K = Kb;
