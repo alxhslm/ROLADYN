@@ -57,12 +57,11 @@ switch part
             Cqx =  mtimesx(P.Model.A',Stiffness.Cqx);
             Cxq =  mtimesx(Stiffness.Cxq,P.Model.A);
             Cxx =  Stiffness.Cxx;
-            
-            Kqu = mtimesx(P.Model.A',mtimesx(Stiffness.Kqu,P.Mesh.Excite.Sgd));
-            Kxu = mtimesx(Stiffness.Kxu,P.Mesh.Excite.Sgd);
-            
-            Cqu = mtimesx(P.Model.A',mtimesx(Stiffness.Cqu,P.Mesh.Excite.Sgd));
-            Cxu = mtimesx(Stiffness.Cxu,P.Mesh.Excite.Sgd);
+
+            Kqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
+            Kxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
+            Cqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
+            Cxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
         else
             f0 = rotor_hbm_model('all',States,hbm,problem);
             h = 1E-10;
@@ -92,25 +91,10 @@ switch part
             Cqx = zeros(P.Model.NDof,P.Model.NDofInt,NPts);
             Cxx = zeros(P.Model.NDofInt,P.Model.NDofInt,NPts);
             
-            Kqu = zeros(P.Model.NDof,P.Mesh.NExcite,NPts);
-            Kxu = zeros(P.Model.NDofInt,P.Mesh.NExcite,NPts);
-            Cqu = zeros(P.Model.NDof,P.Mesh.NExcite,NPts);
-            Cxu = zeros(P.Model.NDofInt,P.Mesh.NExcite,NPts);
-            u0 = States.u;
-            udot0 = States.udot;
-            for i = 1:P.Mesh.NExcite
-                States.u(i,:) = States.u(i,:) + h;
-                f = rotor_hbm_model('all',States,hbm,problem);
-                Kqu(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
-                Kxu(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
-                States.u = u0;
-                
-                States.udot(i,:) = States.udot(i,:) + h;
-                f = rotor_hbm_model('all',States,hbm,problem);
-                Cqu(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
-                Cxu(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
-                States.udot = udot0;
-            end
+            Kqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
+            Kxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
+            Cqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
+            Cxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
         end
         
         switch part

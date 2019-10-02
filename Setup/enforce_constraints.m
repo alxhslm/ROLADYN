@@ -25,11 +25,14 @@ T.Stator.F0 = A'*S.Stator.F0;
 T.Bearing.K = A'*S.Bearing.K*A;
 T.Bearing.C = A'*S.Bearing.C*A;
 T.Bearing.F0 = A'*S.Bearing.F0;
+T.Bearing.NDofInt = S.Bearing.NDofInt;
 
 %and finally the excitation matrices
-T.Excite.Ke = A'*S.Excite.Ke;
-T.Excite.Ce = A'*S.Excite.Ce;
-T.Excite.Me = A'*S.Excite.Me;
+T.Excite.K = A'*S.Excite.K;
+T.Excite.C = A'*S.Excite.C;
+T.Excite.M = A'*S.Excite.M;
+T.Excite.u = S.Excite.u;
+T.Excite.NExcite = S.Excite.NExcite;
 
 %some useful numbers
 T.NDof = size(T.M,1);

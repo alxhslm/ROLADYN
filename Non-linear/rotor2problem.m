@@ -11,15 +11,15 @@ NDofInt = P.Model.Reduced.NDofInt;
 problem.sparsity = [ones(P.Model.NDof)    ones(P.Model.NDof,NDofInt);
                     ones(NDofInt,P.Model.NDof) P.Model.Reduced.Sparsity];
 
-problem.NDof = P.Model.NDof;
+problem.NDof    = P.Model.NDof;
 problem.NOutput = P.Model.NDof;
-problem.NInput = P.Mesh.NExcite;
+problem.NInput  = P.Model.Excite.NExcite;
 
 problem.NDof = problem.NDof + NDofInt;
 
-problem.Ku = P.Model.Excite.Kub*P.Mesh.Excite.Sub;
-problem.Cu = P.Model.Excite.Cub*P.Mesh.Excite.Sub;
-problem.Mu = P.Model.Excite.Mub*P.Mesh.Excite.Sub;
+problem.Ku = P.Model.Excite.K;
+problem.Cu = P.Model.Excite.C;
+problem.Mu = P.Model.Excite.M;
 
 problem.M  = P.Model.Rotor.M;
 problem.C  = P.Model.Rotor.C;
@@ -58,43 +58,34 @@ end
 
 problem.P = P;
 
-% problem.Ku = [P.Model.Excite.Kub*P.Mesh.Excite.Sub; zeros(NDofInt,P.Mesh.NExcite)];
-% problem.Cu = [P.Model.Excite.Cub*P.Mesh.Excite.Sub; zeros(NDofInt,P.Mesh.NExcite)];
-% problem.Mu = [P.Model.Excite.Mub*P.Mesh.Excite.Sub; zeros(NDofInt,P.Mesh.NExcite)];
-% problem.M  = 0*blkdiag(P.Model.Rotor.M,zeros(NDofInt));
-% problem.C  = 0*blkdiag(P.Model.Rotor.C,zeros(NDofInt));
-% problem.K  = 0*blkdiag(P.Model.Rotor.K,zeros(NDofInt));
-% problem.F0 = 0*[-P.Model.Fg + P.Model.Rotor.F0 - P.Model.Rotor.K*P.Model.x0; zeros(NDofInt,1)];
-
 function Red = get_internal_indices(B,bCompressREB)
 iDofIn = 0;
 iInt = [];
 iSum = {};
 for i = 1:length(B)
-    for j = 1:2
-        if strcmp(B{i}.Model{j},'REB')
-            REB = B{i}.Params{j};
-            if bCompressREB
-                iInt = [iInt; iDofIn+((1:REB.Model.NDof)-1)*REB.Setup.Z+1];
-                for k = 1:REB.Model.NDof
-                    iSum = [iSum; iDofIn+ (k-1)*REB.Setup.Z + (1:REB.Setup.Z)];
-                end
-                iDofIn = iDofIn + B{i}.NDofInt(j);
-                Sparsity{i,j} = ones(B{i}.Params{j}.Model.NDof);
-            else
-                iInt = [iInt; iDofIn+(1:B{i}.NDofInt(j))];
-                iSum = [iSum; num2cell(iDofIn+(1:B{i}.NDofInt(j)))];
-                iDofIn  = iDofIn  + B{i}.NDofInt(j);
-                Sparsity{i,j} = repmat(eye(REB.Setup.Z),B{i}.Params{j}.Model.NDof);
+    if strcmp(B{i}.Model,'REB')
+        REB = B{i}.Params;
+        if bCompressREB
+            iInt = [iInt; iDofIn+((1:REB.Model.NDof)-1)*REB.Setup.Z+1];
+            for k = 1:REB.Model.NDof
+                iSum = [iSum; iDofIn+ (k-1)*REB.Setup.Z + (1:REB.Setup.Z)];
             end
+            iDofIn = iDofIn + B{i}.NDofInt;
+            Sparsity{i} = ones(B{i}.Params.Model.NDof);
         else
-            %othwerise need all the internal states
-            iInt = [iInt; iDofIn+(1:B{i}.NDofInt(j))];
-            iSum = [iSum; num2cell(iDofIn+(1:B{i}.NDofInt(j)))];
-            iDofIn  = iDofIn  + B{i}.NDofInt(j);
-            Sparsity{i,j} = ones(B{i}.NDofInt(j));
+            iInt = [iInt; iDofIn+(1:B{i}.NDofInt)];
+            iSum = [iSum; num2cell(iDofIn+(1:B{i}.NDofInt))];
+            iDofIn  = iDofIn  + B{i}.NDofInt;
+            Sparsity{i} = repmat(eye(REB.Setup.Z),B{i}.Params.Model.NDof);
         end
+    else
+        %othwerise need all the internal states
+        iInt = [iInt; iDofIn+(1:B{i}.NDofInt)];
+        iSum = [iSum; num2cell(iDofIn+(1:B{i}.NDofInt))];
+        iDofIn  = iDofIn  + B{i}.NDofInt;
+        Sparsity{i} = ones(B{i}.NDofInt);
     end
+    
 end
 Red.NDofInt = length(iInt);
 Red.iInt = iInt;
@@ -102,4 +93,3 @@ Red.iSum = iSum;
 
 Sparsity = Sparsity';
 Red.Sparsity = blkdiag(Sparsity{:});
-% Red.Sparsity = Red.Sparsity*0 + 1;

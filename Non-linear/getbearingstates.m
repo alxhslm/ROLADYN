@@ -16,43 +16,36 @@ bearing_states.xddotInt = zeros(P.Model.NDofInt,NPts);
 iDofIn = 0;
 iDofOut = 0;
 for i = 1:length(P.Bearing)
-    for j = 1:2
-        if strcmp(P.Bearing{i}.Model{j},'REB') && P.Bearing{i}.Params{j}.Model.NDof > 0
-            REB = P.Bearing{i}.Params{j};
-           
-            if P.Model.bCompressREB && (size(xB,1) == P.Model.Reduced.NDofInt)
+    if strcmp(P.Bearing{i}.Model,'REB') && P.Bearing{i}.Params.Model.NDof > 0
+        REB = P.Bearing{i}.Params;
+
+        if P.Model.bCompressREB && (size(xB,1) == P.Model.Reduced.NDofInt)
 %                 [xInt,xdotInt,xddotInt] = shift_balls(xB(iDofIn+(1:REB.Model.NDof),:),xdotB(iDofIn+(1:REB.Model.NDof),:),xddotB(iDofIn+(1:REB.Model.NDof),:),REB,P.Model.iRot,hbm);
-                [xInt,xdotInt,xddotInt] = shift_balls_fast(xB(iDofIn+(1:REB.Model.NDof),:),xdotB(iDofIn+(1:REB.Model.NDof),:),xddotB(iDofIn+(1:REB.Model.NDof),:),REB,P.Model.iRot,hbm);
-                iDofIn  = iDofIn  + REB.Model.NDof;
-            else
-                xInt = xB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
-                xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)  =  xdotB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
-                xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:) =  xddotB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
-                iDofIn  = iDofIn  + P.Bearing{i}.NDofInt(j);
-            end
-                                    
-            bearing_states.xInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)     = xInt;
-            bearing_states.xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)  = xdotInt;
-            bearing_states.xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:) = xddotInt;
-            
-            iDofOut = iDofOut + P.Bearing{i}.NDofInt(j);
-            
+            [xInt,xdotInt,xddotInt] = shift_balls_fast(xB(iDofIn+(1:REB.Model.NDof),:),xdotB(iDofIn+(1:REB.Model.NDof),:),xddotB(iDofIn+(1:REB.Model.NDof),:),REB,P.Model.iRot,hbm);
+            iDofIn  = iDofIn  + REB.Model.NDof;
         else
-            
-            bearing_states.xInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)     =  xB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
-            bearing_states.xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:)  =  xdotB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
-            bearing_states.xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt(j)),:) =  xddotB(iDofIn+(1:P.Bearing{i}.NDofInt(j)),:);
-            
-            iDofIn  = iDofIn  + P.Bearing{i}.NDofInt(j);
-            iDofOut = iDofOut + P.Bearing{i}.NDofInt(j);
+            xInt = xB(iDofIn+(1:P.Bearing{i}.NDofInt),:);
+            xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt),:)  =  xdotB(iDofIn+(1:P.Bearing{i}.NDofInt),:);
+            xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt),:) =  xddotB(iDofIn+(1:P.Bearing{i}.NDofInt),:);
+            iDofIn  = iDofIn  + P.Bearing{i}.NDofInt;
         end
+
+        bearing_states.xInt(iDofOut+(1:P.Bearing{i}.NDofInt),:)     = xInt;
+        bearing_states.xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt),:)  = xdotInt;
+        bearing_states.xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt),:) = xddotInt;
+
+        iDofOut = iDofOut + P.Bearing{i}.NDofInt;
+
+    else
+
+        bearing_states.xInt(iDofOut+(1:P.Bearing{i}.NDofInt),:)     =  xB(iDofIn+(1:P.Bearing{i}.NDofInt),:);
+        bearing_states.xdotInt(iDofOut+(1:P.Bearing{i}.NDofInt),:)  =  xdotB(iDofIn+(1:P.Bearing{i}.NDofInt),:);
+        bearing_states.xddotInt(iDofOut+(1:P.Bearing{i}.NDofInt),:) =  xddotB(iDofIn+(1:P.Bearing{i}.NDofInt),:);
+
+        iDofIn  = iDofIn  + P.Bearing{i}.NDofInt;
+        iDofOut = iDofOut + P.Bearing{i}.NDofInt;
     end
 end
-
-bearing_states.u     = P.Mesh.Excite.Sgd*States.u;
-bearing_states.udot  = P.Mesh.Excite.Sgd*States.udot;
-bearing_states.uddot = P.Mesh.Excite.Sgd*States.uddot;
-
 
 function [xInt,xdotInt,xddotInt] = shift_balls_fast(x,xdot,xddot,REB,iRot,hbm)
 xInt     = zeros(REB.Model.NDofTot,prod(hbm.harm.Nfft));

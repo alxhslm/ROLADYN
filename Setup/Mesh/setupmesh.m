@@ -250,27 +250,31 @@ ue = zeros(NExcInputTot,1);
 
 for i = 1:length(P.Excite)
     Se = IMapExcite(P.Excite{i}.iExcite,:);
-    ue = ue + P.Excite{i}.U{j}'*P.Excite{i}.u;
+    ue = ue + Se'*P.Excite{i}.u;
 
     switch P.Excite{i}.Name
         case 'unbalance'
             iRotor = P.Excite{i}.iRotor;
             iDisc  = P.Excite{i}.iDisc;
-            Sd = P.Rotor{iRotor}.Disc{iDisc}.Hub.S*P.Rotor{iRotor}.Disc{iDisc}.S*P.Rotor{iRotor}.S;
+            Sd = P.Rotor{iRotor}.Disc{iDisc}.Hub.S(1:2,:)*P.Rotor{iRotor}.Disc{iDisc}.S*P.Rotor{iRotor}.S;
+            Me = Me + Sd'*P.Excite{i}.M*Se;
+        case 'skew'
+            iRotor = P.Excite{i}.iRotor;
+            iDisc  = P.Excite{i}.iDisc;
+            Sd = P.Rotor{iRotor}.Disc{iDisc}.Hub.S(3:4,:)*P.Rotor{iRotor}.Disc{iDisc}.S*P.Rotor{iRotor}.S;
             Me = Me + Sd'*P.Excite{i}.M*Se;
         case 'shaker'
             iStator = P.Excite{i}.iStator;
             Ss = P.Stator{iStator}.U;
             Ke = Ke + Ss'*P.Excite{iStator}.K*Se;
     end
-    ue = ue + P.Excite{i}.S'*P.Excite{i}.u;    
     P.Excite{i}.S = Se;
 end
 
-P.Mesh.Excite.Ke = Ke;
-P.Mesh.Excite.Ce = Ce;
-P.Mesh.Excite.Me = Me;
-P.Mesh.Excite.ue = ue;
+P.Mesh.Excite.K = Ke;
+P.Mesh.Excite.C = Ce;
+P.Mesh.Excite.M = Me;
+P.Mesh.Excite.u = ue;
 
 %% Combined
 P.Mesh.M  = P.Mesh.Rotor.M + P.Mesh.Stator.M;
@@ -285,7 +289,7 @@ P.Mesh.A  = eye(NDofTot);
 P.Mesh.NDofInt = NInternalTot;
 P.Mesh.NDof = NDofTot;
 P.Mesh.NDofTot = NDofTot+NInternalTot;
-P.Mesh.NExcite = NExcInputTot;
+P.Mesh.Excite.NExcite = NExcInputTot;
 
 P.Mesh.Rotor.NDof = NDofRotor;
 P.Mesh.Stator.NDof = NDofStator;

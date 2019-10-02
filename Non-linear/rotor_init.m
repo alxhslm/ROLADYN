@@ -46,11 +46,6 @@ xCG     = freq2time(X,NHarm,Nfft)';
 xdotCG  = freq2time(Xdot,NHarm,Nfft)';
 xddotCG = freq2time(Xddot,NHarm,Nfft)';
 
-%create the vector of inputs
-uGnd     = freq2time(U*P.Mesh.Excite.Sgd.',NHarm,Nfft)';
-udotGnd  = freq2time(Udot*P.Mesh.Excite.Sgd.',NHarm,Nfft)';
-uddotGnd = freq2time(Uddot*P.Mesh.Excite.Sgd.',NHarm,Nfft)';
-
 fe = freq2time(Fe,NHarm,Nfft)';
 
 Fgyro = O*P.Model.Rotor.G*xdotCG;
@@ -66,14 +61,11 @@ u0 = P.Mesh.Bearing.u0*(0*O+1);
 
 fe = fe + P.Model.Fg;
 fL = P.Model.Rotor.K*(xCG-x0)   + P.Model.Rotor.C*xdotCG   + P.Model.Rotor.M*xddotCG + P.Model.Rotor.F0;
-fB = P.Model.Bearing.K*(xCG-x0) + P.Model.Bearing.C*xdotCG + P.Model.Excite.Kgd*(uGnd-u0) + P.Model.Bearing.F0 + Fgyro;
+fB = P.Model.Bearing.K*(xCG-x0) + P.Model.Bearing.C*xdotCG + P.Model.Bearing.F0 + Fgyro;
 
 States.x     = P.Model.A*xCG;
 States.xdot  = P.Model.A*xdotCG;
 States.xddot = P.Model.A*xddotCG;
-States.u     = uGnd;
-States.udot  = udotGnd;
-States.uddot = uddotGnd;
 States.A = A;
 States.O = O;
 States.bSolve = 1;
