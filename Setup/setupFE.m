@@ -15,9 +15,9 @@ for i = 1:length(Rotor)
         if isinf(Rotor{i}.Shaft{j}.Material.E)
             %enforce the displacement of each node to be a
             %rigid body transformations from the previous
-            for k = 1:Rotor{i}.Shaft{j}.Nz-1
-                dz = Rotor{i}.Shaft{j}.z(k+1) - Rotor{i}.Shaft{j}.z(k);
-                Se = Rotor{i}.Shaft{j}.Se{k}*SShaft;
+            for k = 1:(Rotor{i}.Shaft{j}.Mesh.Nz-1)
+                dz = Rotor{i}.Shaft{j}.Element{k}.L;
+                Se = Rotor{i}.Shaft{j}.Element{k}.S*SShaft;
                 NDofShaft = 4;
                 AConstr = [AConstr; axial_offset(dz)*Se(1:NDofShaft,:) - Se(NDofShaft + (1:NDofShaft),:)];
             end

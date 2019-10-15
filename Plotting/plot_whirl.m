@@ -64,10 +64,10 @@ for i = 1:NModes
         for k = 1:length(P.Rotor{j}.Shaft)
             Shaft = P.Rotor{j}.Shaft{k};
             SShaft = Shaft.S * SRotor;
-            for m = 1:length(Shaft.iNodes)-1
-                zNode = Nodes(Shaft.iNodes(m));
-                le = Shaft.le(m);
-                qe = Shaft.Se{m} * SShaft * modes(:,i,1);
+            for m = 1:(P.Rotor{j}.Shaft{k}.Mesh.Nz-1)
+                zNode = P.Rotor{j}.Shaft{k}.Mesh.z(k);
+                le = Shaft.Element{m}.L;
+                qe = Shaft.Element{m}.S * SShaft * modes(:,i,1);
                 [zShaft,uShaft,vShaft] = shaft_disp_field(qe,le,10);
                 
                 %shape of shaft
@@ -92,7 +92,7 @@ for i = 1:NModes
             uDisc = qDisc(1); vDisc = qDisc(2);
             for m = 1:Disc.Mesh.Nt
                 for n = 1:(Disc.Mesh.Nr-1)
-                    qe = Disc.Se{m,n} * SDisc * modes(:,i,1);
+                    qe = Disc.Element{m,n}.S * SDisc * modes(:,i,1);
                     [xDisc,yDisc,wDisc] = disc_disp_field(qe,Disc.Mesh.r(n),Disc.Mesh.theta(m),Disc.Mesh.dr(n),Disc.Mesh.dtheta(m),10);
                     han.Disc{i,j}{k}(m,n) = surf(zDisc+real(wDisc),xDisc+real(uDisc),yDisc+real(vDisc));
                 end
@@ -189,9 +189,9 @@ for i = 1:NModes
         for k = 1:length(P.Rotor{j}.Shaft)
             Shaft = P.Rotor{j}.Shaft{k};
             SShaft = Shaft.S * SRotor;
-            for m = 1:length(Shaft.iNodes)-1
-                le = Shaft.le(m);
-                qe = Shaft.Se{m} * SShaft * modes(:,i,iPlot);
+            for m = 1:(P.Rotor{j}.Shaft{k}.Mesh.Nz-1)
+                le = Shaft.Element{m}.L;
+                qe = Shaft.Element{m}.S * SShaft * modes(:,i,iPlot);
                 [~,uShaft,vShaft] = shaft_disp_field(qe,le,10);
                 
                 %shape of shaft

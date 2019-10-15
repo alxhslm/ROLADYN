@@ -54,21 +54,22 @@ for i = 1:NRotor
         SShaft = IMapRotor(P.Rotor{i}.Shaft{j}.iLocal,:);
         P.Rotor{i}.Shaft{j}.S = SShaft;
         
-        for k = 1:(P.Rotor{i}.Shaft{j}.Nz-1)
+        for k = 1:(P.Rotor{i}.Shaft{j}.Mesh.Nz-1)
             %rotor->shaft element mapping matrix
-            Se = P.Rotor{i}.Shaft{j}.Se{k}*SShaft;
+            Se = P.Rotor{i}.Shaft{j}.Element{k}.S*SShaft;
+            Re = P.Rotor{i}.Shaft{j}.Element{k}.R;
                         
             %stiffness/damping
-            P.Rotor{i}.K = P.Rotor{i}.K + Se'*P.Rotor{i}.Shaft{j}.R{k}'*P.Rotor{i}.Shaft{j}.Ke{k}*P.Rotor{i}.Shaft{j}.R{k}*Se;
-            P.Rotor{i}.C = P.Rotor{i}.C + Se'*P.Rotor{i}.Shaft{j}.R{k}'*P.Rotor{i}.Shaft{j}.Ke{k}*P.Rotor{i}.Shaft{j}.R{k}*Se * P.Rotor{i}.Shaft{j}.Material.eta;
+            P.Rotor{i}.K = P.Rotor{i}.K + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.K*Re*Se;
+            P.Rotor{i}.C = P.Rotor{i}.C + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.K*Re*Se * P.Rotor{i}.Shaft{j}.Material.eta;
             
             %inertia
-            P.Rotor{i}.M = P.Rotor{i}.M + Se'*P.Rotor{i}.Shaft{j}.R{k}'*P.Rotor{i}.Shaft{j}.Me{k}*P.Rotor{i}.Shaft{j}.R{k}*Se;
-            P.Rotor{i}.G = P.Rotor{i}.G + Se'*P.Rotor{i}.Shaft{j}.R{k}'*P.Rotor{i}.Shaft{j}.Ge{k}*P.Rotor{i}.Shaft{j}.R{k}*Se * P.Rotor{i}.Speed;
+            P.Rotor{i}.M = P.Rotor{i}.M + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.M*Re*Se;
+            P.Rotor{i}.G = P.Rotor{i}.G + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.G*Re*Se * P.Rotor{i}.Speed;
             
-            P.Rotor{i}.Fg = P.Rotor{i}.Fg + Se'*P.Rotor{i}.Shaft{j}.me(k)/2*repmat([P.g; 0; 0],2,1);
+            P.Rotor{i}.Fg = P.Rotor{i}.Fg + Se'*P.Rotor{i}.Shaft{j}.Element{k}.m/2*repmat([P.g; 0; 0],2,1);
             
-            P.Rotor{i}.F0 = P.Rotor{i}.F0 + Se'*P.Rotor{i}.Shaft{j}.R{k}'*P.Rotor{i}.Shaft{j}.F0{k};
+            P.Rotor{i}.F0 = P.Rotor{i}.F0 + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.F0;
         end
     end
     

@@ -10,6 +10,9 @@ for i = 1:length(D)
     else
         x{i} = [];
     end
+    if ~isfield(D{i}, 'Name')
+        D{i}.Name = sprintf('Disc %d',i);
+    end
     D{i} = setup_each_disc(D{i},N,x{i});
     D{i}.iLocal = [(D{i}.iNode-1)*4 + (1:4) iDofCount + (1:D{i}.NDof)];
     iDofCount = iDofCount + D{i}.NDof;
@@ -18,13 +21,7 @@ end
 function D = setup_each_disc(D,N,x0)
 
 if ~isfield(D,'iNode')
-    error('Missing field iNode');
-end
-if ~isfield(D,'Options')
-    D.Options = struct();
-end
-if ~isfield(D,'Inertia')
-    D.Inertia = struct();
+    error('Missing field "iNode" from disc "%s"',D.Name);
 end
 
 D.z = N(D.iNode);
@@ -44,6 +41,10 @@ if ~isfield(D.Ring,'t')
     D.Ring.t = NaN;
 end
 
+if ~isfield(D,'Inertia')
+    D.Inertia = struct();
+end
+
 if any(isnan(D.Ring.R)) || any(isnan(D.Ring.t))
     if length(D.Ring.t) > 1
         error('Unable to compute disc geometry for disc "%s"',D.Name);
@@ -54,6 +55,10 @@ if any(isnan(D.Ring.R)) || any(isnan(D.Ring.t))
     end
 end
 
+%% Options
+if ~isfield(D,'Options')
+    D.Options = struct();
+end
 if ~isfield(D.Options,'bGyro')
     D.Options.bGyro = 1;
 end
@@ -143,7 +148,7 @@ if NSegments > 0
 
             D.Element{i,j}.R = eye(NDofe*NEle);
 
-            [D.Element{i,j}.K,D.Element{i,j}.M,D.Element{i,j}.G] = annular(D.Material,D.Mesh.t(j),D.Mesh.r(j),D.Mesh.dtheta(i),D.Mesh.dr(j));
+            [D.Element{i,j}.K,D.Element{i,j}.M,D.Element{i,j}.G] = disc_annular(D.Material,D.Mesh.t(j),D.Mesh.r(j),D.Mesh.dtheta(i),D.Mesh.dr(j));
 
             D.Element{i,j}.G = D.Options.bGyro*D.Element{i,j}.G;
 
