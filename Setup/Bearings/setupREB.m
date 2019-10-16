@@ -282,19 +282,24 @@ Kinematics.rPivot_lat = sin(Geometry.alpha0)/Geometry.D;
 function Race = setupRaces(Race,Geometry,Setup,Material)
 theta = 2*pi/Setup.Z;
 E = Material.E;
-Race.Inner = setupRace(Race.Inner,theta,E,Geometry.di);
-Race.Outer = setupRace(Race.Outer,theta,E,Geometry.do);
+Race.Inner = setupRace(Race.Inner,Material,theta,Geometry.di);
+Race.Outer = setupRace(Race.Outer,Material,theta,Geometry.do);
 
-function Race = setupRace(Race,theta,E,d)
-Race.I = Race.w * Race.t^3 / 12;
-Race.A = Race.w * Race.t;
-
-Race.Kax = E * Race.A * theta;
-Race.Kfl = E * Race.I * theta;
-
+function Race = setupRace(Race,Material,theta,d)
 if ~isfield(Race,'R')
     Race.R = d/2;
 end
+
+Race.I = Race.w * Race.t^3 / 12;
+Race.A = Race.w * Race.t;
+
+Race.m = Material.rho * Race.w * pi*((Race.R+Race.t/2)^2 - (Race.R-Race.t/2)^2);
+Race.J = Material.rho * Race.w * pi/4*((Race.R+Race.t/2)^4 - (Race.R-Race.t/2)^4);
+Race.I = Race.J/2 + Race.m/12 * Race.w^3;
+
+Race.Kax = Material.E * Race.A * theta;
+Race.Kfl = Material.E * Race.I * theta;
+
 Race.K = Race.Kax/Race.R + Race.Kfl/Race.R^3;
 
 function Contact = setupPointContacts(Contact,Geometry,Material,Fluid)
