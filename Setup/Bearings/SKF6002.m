@@ -17,8 +17,6 @@ end
 REB.Geometry.cr = cr;
 REB.Geometry.cz = 0E-6;
 
-REB.Geometry.do = REB.Geometry.dm + REB.Geometry.cr + REB.Geometry.D;
-REB.Geometry.di = REB.Geometry.dm - REB.Geometry.cr - REB.Geometry.D;
 
 REB.Geometry.RRaceo = 1.05*REB.Geometry.D/2;
 REB.Geometry.RRacei = 1.05*REB.Geometry.D/2;

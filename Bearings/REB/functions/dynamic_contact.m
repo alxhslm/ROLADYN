@@ -14,6 +14,11 @@ dc = (Fc/Contact.Outer.K).^(1/Contact.n);
 iO = r<dc;
 u(iO) = dc(iO);
 err = u + Inf;
+if isnan(err)
+    Qi = NaN;
+    Qo = NaN;
+    return;
+end
 iter = 0;
 while any(abs(err(:))>1E-8)
     [Qi,Ki] = hertz_contact(Contact.Inner.K,Contact.n,r-u,tol);

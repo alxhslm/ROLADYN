@@ -31,6 +31,8 @@ end
 Qri = r + NaN; Kri = r + NaN;
 Qro = r + NaN; Kro = r + NaN;
 
+Qi  = r + NaN;
+
 while any(abs(dQ(:))>1E-8)
     [Qi,Ki] = hertz_contact(Contact.K,Contact.n,r-w(1,:,:)-w(2,:,:),tol);
     Qo = Qi; Ko = Ki;
