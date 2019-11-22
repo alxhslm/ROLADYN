@@ -50,14 +50,24 @@ Xscale = Xscale(~bKnownX);
 fscale = fscale(bKnownF);
 
 if ~all(bKnownX)
-    X0 = rand(sum(~bKnownX),1);
-    constr_fun = @(X)confun(X,Xscale,fscale,Xknown,Fknown,bKnownX,bKnownF,D.Material.rho);
-    options.print_level = 0;
-    iter = 1;
-    while iter < 10
-        [X,info] = fipopt([],X0,constr_fun,options);
-        X0 = X;
-        iter = iter + 1;
+    attempts = 1;
+    while attempts < 5
+        X0 = rand(sum(~bKnownX),1);
+        constr_fun = @(X)confun(X,Xscale,fscale,Xknown,Fknown,bKnownX,bKnownF,D.Material.rho);
+        options.print_level = 0;
+        iter = 1;
+        while iter < 10
+            [X,info] = fipopt([],X0,constr_fun,options);
+            X0 = X;
+            iter = iter + 1;
+            if ~info.status
+                break
+            end
+        end
+        if ~info.status
+            break
+        end
+        attempts = attempts + 1;
     end
     if info.status
          error('Unable to find disc parameters')
