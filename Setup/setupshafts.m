@@ -44,8 +44,8 @@ S.Section.I = pi/4*(S.Section.ro^4 - S.Section.ri^4);
 if ~isfield(S,'Options')
     S.Options = struct();
 end
-if ~isfield(S,'bGyro')
-    S.bGyro = 1;
+if ~isfield(S.Options,'bGyro')
+    S.Options.bGyro = 1;
 end
 if ~isfield(S.Options,'Element')
     S.Options.Element = 'euler_bernoulli';
@@ -73,7 +73,7 @@ for k = 1:(S.Mesh.Nz-1)
     S.Element{k}.Ip = 2*S.Material.rho*S.Section.I*S.Element{k}.L;
     
     [S.Element{k}.K,S.Element{k}.M,S.Element{k}.G] = feval(['shaft_' S.Options.Element],S.Material,S.Section.ri,S.Section.ro,S.Element{k}.L);
-    S.Element{k}.G = S.bGyro*S.Element{k}.G;
+    S.Element{k}.G = S.Options.bGyro*S.Element{k}.G;
     
     S.Element{k}.R = RShaft;
     S.Element{k}.S = [S.Mesh.SNode{k}; S.Mesh.SNode{k+1}];
@@ -104,4 +104,4 @@ for k = 1:length(S.Element)
 end
 
 S.M = diag([S.Inertia.m S.Inertia.m S.Inertia.Id S.Inertia.Id]);
-S.G = S.bGyro*blkdiag(zeros(2),antidiag(S.Inertia.Id*[1 -1]));
+S.G = S.Options.bGyro*blkdiag(zeros(2),antidiag(S.Inertia.Id*[1 -1]));
