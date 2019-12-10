@@ -30,33 +30,35 @@ for i = 1:length(Rotor)
         SHub  = Rotor{i}.Disc{j}.Hub.S*SDisc;
         SRoot = Rotor{i}.Disc{j}.Root.S*SDisc;
         
-        if isinf(Rotor{i}.Disc{j}.Material.E)
-            %enforce the displacement of each node to be a
-            %rigid body transformations from the hub          
-            for k = 1:Rotor{i}.Disc{j}.Mesh.Nt
-                for l = 1:Rotor{i}.Disc{j}.Mesh.Nr
-                    AConstr = [AConstr; Rotor{i}.Disc{j}.Mesh.RHub{k,l}*SHub - Rotor{i}.Disc{j}.Mesh.SNode{k,l}*SDisc];
+        if strcmp(Rotor{i}.Disc{j}.Type,'Flexible')
+            if isinf(Rotor{i}.Disc{j}.Material.E)
+                %enforce the displacement of each node to be a
+                %rigid body transformations from the hub
+                for k = 1:Rotor{i}.Disc{j}.Mesh.Nt
+                    for l = 1:Rotor{i}.Disc{j}.Mesh.Nr
+                        AConstr = [AConstr; Rotor{i}.Disc{j}.Mesh.RHub{k,l}*SHub - Rotor{i}.Disc{j}.Mesh.SNode{k,l}*SDisc];
+                    end
                 end
             end
-        end
-        
-        %hub
-        for k = 1:Rotor{i}.Disc{j}.Mesh.Nt
-            SEdge = (Rotor{i}.Disc{j}.Mesh.RHub{k,1}*SHub - Rotor{i}.Disc{j}.Mesh.SNode{k,1}*SDisc);       
             
-            %axially
-            if isinf(Rotor{i}.Disc{j}.Edge.Kzz)
-               AConstr = [AConstr; SEdge(1,:)];
-            end
-            
-            %circumferentially
-            if isinf(Rotor{i}.Disc{j}.Edge.Ktt)
-                AConstr = [AConstr; SEdge(2,:)];
-            end
-            
-            %radially
-            if isinf(Rotor{i}.Disc{j}.Edge.Krr)
-                AConstr = [AConstr; SEdge(3,:)];
+            %hub
+            for k = 1:Rotor{i}.Disc{j}.Mesh.Nt
+                SEdge = (Rotor{i}.Disc{j}.Mesh.RHub{k,1}*SHub - Rotor{i}.Disc{j}.Mesh.SNode{k,1}*SDisc);
+                
+                %axially
+                if isinf(Rotor{i}.Disc{j}.Edge.Kzz)
+                    AConstr = [AConstr; SEdge(1,:)];
+                end
+                
+                %circumferentially
+                if isinf(Rotor{i}.Disc{j}.Edge.Ktt)
+                    AConstr = [AConstr; SEdge(2,:)];
+                end
+                
+                %radially
+                if isinf(Rotor{i}.Disc{j}.Edge.Krr)
+                    AConstr = [AConstr; SEdge(3,:)];
+                end
             end
         end
         
