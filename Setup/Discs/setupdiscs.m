@@ -274,7 +274,7 @@ if isfield(D.Ring,'Inertia')
     default_val = {0.1,0.02};
     for i = 1:length(optional_fields)
         if ~isfield(D.Ring.Geometry,optional_fields{i})
-            warning('Default disc diemsion "%d" for disc "%s" of type "Rigid"',optional_fields{i},D.Name);
+            warning('Default disc diemsion "%s" for disc "%s" of type "Rigid"',optional_fields{i},D.Name);
             D.Ring.(optional_fields{i}) = default_val(i);
         end
     end

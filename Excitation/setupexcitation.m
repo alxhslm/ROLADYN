@@ -43,7 +43,7 @@ end
 
 E.NInput = 2;
 E.M = R{E.iRotor}.Disc{E.iDisc}.Inertia.m*eye(2);
-E.u = E.Eccentricity.*exp(1i*E.Angle + [0; -pi/2*sign(R{E.iRotor}.Speed)]);
+E.u = E.Eccentricity.*exp(1i*(E.Angle + [0; -pi/2*sign(R{E.iRotor}.Speed)]));
 E.Mode = 'Sync';
 
 function E = setupskew(E,R)
@@ -63,7 +63,7 @@ end
 
 E.NInput = 2;
 E.M = (R{E.iRotor}.Disc{E.iDisc}.Inertia.Id - R{E.iRotor}.Disc{E.iDisc}.Inertia.Ip)*eye(2);
-E.u = E.Skew.*exp(1i*E.Angle + pi/2 + [0; -pi/2*sign(R{E.iRotor}.Speed)]);
+E.u = E.Skew.*exp(1i*(E.Angle + pi/2 + [0; -pi/2*sign(R{E.iRotor}.Speed)]));
 E.Mode = 'Sync';
 
 function E = setupshaker(E)
