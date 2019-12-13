@@ -67,8 +67,8 @@ for i = 1:NRotor
             P.Rotor{i}.M = P.Rotor{i}.M + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.M*Re*Se;
             P.Rotor{i}.G = P.Rotor{i}.G + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.G*Re*Se * P.Rotor{i}.Speed;
             
-            P.Rotor{i}.Fg = P.Rotor{i}.Fg + Se'*P.Rotor{i}.Shaft{j}.Element{k}.m/2*repmat([P.g; 0; 0],2,1);
-            
+            P.Rotor{i}.Fg = P.Rotor{i}.Fg + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.M*Re*repmat([P.g; 0; 0],2,1);
+
             P.Rotor{i}.F0 = P.Rotor{i}.F0 + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.F0;
         end
     end

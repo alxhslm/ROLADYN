@@ -68,9 +68,9 @@ for k = 1:(S.Mesh.Nz-1)
     %element mass, stiffness etc
     S.Element{k}.L = S.Mesh.z(k+1) - S.Mesh.z(k);
     S.Element{k}.z = 0.5*(S.Mesh.z(k+1) + S.Mesh.z(k));
-    S.Element{k}.m = S.Material.rho*S.Section.A*S.Element{k}.L;
-    S.Element{k}.Id = S.Element{k}.m/12*S.Element{k}.L^2 + S.Material.rho*S.Section.I*S.Element{k}.L;
-    S.Element{k}.Ip = 2*S.Material.rho*S.Section.I*S.Element{k}.L;
+    S.Element{k}.Inertia.m = S.Material.rho*S.Section.A*S.Element{k}.L;
+    S.Element{k}.Inertia.Id = S.Element{k}.Inertia.m/12*S.Element{k}.L^2 + S.Material.rho*S.Section.I*S.Element{k}.L;
+    S.Element{k}.Inertia.Ip = 2*S.Material.rho*S.Section.I*S.Element{k}.L;
     
     [S.Element{k}.K,S.Element{k}.M,S.Element{k}.G] = feval(['shaft_' S.Options.Element],S.Material,S.Section.ri,S.Section.ro,S.Element{k}.L);
     S.Element{k}.G = S.Options.bGyro*S.Element{k}.G;
@@ -92,15 +92,15 @@ S.Inertia.Ip = 0;
 mz = 0;
 for k = 1:length(S.Element)
     S.Section.L = S.Section.L + S.Element{k}.L;
-    S.Inertia.m = S.Inertia.m + S.Element{k}.m;
-    S.Inertia.Ip = S.Inertia.Ip + S.Element{k}.Ip;
-    mz = mz + S.Element{k}.m * S.Element{k}.z;
+    S.Inertia.m = S.Inertia.m + S.Element{k}.Inertia.m;
+    S.Inertia.Ip = S.Inertia.Ip + S.Element{k}.Inertia.Ip;
+    mz = mz + S.Element{k}.Inertia.m * S.Element{k}.z;
 end
 S.Inertia.z = mz / (S.Inertia.m + eps);
 
 S.Inertia.Id = 0;
 for k = 1:length(S.Element)
-    S.Inertia.Id = S.Inertia.Id + S.Element{k}.Id + S.Element{k}.m * (S.Element{k}.z - S.Inertia.z)^2;
+    S.Inertia.Id = S.Inertia.Id + S.Element{k}.Inertia.Id + S.Element{k}.Inertia.m * (S.Element{k}.z - S.Inertia.z)^2;
 end
 
 S.M = diag([S.Inertia.m S.Inertia.m S.Inertia.Id S.Inertia.Id]);

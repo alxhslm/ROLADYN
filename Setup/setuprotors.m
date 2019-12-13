@@ -35,7 +35,11 @@ end
 %if none specified
 
 if ~isfield(R,'Shaft')
-    R.Shaft = struct();
+    R.Shaft = {};
+end
+
+if ~isfield(R,'Disc')
+    R.Disc = {};
 end
 
 m  = 0;
@@ -53,16 +57,12 @@ for i = 1:length(R.Shaft)
 end
 
 %and now the discs
-if isfield(R,'Disc')
-    R.Disc = setupdiscs(R.Disc, R.Nodes, x0);
-    for i = 1:length(R.Disc)
-        m  = m  + R.Disc{i}.Inertia.m;
-        Ip = Ip + R.Disc{i}.Inertia.Ip;
-        mz = mz + R.Disc{i}.Inertia.m * R.Disc{i}.z;
-        R.NDof = R.NDof + R.Disc{i}.NDof;
-    end
-else
-    R.Disc = {};
+R.Disc = setupdiscs(R.Disc, R.Nodes, x0);
+for i = 1:length(R.Disc)
+    m  = m  + R.Disc{i}.Inertia.m;
+    Ip = Ip + R.Disc{i}.Inertia.Ip;
+    mz = mz + R.Disc{i}.Inertia.m * R.Disc{i}.z;
+    R.NDof = R.NDof + R.Disc{i}.NDof;
 end
 
 R.Inertia.m = m;
