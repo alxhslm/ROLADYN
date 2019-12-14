@@ -5,7 +5,6 @@ T.G  = A'*S.G*A;
 T.K  = A'*S.K*A;
 T.C  = A'*S.C*A;
 T.Fg = A'*S.Fg;
-T.F0 = A'*S.F0;
 T.A = S.A*A;
 
 %now the rotor & bearing matrices
@@ -14,17 +13,16 @@ T.Rotor.G = A'*S.Rotor.G*A;
 T.Rotor.C = A'*S.Rotor.C*A;
 T.Rotor.K = A'*S.Rotor.K*A;
 T.Rotor.Fg = A'*S.Rotor.Fg;
-T.Rotor.F0 = A'*S.Rotor.F0;
 
 T.Stator.M = A'*S.Stator.M*A;
 T.Stator.C = A'*S.Stator.C*A;
 T.Stator.K = A'*S.Stator.K*A;
 T.Stator.Fg = A'*S.Stator.Fg;
-T.Stator.F0 = A'*S.Stator.F0;
 
 T.Bearing.K = A'*S.Bearing.K*A;
 T.Bearing.C = A'*S.Bearing.C*A;
-T.Bearing.F0 = A'*S.Bearing.F0;
+T.Bearing.Kb = S.Bearing.Kb*A;
+T.Bearing.Cb = S.Bearing.Cb*A;
 T.Bearing.NDofInt = S.Bearing.NDofInt;
 
 %and finally the excitation matrices

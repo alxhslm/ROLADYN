@@ -32,7 +32,6 @@ Kr = zeros(NDofTot);
 Cr = zeros(NDofTot);
 Mr = zeros(NDofTot);
 Gr = zeros(NDofTot);
-F0r = zeros(NDofTot,1);
 Fgr = zeros(NDofTot,1);
 
 for i = 1:NRotor
@@ -45,7 +44,6 @@ for i = 1:NRotor
     P.Rotor{i}.C = zeros(P.Rotor{i}.NDof);
     P.Rotor{i}.K = zeros(P.Rotor{i}.NDof);
     P.Rotor{i}.Fg = zeros(P.Rotor{i}.NDof,1);
-    P.Rotor{i}.F0 = zeros(P.Rotor{i}.NDof,1);
     
     IMapRotor = eye(P.Rotor{i}.NDof);
     
@@ -68,8 +66,6 @@ for i = 1:NRotor
             P.Rotor{i}.G = P.Rotor{i}.G + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.G*Re*Se * P.Rotor{i}.Speed;
             
             P.Rotor{i}.Fg = P.Rotor{i}.Fg + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.M*Re*repmat([P.g; 0; 0],2,1);
-
-            P.Rotor{i}.F0 = P.Rotor{i}.F0 + Se'*Re'*P.Rotor{i}.Shaft{j}.Element{k}.F0;
         end
     end
     
@@ -95,8 +91,6 @@ for i = 1:NRotor
                     %only intertia terms
                     P.Rotor{i}.M = P.Rotor{i}.M + Se'*Re'*P.Rotor{i}.Disc{j}.Element{k,l}.M*Re*Se;
                     P.Rotor{i}.G = P.Rotor{i}.G + Se'*Re'*P.Rotor{i}.Disc{j}.Element{k,l}.G*Re*Se * P.Rotor{i}.Speed;
-                    
-                    P.Rotor{i}.F0 = P.Rotor{i}.F0 + Se'*Re'*P.Rotor{i}.Disc{j}.Element{k,l}.F0;
                 end
             end
             
@@ -116,7 +110,6 @@ for i = 1:NRotor
         %root stiffness
         P.Rotor{i}.K  = P.Rotor{i}.K  + (SHub-SRoot)'*P.Rotor{i}.Disc{j}.Root.K*(SHub-SRoot);
         P.Rotor{i}.C  = P.Rotor{i}.C  + (SHub-SRoot)'*P.Rotor{i}.Disc{j}.Root.C*(SHub-SRoot);
-        P.Rotor{i}.F0 = P.Rotor{i}.F0 + (SHub-SRoot)'*P.Rotor{i}.Disc{j}.Root.F0;
     end
     
     Mr  = Mr  + P.Rotor{i}.S'*P.Rotor{i}.M*P.Rotor{i}.S;
@@ -124,7 +117,6 @@ for i = 1:NRotor
     Cr  = Cr  + P.Rotor{i}.S'*P.Rotor{i}.C*P.Rotor{i}.S;
     Kr  = Kr  + P.Rotor{i}.S'*P.Rotor{i}.K*P.Rotor{i}.S;
     Fgr = Fgr + P.Rotor{i}.S'*P.Rotor{i}.Fg;
-    F0r = F0r + P.Rotor{i}.S'*P.Rotor{i}.F0;
 end
 
 P.Mesh.Rotor.M = Mr;
@@ -132,13 +124,11 @@ P.Mesh.Rotor.G = Gr;
 P.Mesh.Rotor.C = Cr;
 P.Mesh.Rotor.K = Kr;
 P.Mesh.Rotor.Fg = Fgr;
-P.Mesh.Rotor.F0 = F0r;
 
 %% And the stator
 Ks = zeros(NDofTot);
 Cs = zeros(NDofTot);
 Ms = zeros(NDofTot);
-F0s = zeros(NDofTot,1);
 Fgs = zeros(NDofTot,1);
 
 for i = 1:NStator
@@ -152,14 +142,12 @@ for i = 1:NStator
     Cs  = Cs  + P.Stator{i}.S'*P.Stator{i}.C*P.Stator{i}.S;
     Ks  = Ks  + P.Stator{i}.S'*P.Stator{i}.K*P.Stator{i}.S;
     Fgs = Fgs + P.Stator{i}.S'*P.Stator{i}.Fg;
-    F0s = F0s + P.Stator{i}.S'*P.Stator{i}.F0;
 end
 
 P.Mesh.Stator.M = Ms;
 P.Mesh.Stator.C = Cs;
 P.Mesh.Stator.K = Ks;
 P.Mesh.Stator.Fg = Fgs;
-P.Mesh.Stator.F0 = F0s;
 
 %% Move onto the bearings
 NBearings = length(P.Bearing);
@@ -174,7 +162,9 @@ NInternalTot = sum(NInternal(:));
 Kb = zeros(NDofTot);
 Cb = zeros(NDofTot);
 Fb = zeros(NDofTot,1);
-xInt = zeros(NInternalTot,1);
+
+Kbf = zeros(2*NDofe*NBearings,NDofTot);
+Cbf = zeros(2*NDofe*NBearings,NDofTot);
 
 IMapForces = eye(2*NBearings*NDofe);
 IMapInternal = eye(NInternalTot);
@@ -205,14 +195,13 @@ for i = 1:NBearings
         
     SBear = [P.Bearing{i}.Ri*P.Bearing{i}.Si; P.Bearing{i}.Ro*P.Bearing{i}.So];
     Kb = Kb + SBear'*P.Bearing{i}.Kb*SBear;
-    Cb = Cb + SBear'*P.Bearing{i}.Cb*SBear;    
-        
+    Cb = Cb + SBear'*P.Bearing{i}.Cb*SBear;
     Fb = Fb + P.Bearing{i}.S'*P.Bearing{i}.R'*P.Bearing{i}.Fb;
-        
-    if ~isempty(P.Bearing{i}.xInt)
-        xInt = xInt + P.Bearing{i}.V'*P.Bearing{i}.xInt;
-    end
-        
+
+    UBear = [P.Bearing{i}.Ri*P.Bearing{i}.Ui; P.Bearing{i}.Ro*P.Bearing{i}.Uo];
+    Kbf = Kbf + UBear'*P.Bearing{i}.Kb*SBear;
+    Cbf = Cbf + UBear'*P.Bearing{i}.Cb*SBear;
+    
     %and finally work out the boundary nodes of the rotors
     Rb = {P.Bearing{i}.Ro,P.Bearing{i}.Ri};
     zBear = NaN(1,2);
@@ -264,8 +253,9 @@ end
 
 P.Mesh.Bearing.K = Kb;
 P.Mesh.Bearing.C = Cb;
-P.Mesh.Bearing.F0 = Fb;
-P.Mesh.Bearing.xInt = xInt;
+
+P.Mesh.Bearing.Kb = Kbf;
+P.Mesh.Bearing.Cb = Cbf;
 
 %% Excitations
 NExcInput = zeros(length(P.Excite),1);
@@ -315,7 +305,6 @@ P.Mesh.G  = P.Mesh.Rotor.G;
 P.Mesh.K  = P.Mesh.Rotor.K  + P.Mesh.Bearing.K + P.Mesh.Stator.K;
 P.Mesh.C  = P.Mesh.Rotor.C  + P.Mesh.Bearing.C + P.Mesh.Stator.C;
 P.Mesh.Fg = P.Mesh.Rotor.Fg + P.Mesh.Stator.Fg;
-P.Mesh.F0 = P.Mesh.Rotor.F0 + P.Mesh.Bearing.F0 + P.Mesh.Stator.F0;
 P.Mesh.A  = eye(NDofTot);
 
 %% Store some useful numbers

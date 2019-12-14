@@ -1,4 +1,4 @@
-function Ar = setupFE(Rotor)
+function [Rr, Ar] = setupFE(Rotor)
 % SETUPFE performs model reduction on each rotor, including enforcing rigid
 % body constraints, and Craig-Bampton reduction
 
@@ -6,8 +6,9 @@ NDofe = 4;
 
 %Handle the rotor DOF first
 Ar = [];
+Rr = [];
 for i = 1:length(Rotor)
-    AConstr = [];
+    Rcon = zeros(0,Rotor{1}.NDof);
     for j = 1:length(Rotor{i}.Shaft)
         %lock out shaft DOF if shaft is rigid
         SShaft = Rotor{i}.Shaft{j}.S;
@@ -19,7 +20,7 @@ for i = 1:length(Rotor)
                 dz = Rotor{i}.Shaft{j}.Element{k}.L;
                 Se = Rotor{i}.Shaft{j}.Element{k}.S*SShaft;
                 NDofShaft = 4;
-                AConstr = [AConstr; axial_offset(dz)*Se(1:NDofShaft,:) - Se(NDofShaft + (1:NDofShaft),:)];
+                Rcon = [Rcon; axial_offset(dz)*Se(1:NDofShaft,:) - Se(NDofShaft + (1:NDofShaft),:)];
             end
         end
     end
@@ -36,7 +37,7 @@ for i = 1:length(Rotor)
                 %rigid body transformations from the hub
                 for k = 1:Rotor{i}.Disc{j}.Mesh.Nt
                     for l = 1:Rotor{i}.Disc{j}.Mesh.Nr
-                        AConstr = [AConstr; Rotor{i}.Disc{j}.Mesh.RHub{k,l}*SHub - Rotor{i}.Disc{j}.Mesh.SNode{k,l}*SDisc];
+                        Rcon = [Rcon; Rotor{i}.Disc{j}.Mesh.RHub{k,l}*SHub - Rotor{i}.Disc{j}.Mesh.SNode{k,l}*SDisc];
                     end
                 end
             end
@@ -47,35 +48,35 @@ for i = 1:length(Rotor)
                 
                 %axially
                 if isinf(Rotor{i}.Disc{j}.Edge.Kzz)
-                    AConstr = [AConstr; SEdge(1,:)];
+                    Rcon = [Rcon; SEdge(1,:)];
                 end
                 
                 %circumferentially
                 if isinf(Rotor{i}.Disc{j}.Edge.Ktt)
-                    AConstr = [AConstr; SEdge(2,:)];
+                    Rcon = [Rcon; SEdge(2,:)];
                 end
                 
                 %radially
                 if isinf(Rotor{i}.Disc{j}.Edge.Krr)
-                    AConstr = [AConstr; SEdge(3,:)];
+                    Rcon = [Rcon; SEdge(3,:)];
                 end
             end
         end
         
         %root
         if isinf(Rotor{i}.Disc{j}.Root.Krr)                
-            AConstr = [AConstr; SHub([1 2],:)-SRoot([1 2],:)];
+            Rcon = [Rcon; SHub([1 2],:)-SRoot([1 2],:)];
         end
         if isinf(Rotor{i}.Disc{j}.Root.Ktt)                
-            AConstr = [AConstr; SHub([3 4],:)-SRoot([3 4],:)];
+            Rcon = [Rcon; SHub([3 4],:)-SRoot([3 4],:)];
         end
     end
     
     %apply any rigid shaft/disc constraints
-    if isempty(AConstr)
+    if isempty(Rcon)
         A = eye(Rotor{i}.NDof);
     else
-        A = null(AConstr,'r');
+        A = null(Rcon,'r');
     end
        
     Kr   = A'*Rotor{i}.K*A;
@@ -100,7 +101,10 @@ for i = 1:length(Rotor)
         else
             iRetain = 1:Rotor{i}.iModes;
         end
-    
+        
+        bKeep = false(size(Vm,2),1);
+        bKeep(iRetain) = true;
+            
         iOutofBounds = iRetain>size(Vm,2);
         if any(iOutofBounds)
             warning('User specified retaining modes %s which were out of bounds',mat2str(iRetain(iOutofBounds)));
@@ -108,13 +112,18 @@ for i = 1:length(Rotor)
         end
         
         %the reponse must be in the column-space of the retained modes
-        Acb = [Vm(:,iRetain) Vc];
+        Acb = [Vm(:,bKeep) Vc];
         A = A*Acb;
     end
     
+    R = null(A')';
+    
     %now store everything
     Rotor{i}.FE.A = A;
-    Ar = [Ar Rotor{i}.S'*Rotor{i}.FE.A];
+    Rotor{i}.FE.R = R;
+    
+    Ar = [Ar Rotor{i}.S'*A];
+    Rr = [Rr; R*Rotor{i}.S];
 end
 
 function [Vm,Vc] = cms_analysis(M,K,F,A,iFixed)
