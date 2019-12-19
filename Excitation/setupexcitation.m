@@ -34,16 +34,17 @@ for j = 1:length(essential_fields)
     end
 end
 
-defaultable_fields = {'Eccentricity', 'Angle'};
+defaultable_fields = {'m','r', 'Angle'};
+val = [R{E.iRotor}.Disc{E.iDisc}.Inertia.m 0 0];
 for j = 1:length(defaultable_fields)
     if ~isfield(E,defaultable_fields{j})
-        E.(defaultable_fields{j}) = 0;
+        E.(defaultable_fields{j}) = val(j);
     end
 end
 
 E.NInput = 2;
-E.M = R{E.iRotor}.Disc{E.iDisc}.Inertia.m*eye(2);
-E.u = E.Eccentricity.*exp(1i*(E.Angle + [0; -pi/2*sign(R{E.iRotor}.Speed)]));
+E.M = eye(2);
+E.u = E.m * E.r.*exp(1i*(E.Angle + [0; -pi/2*sign(R{E.iRotor}.Speed)]));
 E.Mode = 'Sync';
 
 function E = setupskew(E,R)
