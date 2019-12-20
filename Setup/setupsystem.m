@@ -22,7 +22,7 @@ P.Rotor = setuprotors(P.Rotor);
 if ~isfield(P,'Bearing')
     P.Bearing = {};
 end
-P.Bearing = setupbearings(P.Bearing,P.Rotor,O);
+P.Bearing = setupbearings(P.Bearing,P.Rotor);
 
 if ~isfield(P,'Stator')
     P.Stator = {};
@@ -43,26 +43,8 @@ P = setupmesh(P);
 % Assemble the matrices for the rigid shaft model
 P = setupmodel(P,type);
 
-% Intial guess for x0
-if isfield(P.Model,'x0') && length(P.Model.x0) == P.Model.NDof
-    x0 = [P.Model.x0;
-          P.Mesh.xInt];
-else
-    x0 = [(P.Model.K+1E5*eye(P.Model.NDof))\P.Model.Fg;
-          zeros(P.Model.NDofInt,1)];
-end
-
 %% Now find equilibrium position & resetup
-x0 = rotor_equib(P,x0,O,A);
+P = rotor_equib(P,O,A);
 
-P.Model.x0   = x0(1:P.Model.NDof);
-P.Model.xInt = x0(P.Model.NDof+1:end);
-
-P.Mesh.x0   = P.Model.A * P.Model.x0;
-P.Mesh.xInt = P.Model.xInt;
-
-% Bearings - now setup the bearing stiffness matrices etc
-P.Rotor   = setuprotors(P.Rotor,P.Mesh.x0);
-P.Bearing = setupbearings(P.Bearing,P.Rotor,O,P.Mesh.x0);
-
-P = setuploads(P);
+%compute the loads at setup
+P = setuploadandstiffness(P,O,A);

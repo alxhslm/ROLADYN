@@ -1,13 +1,4 @@
-function [B,F,K,C,xInt] = setupREB(B,qi,qo,Oi,Oo)
-if nargin < 2
-    qi = zeros(4,1);
-    qo = zeros(4,1);
-end
-if nargin < 4
-    Oi = 0;
-    Oo = 0;
-end
-
+function [B,K,C] = setupREB(B)
 switch B.Setup.Type
     case 'radial'
         B.bActive = true(4,1);
@@ -112,41 +103,12 @@ B.Kinematics = setupKinematics(B.Geometry);
 B.Model         = setupModel(B.Model,B.Options);
 B.Model.NDofTot = B.Model.NDof * B.Elements.N;
 
-% B = setupRaceModel(B);
-% B = setupDynamicModel(B);
-
-%find stiffness/damping in equilibrium position
-psi = 0;%linspace(0,2*pi/B.Elements.N/B.Kinematics.rCagei,201);
-wons = 0*psi + 1;
-States.qi = qi*wons;
-States.qo = qo*wons;
-States.Oi = Oi*wons;
-States.Oo = Oo*wons;
-States.Ai = psi;
-States.Ao = 0*wons;
-States.bSolve = 1;
-[Forces,Channels,Stiffness] = REB_model(B, States);
-B.F0 = mean(Forces.F,2);
-B.K0 = mean(Stiffness.K,3);
-B.C0 = mean(Stiffness.C,3);
-B.Channels = Channels;
-
-B.Fi0 = mean(Forces.Fi,2);
-B.Fo0 = mean(Forces.Fo,2);
-B.qi0 = qi;
-B.qo0 = qo;
-B.x0 = mean(Forces.xInt,2);
-
 %assemble outputs
 B.KPar = kron([1 -1; -1 1], max(-1E20,min(B.Setup.KbParallel,1E20)));
-K = B.K0 + kron([1 -1; -1 1], B.Setup.KbParallel);
+K = kron([1 -1; -1 1], B.Setup.KbParallel);
 
 B.CPar = kron([1 -1; -1 1], max(-1E20,min(B.Setup.CbParallel,1E20)));
-C = B.C0 + kron([1 -1; -1 1], B.Setup.CbParallel);
-
-F = B.F0 + B.KPar*[qi; qo];
-
-xInt = B.x0;
+C = kron([1 -1; -1 1], B.Setup.CbParallel);
 
 function S = createArrangement(Arrangement,Geometry,S)
 S.alpha = Geometry.alpha0 + 0*S.psi;

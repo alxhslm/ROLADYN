@@ -1,9 +1,9 @@
 function bearing_states = getbearingstates(States,O,P,hbm)
 NPts = size(States.x,2);
 
-bearing_states.x     = P.Model.A*States.x(1:P.Model.NDof,:);
-bearing_states.xdot  = P.Model.A*States.xdot(1:P.Model.NDof,:);
-bearing_states.xddot = P.Model.A*States.xddot(1:P.Model.NDof,:);
+bearing_states.x     = P.Model.Bearing.S*States.x(1:P.Model.NDof,:);
+bearing_states.xdot  = P.Model.Bearing.S*States.xdot(1:P.Model.NDof,:);
+bearing_states.xddot = P.Model.Bearing.S*States.xddot(1:P.Model.NDof,:);
 
 xB     = States.x(P.Model.NDof+1:end,:);
 xdotB  = 0*xB;

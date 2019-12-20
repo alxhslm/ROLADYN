@@ -1,4 +1,4 @@
-function R = setuprotors(R,x0)
+function R = setuprotors(R)
 % Rotor mass and gyro matrices
 
 if ~iscell(R)
@@ -6,18 +6,13 @@ if ~iscell(R)
 end
 
 for i = 1:length(R)
-    if nargin > 1
-        x{i} = R{i}.S*x0;
-    else
-        x{i} = [];
-    end
     if ~isfield(R{i}, 'Name')
         R{i}.Name = sprintf('Rotor %d',i);
     end
-    R{i} = setup_each_rotor(R{i},x{i});
+    R{i} = setup_each_rotor(R{i});
 end
 
-function R = setup_each_rotor(R,x0)
+function R = setup_each_rotor(R)
 
 if ~isfield(R,'z')
     R.z = mean(R.Nodes);
@@ -49,7 +44,7 @@ mz = 0;
 R.NDof = length(R.Nodes)*4;
 
 %setup all of the shafts on the specified rotor
-R.Shaft = setupshafts(R.Shaft, R.Nodes, x0);
+R.Shaft = setupshafts(R.Shaft, R.Nodes);
 for i = 1:length(R.Shaft)
     m  = m  + R.Shaft{i}.Inertia.m;
     Ip = Ip + R.Shaft{i}.Inertia.Ip;
@@ -57,7 +52,7 @@ for i = 1:length(R.Shaft)
 end
 
 %and now the discs
-R.Disc = setupdiscs(R.Disc, R.Nodes, x0);
+R.Disc = setupdiscs(R.Disc,R.Nodes);
 for i = 1:length(R.Disc)
     m  = m  + R.Disc{i}.Inertia.m;
     Ip = Ip + R.Disc{i}.Inertia.Ip;

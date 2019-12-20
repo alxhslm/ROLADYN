@@ -21,10 +21,10 @@ problem.Ku = P.Model.Excite.K;
 problem.Cu = P.Model.Excite.C;
 problem.Mu = P.Model.Excite.M;
 
-problem.M  = P.Model.Rotor.M;
-problem.C  = P.Model.Rotor.C;
-problem.K  = P.Model.Rotor.K;
-problem.F0 = -P.Model.Fg + P.Model.Rotor.F0 - P.Model.Rotor.K*P.Model.x0;
+problem.M  =  P.Model.Rotor.M + P.Model.Stator.M;
+problem.C  =  P.Model.Rotor.C + P.Model.Stator.C;
+problem.K  =  P.Model.Rotor.K + P.Model.Stator.K;
+problem.F0 = -P.Model.Fg;
 
 problem.Ku = [problem.Ku; zeros(NDofInt,size(problem.Ku,2))];
 problem.Cu = [problem.Cu; zeros(NDofInt,size(problem.Cu,2))];

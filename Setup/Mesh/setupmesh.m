@@ -159,48 +159,42 @@ for i = 1:NBearings
 end
 NInternalTot = sum(NInternal(:));
 
-Kb = zeros(NDofTot);
-Cb = zeros(NDofTot);
-Fb = zeros(NDofTot,1);
+NInputBearing = 2*NDofe*NBearings;
+Kb = zeros(NInputBearing);
+Cb = zeros(NInputBearing);
 
-Kbf = zeros(2*NDofe*NBearings,NDofTot);
-Cbf = zeros(2*NDofe*NBearings,NDofTot);
-
-IMapForces = eye(2*NBearings*NDofe);
+IMapInput = eye(NInputBearing);
 IMapInternal = eye(NInternalTot);
 
+Sb = [];
 for i = 1:NBearings
     %work out mapping matrices
     for j = 1:2
         switch P.Bearing{i}.Node{j}.Type
             case 'ground'
-                Sb{j} = zeros(NDofe,NDofTot);
+                Sio{j} = zeros(NDofe,NDofTot);
             case 'rotor'
                 iNode = P.Bearing{i}.Node{j}.iNode;
-                Sb{j} = P.Rotor{P.Bearing{i}.Node{j}.iRotor}.S((iNode-1)*NDofe+(1:NDofe),:);
+                Sio{j} = P.Rotor{P.Bearing{i}.Node{j}.iRotor}.S((iNode-1)*NDofe+(1:NDofe),:);
             case 'stator'
-                Sb{j} = P.Stator{P.Bearing{i}.Node{j}.iStator}.S(1:NDofe,:);
+                Sio{j} = P.Stator{P.Bearing{i}.Node{j}.iStator}.S(1:NDofe,:);
         end
     end
     
-    P.Bearing{i}.So = Sb{1};
-    P.Bearing{i}.Si = Sb{2};
+    P.Bearing{i}.So = Sio{1};
+    P.Bearing{i}.Si = Sio{2};
     
-    P.Bearing{i}.Ui = IMapForces(P.Bearing{i}.iForcei,:);
-    P.Bearing{i}.Uo = IMapForces(P.Bearing{i}.iForceo,:);
+    P.Bearing{i}.Ui = IMapInput(P.Bearing{i}.iInputi,:);
+    P.Bearing{i}.Uo = IMapInput(P.Bearing{i}.iInputo,:);
     P.Bearing{i}.V  = IMapInternal(P.Bearing{i}.iInternal,:);
     
     %now compute the stiffness matrices
     P.Bearing{i}.S = [P.Bearing{i}.Si; P.Bearing{i}.So];
+    Sb = [Sb; P.Bearing{i}.S];
         
-    SBear = [P.Bearing{i}.Ri*P.Bearing{i}.Si; P.Bearing{i}.Ro*P.Bearing{i}.So];
-    Kb = Kb + SBear'*P.Bearing{i}.Kb*SBear;
-    Cb = Cb + SBear'*P.Bearing{i}.Cb*SBear;
-    Fb = Fb + P.Bearing{i}.S'*P.Bearing{i}.R'*P.Bearing{i}.Fb;
-
     UBear = [P.Bearing{i}.Ri*P.Bearing{i}.Ui; P.Bearing{i}.Ro*P.Bearing{i}.Uo];
-    Kbf = Kbf + UBear'*P.Bearing{i}.Kb*SBear;
-    Cbf = Cbf + UBear'*P.Bearing{i}.Cb*SBear;
+    Kb = Kb + UBear'*P.Bearing{i}.Kb*UBear;
+    Cb = Cb + UBear'*P.Bearing{i}.Cb*UBear;
     
     %and finally work out the boundary nodes of the rotors
     Rb = {P.Bearing{i}.Ro,P.Bearing{i}.Ri};
@@ -251,11 +245,12 @@ for i = 1:NBearings
     end
 end
 
-P.Mesh.Bearing.K = Kb;
-P.Mesh.Bearing.C = Cb;
+P.Mesh.Bearing.Kb = Kb;
+P.Mesh.Bearing.Cb = Cb;
 
-P.Mesh.Bearing.Kb = Kbf;
-P.Mesh.Bearing.Cb = Cbf;
+P.Mesh.Bearing.K = Sb'*Kb*Sb;
+P.Mesh.Bearing.C = Sb'*Cb*Sb;
+P.Mesh.Bearing.S = Sb;
 
 %% Excitations
 NExcInput = zeros(length(P.Excite),1);
@@ -313,7 +308,8 @@ P.Mesh.NDof = NDofTot;
 P.Mesh.NDofTot = NDofTot+NInternalTot;
 P.Mesh.Excite.NExcite = NExcInputTot;
 
-P.Mesh.Rotor.NDof = NDofRotor;
+P.Mesh.Rotor.NDof  = NDofRotor;
 P.Mesh.Stator.NDof = NDofStator;
 
 P.Mesh.Bearing.NDofInt = NInternalTot;
+P.Mesh.Bearing.NInput = NInputBearing;

@@ -1,22 +1,17 @@
-function S = setupshafts(S,N,x0)
+function S = setupshafts(S,N)
 if ~iscell(S)
     S = {S};
 end
 for i = 1:length(S)
-    if nargin > 2 && ~isempty(x0)
-        x{i} = S{i}.S*x0;
-    else
-        x{i} = [];
-    end
     if ~isfield(S{i}, 'Name')
         S{i}.Name = sprintf('Shaft %d',i);
     end
-    S{i} = setup_each_shaft(S{i},N,x{i});
+    S{i} = setup_each_shaft(S{i},N);
     S{i}.iLocal = ((S{i}.iNodes(:)-1)*4 + (1:4))';
     S{i}.iLocal = S{i}.iLocal(:);
 end
 
-function S = setup_each_shaft(S,N,x0)
+function S = setup_each_shaft(S,N)
 if ~isfield(S, 'Name')
     S.Name = sprintf('Shaft %d',ind);
 end
@@ -77,12 +72,6 @@ for k = 1:(S.Mesh.Nz-1)
     
     S.Element{k}.R = RShaft;
     S.Element{k}.S = [S.Mesh.SNode{k}; S.Mesh.SNode{k+1}];
-    
-    if ~isempty(x0)
-        S.Element{k}.F0 = S.Element{k}.K*S.Element{k}.R*S.Element{k}.S*x0;
-    else
-        S.Element{k}.F0 = zeros(8,1);
-    end
 end
 
 %% Totals

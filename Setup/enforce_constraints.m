@@ -21,8 +21,7 @@ T.Stator.Fg = A'*S.Stator.Fg;
 
 T.Bearing.K = A'*S.Bearing.K*A;
 T.Bearing.C = A'*S.Bearing.C*A;
-T.Bearing.Kb = S.Bearing.Kb*A;
-T.Bearing.Cb = S.Bearing.Cb*A;
+T.Bearing.S = S.Bearing.S*A;
 T.Bearing.NDofInt = S.Bearing.NDofInt;
 
 %and finally the excitation matrices

@@ -1,24 +1,19 @@
-function D = setupdiscs(D,N,x0)
+function D = setupdiscs(D,N)
 if ~iscell(D)
     D = {D};
 end
 
 iDofCount = length(N)*4;
 for i = 1:length(D)
-    if  nargin > 2 && ~isempty(x0)
-        x{i} = D{i}.S*x0;
-    else
-        x{i} = [];
-    end
     if ~isfield(D{i}, 'Name')
         D{i}.Name = sprintf('Disc %d',i);
     end
-    D{i} = setup_each_disc(D{i},N,x{i});
+    D{i} = setup_each_disc(D{i},N);
     D{i}.iLocal = [(D{i}.iNode-1)*4 + (1:4) iDofCount + (1:D{i}.NDof)];
     iDofCount = iDofCount + D{i}.NDof;
 end
 
-function D = setup_each_disc(D,N,x0)
+function D = setup_each_disc(D,N)
 
 if ~isfield(D,'iNode')
     error('Missing field "iNode" from disc "%s"',D.Name);
@@ -96,13 +91,6 @@ D.Root.C = [diag(D.Root.Crr*[1 1])   D.Root.Crt*eye(2);
          
 ii = isinf(D.Root.C); D.Root.C(ii) = 0;
 % D.Root.C = max(min(D.Root.C,1E20),-1E20);
-
-if ~isempty(x0)
-    D.Root.F0 = D.Root.K*(D.Hub.S-D.Root.S)*x0;
-else
-    D.Root.F0 = zeros(4,1);
-end
-
 
 %% Totals
 D.Inertia.m  = D.Hub.m  + sum(D.Ring.Inertia.m);

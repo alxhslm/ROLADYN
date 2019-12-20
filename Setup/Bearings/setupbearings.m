@@ -1,26 +1,15 @@
-function B = setupbearings(B,R,O,x0)
+function B = setupbearings(B,R)
 if ~iscell(B)
     B = {B};
 end
-if nargin > 3
-    for i = 1:length(B)
-        qi{i} = B{i}.Ri * B{i}.Si * x0;
-        qo{i} = B{i}.Ro * B{i}.So * x0;
-    end
-else
-    for i = 1:length(B)
-        qi{i} = zeros(4,1);
-        qo{i} = zeros(4,1);
-    end
-end
 
-iForceCount = 0;
+iInputCount = 0;
 iInternalCount = 0;
 for i = 1:length(B)
-    B{i} = setup_each_bearing(B{i},i,qi{i},qo{i},R,O);
-    B{i}.iForceo = iForceCount + (1:4);
-    B{i}.iForcei = iForceCount + (5:8);
-    iForceCount = iForceCount + 8;
+    B{i} = setup_each_bearing(B{i},i,R);
+    B{i}.iInputo = iInputCount + (1:4);
+    B{i}.iInputi = iInputCount + (5:8);
+    iInputCount = iInputCount + 8;
     
 
     B{i}.iInternal = iInternalCount + (1:B{i}.NDofInt);
@@ -46,7 +35,7 @@ for j = 1:length(Node)
     
 end
 
-function B = setup_each_bearing(B,ind,xi,xo,R,O)
+function B = setup_each_bearing(B,ind,R)
 if ~isfield(B, 'Name')
     B.Name = sprintf('Bearing %d',ind);
 end
@@ -57,8 +46,6 @@ if ~isfield(B,'Node')
 end
 
 B.Node = setupnodes(B.Node,R);
-Oo = B.Node{1}.Speed*O;
-Oi = B.Node{2}.Speed*O;
 
 %no damping as default
 damping_fields = {'cxx','cxy','cyy'};
@@ -106,7 +93,7 @@ RBear(4,:) = -RBear(4,:);
 
 switch B.Model
     case 'REB'
-        [B.Params,B.Fb,B.Kb,B.Cb,B.xInt] = setupREB(B.Params,xi+B.ui,xo+B.uo,Oi,Oo); 
+        [B.Params,B.Kb,B.Cb] = setupREB(B.Params); 
         B.NDofInt = B.Params.Model.NDofTot;       
         B.bActive = B.Params.bActive;       
 
@@ -118,7 +105,7 @@ switch B.Model
         B.Cxy = B.Cb(1:2,3:4);
         B.Cyy = B.Cb(3:4,3:4);
     case 'radial'
-        [B.Params,B.Fb,B.Kb,B.Cb,B.xInt] = setupRadial(B.Params,xi+B.ui,xo+B.uo,Oi,Oo); 
+        [B.Params,B.Kb,B.Cb] = setupRadial(B.Params); 
         B.NDofInt = 0;
         B.bActive = B.Params.bActive;   
 
@@ -130,7 +117,7 @@ switch B.Model
         B.Cxy = B.Cb(1:2,3:4);
         B.Cyy = B.Cb(3:4,3:4);
     case 'SFD'
-        [B.Params,B.Fb,B.Kb,B.Cb,B.xInt] = setupSFD(B.Params,xi+B.ui,xo+B.uo,Oi,Oo);
+       [B.Params,B.Kb,B.Cb] = setupSFD(B.Params);
         B.NDofInt = 0;
         B.bActive = true(4,1);
 
@@ -170,11 +157,6 @@ switch B.Model
                    B.Cxy B.Cyy];
 
         B.Cb = kron([1 -1; -1 1],B.Cb);
-
-        Kb = max(-1E20,min(B.Kb,1E20));
-        B.Fb = Kb*[xi+B.ui;xo+B.uo];
-
-        B.xInt = [];
 end
 
 B.Ri = RBear;
@@ -191,5 +173,3 @@ B.R  = blkdiag(RBear,RBear);
 
 ii = isinf(B.Kb); B.Kb(ii) = 100;
 ii = isinf(B.Cb); B.Cb(ii) = 100;
-%         B.Kb  = max(min(B.Kb,1E20),-1E20);
-%         B.Cb  = max(min(B.Cb,1E20),-1E20);

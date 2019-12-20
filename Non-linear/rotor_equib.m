@@ -1,18 +1,18 @@
-function x = rotor_equib(P,x0,O,A)
-if nargin < 3 || isempty(O)
+function P = rotor_equib(P,O,A)
+if nargin < 2 || isempty(O)
     O = 0;
 end
-if nargin < 4 || isempty(A)
+if nargin < 3 || isempty(A)
     A = linspace(0,2*pi,100);
 end
 N = length(A);
 
-if nargin < 2 || isempty(x0)
+if isfield(P.Mesh,'x0') && length(P.Model.x0) == P.Model.NDof
+    x0 = [P.Mesh.x0;
+          repmat(P.Mesh.xInt,N,1)];
+else
     x0 = [rand(P.Model.NDof,1)*1E-2;
           rand(P.Model.NDofInt*N,1)*1E-6];
-else
-    x0 = [x0(1:P.Model.NDof);
-           repmat(x0(P.Model.NDof+1:end),N,1)];
 end
 
 Jb = get_sparsity(P.Bearing);
@@ -32,16 +32,41 @@ iter = 0;
 bSuccess = 0;
 while ~bSuccess && iter < 20
     [x,info] = fipopt([],x0,@rotor_equilibrium,options,P,O,A);
-    % constr = rotor_equilibrium(x,P,O,A);
     bSuccess = any(info.status == [0 1]);
     x0 = x;
     iter = iter + 1;
 end
 
-J = full(rotor_equilibrium_jacob(x,P,O,A));
 [xCG,xInt] = unpack_vector(x,P,N);
-x = [xCG; 
-    mean(xInt,2)];
+
+P.Model.x0   = xCG;
+P.Model.xInt = mean(xInt,2);
+
+P.Mesh.x0   = P.Model.A * P.Model.x0;
+P.Mesh.xInt = P.Model.xInt;
+
+wons = (0*A+1);
+States.O = O*wons; 
+States.A = A;
+States.x = (P.Model.Bearing.S*xCG)*wons;
+States.xInt = xInt;
+States.bSolve = 0;
+
+[Forces, Stiffness] = bearingforces(P,States);
+
+P.Model.Rotor.F0    = P.Model.Rotor.K*P.Model.x0;
+P.Model.Stator.F0   = P.Model.Stator.K*P.Model.x0;
+P.Model.Bearing.F0  = P.Model.Bearing.S'*mean(Forces.F,2);
+P.Model.Bearing.K   = P.Model.Bearing.S'*mean(Stiffness.Kqq,3)*P.Model.Bearing.S;
+P.Model.K           = P.Model.Rotor.K + P.Model.Stator.K + P.Model.Bearing.K;
+
+P.Mesh.Rotor.F0    = P.Mesh.Rotor.K*P.Mesh.x0;
+P.Mesh.Stator.F0   = P.Mesh.Stator.K*P.Mesh.x0;
+P.Mesh.Bearing.F0  = P.Mesh.Bearing.S'*mean(Forces.F,2);
+P.Mesh.Bearing.Fb  = mean(Forces.F,2);
+P.Mesh.Bearing.K   = P.Mesh.Bearing.S'*mean(Stiffness.Kqq,3)*P.Mesh.Bearing.S;
+P.Mesh.Bearing.Kb  = mean(Stiffness.Kqq,3);
+P.Mesh.K           = P.Mesh.Rotor.K + P.Mesh.Stator.K + P.Mesh.Bearing.K;
 
 if ~bSuccess
     error('Failed to find equilibirum position')
@@ -59,56 +84,39 @@ N = length(A);
      
 States.O = O*wons; 
 States.A = A;
-States.x = (P.Model.A*xCG)*wons;
+States.x = (P.Model.Bearing.S*xCG)*wons;
 States.xInt = xInt;
 States.bSolve = 0;
 
 Forces = bearingforces(P,States);
 
-Fr  = P.Model.Rotor.K*xCG;
+Fr  = (P.Model.Rotor.K+P.Model.Stator.K)*xCG;
 Fg  = P.Model.Fg;
-Fb  = P.Model.A'*Forces.F;
+Fb  = P.Model.Bearing.S'*Forces.F;
 
 constr = [Fg - Fr - mean(Fb,2); Forces.FInt(:)];
 
-if any(isnan(constr))
-    1
-end
-
 function J = rotor_equilibrium_jacob(x,P,O,A)
-if 1
-    N = length(A);
-    wons = (0*A+1);
+N = length(A);
+wons = (0*A+1);
 
-    [xCG,xInt] = unpack_vector(x,P,N);
+[xCG,xInt] = unpack_vector(x,P,N);
 
-    States.O = O*wons; 
-    States.A = A;               
-    States.x = (P.Model.A*xCG)*wons;
-    States.xInt = xInt;
-    States.bSolve = 0;
+States.O = O*wons; 
+States.A = A;               
+States.x = (P.Model.Bearing.S*xCG)*wons;
+States.xInt = xInt;
+States.bSolve = 0;
 
-    [Forces, Stiffness] = bearingforces(P,States);
+[Forces, Stiffness] = bearingforces(P,States);
 
-    Fr  = P.Model.Rotor.K*xCG*wons;
-    Fg  = P.Model.Fg*wons;
-    Fb  = P.Model.A'*Forces.F;
+Jqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Kqq,P.Model.Bearing.S));
+Jqx =  mtimesx(P.Model.Bearing.S',Stiffness.Kqx);
+Jxq =  mtimesx(Stiffness.Kxq,P.Model.Bearing.S);
+Jxx =  Stiffness.Kxx;
 
-    Jqq =  mtimesx(P.Model.A',mtimesx(Stiffness.Kqq,P.Model.A));
-    Jqx =  mtimesx(P.Model.A',Stiffness.Kqx);
-    Jxq =  mtimesx(Stiffness.Kxq,P.Model.A);
-    Jxx =  Stiffness.Kxx;
-
-    J = [-P.Model.Rotor.K-mean(Jqq,3) -catmat(Jqx,2)/N;
-               catmat(Jxq,1)   blkmat(Jxx)];
-
-else
-    J = jacobian(@rotor_equilibrium,x,P,O,A);
-end
-
-if any(isnan(J))
-    1
-end
+J = [-P.Model.Rotor.K-mean(Jqq,3) -catmat(Jqx,2)/N;
+           catmat(Jxq,1)   blkmat(Jxx)];
 
 J = sparse(J);
 
