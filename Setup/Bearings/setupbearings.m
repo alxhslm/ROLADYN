@@ -159,9 +159,13 @@ switch B.Model
         B.Cb = kron([1 -1; -1 1],B.Cb);
 end
 
-B.Ri = RBear;
-B.Ro = RBear;
-B.R  = blkdiag(RBear,RBear);
+R_fields = {'Ri','Ro'};
+for i = 1:2
+    if ~isfield(B,R_fields{i})
+        B.(R_fields{i}) = RBear;
+    end
+end
+B.R = blkdiag(RBear,RBear);
 
 %We can't have infs in the final bearing stiffness matrix as this breaks
 %the FE setup code, so we set these terms to a small value. It must be 
