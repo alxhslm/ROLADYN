@@ -78,10 +78,10 @@ end
 defaultable_fields = {'Amplitude', 'Phase'};
 for j = 1:length(defaultable_fields)
     if ~isfield(E,defaultable_fields{j})
-        E.(defaultable_fields{j}) = zeros(4,1);
+        E.(defaultable_fields{j}) = zeros(2,1);
     end
 end
 
-E.NInput = 4;
-E.K = eye(4);
+E.NInput = 2;
+E.K = eye(2);
 E.u = E.Amplitude.*exp(1i*E.Phase);

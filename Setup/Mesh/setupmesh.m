@@ -283,7 +283,7 @@ for i = 1:length(P.Excite)
             Me = Me + Sd'*P.Excite{i}.M*Se;
         case 'shaker'
             iStator = P.Excite{i}.iStator;
-            Ss = P.Stator{iStator}.U;
+            Ss = P.Stator{iStator}.S(1:2,:);
             Ke = Ke + Ss'*P.Excite{iStator}.K*Se;
     end
     P.Excite{i}.S = Se;
