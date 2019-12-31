@@ -1,26 +1,29 @@
 function [F,V,S] = radial_model(B, States) 
 xBearing = States.qi - States.qo;
 dxBearing = States.qidot - States.qodot;
+ddxBearing = States.qiddot - States.qoddot;
+
 
 x = xBearing([1 3],:);
 xdot = dxBearing([1 3],:);
+xddot = ddxBearing([1 3],:);
 
 r = sqrt(sum(x.^2));
 n = x ./ (repmat(r,2,1) + eps);
 t = [n(2,:); -n(1,:)];
 
 rdot = xdot .* n;
+rddot = xddot .* n;
 
 fel = getforces(B,r);
 fdamp = B.C * rdot;
+finer = B.M * rddot;
 
 NPts = size(States.qi,2);
 fb = zeros(4,NPts);
-fb([1 3],:) = (fel + fdamp).*n;
+fb([1 3],:) = (fel + fdamp + finer).*n;
 
-F.Fi =  fb;
-F.Fo = -fb;
-F.F = [F.Fi; F.Fo];
+F.F = [fb; -fb];
 F.FInt     = zeros(0,NPts);
 F.xInt     = zeros(0,NPts);
 F.xdotInt  = zeros(0,NPts);
@@ -39,6 +42,9 @@ if nargout > 2
 
     Crot = zeros(2,2,NPts);
     Crot(1,1,:) = B.C;
+    
+    Mrot = zeros(2,2,NPts);
+    Mrot(1,1,:) = B.M;
 
     R(:,1,:) = permute(n,[1 3 2]);
     R(:,2,:) = permute(t,[1 3 2]);
@@ -49,33 +55,21 @@ if nargout > 2
 
     Cb = zeros(4,4,size(xBearing,2));
     Cb([1 3],[1 3],:) = mtimesx(Rt,mtimesx(Crot,R));
-
-    % h = 1E-9;
-    % Kb = zeros(4,4,NPts);
-    % for i = [1 3]
-    %     States.qi(i,:) = States.qi(i,:) + h;
-    %     Forces = radial_model(B, States); 
-    %     Kb(:,i,:) = permute(Forces.Fi - fb,[1 3 2])/h;
-    %     States.qi(i,:) = States.qi(i,:) - h;
-    % end
     
-    % Cb = zeros(4,4,NPts);
-    % for i = [1 3]
-    %     States.qidot(i,:) = States.qidot(i,:) + h;
-    %     Forces = radial_model(B, States); 
-    %     Cb(:,i,:) = permute(Forces.Fi - fb,[1 3 2])/h;
-    %     States.qidot(i,:) = States.qidot(i,:) - h;
-    % end
-    
+    Mb = zeros(4,4,size(xBearing,2));
+    Mb([1 3],[1 3],:) = mtimesx(Rt,mtimesx(Mrot,R));
     
     K = [Kb -Kb; -Kb Kb];
     C = [Cb -Cb; -Cb Cb];
+    M = [Mb -Mb; -Mb Mb];
         
     S.K = K;
     S.C = C;
+    S.M = M;
 
     S.Kqq = K;
     S.Cqq = C; 
+    S.Mqq = M;
     
     S.Kqx = zeros(8,0,NPts);
     S.Kxq = zeros(0,8,NPts);
@@ -84,8 +78,11 @@ if nargout > 2
     S.Cqx = zeros(8,0,NPts);
     S.Cxq = zeros(0,8,NPts);
     S.Cxx = zeros(0,0,NPts);
+    
+    S.Mqx = zeros(8,0,NPts);
+    S.Mxq = zeros(0,8,NPts);
+    S.Mxx = zeros(0,0,NPts);
 end
-
 
 function [fel,Kr] = getforces(B,r)
 fel = B.K * max(r-B.c,0).^B.n;

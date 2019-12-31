@@ -1,4 +1,4 @@
-function [D,K,C] = setupSFD(D)
+function [D,K,C,M] = setupSFD(D)
 if ~isfield(D,'Nt')
     D.Nt = 11; 
 end
@@ -21,3 +21,4 @@ D.fun = str2func(['SFD_', D.Model]);
 D.KSq = max(-1E20,min(D.KbSquirrel,1E20));
 K = D.K0 + D.KbSquirrel;
 C = D.C0;
+M = D.M0;

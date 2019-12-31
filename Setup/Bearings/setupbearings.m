@@ -55,6 +55,14 @@ for i = 1:length(damping_fields)
     end
 end
 
+%or inertia
+inertia_fields = {'mxx','mxy','myy'};
+for i = 1:length(inertia_fields)
+    if ~isfield(B,inertia_fields{i})
+        B.(inertia_fields{i}) = 0;
+    end
+end
+
 %default to linear bearing model
 if ~isfield(B,'Model')
     B.Model = 'linear';
@@ -71,8 +79,8 @@ end
 
 %convert any linear stiffness properties (kxx) into stiffness matrices (Kxx)
 dof = {'xx','xy','yy'};
-mat = {'K','C'};
-for iMat = 1:2
+mat = {'K','C','M'};
+for iMat = 1:3
     for iDof = 1:3
         if ~isfield(B,[mat{iMat} dof{iDof}]) && isfield(B,[lower(mat{iMat}) dof{iDof}])
             B.([mat{iMat} dof{iDof}]) = diag([B.([lower(mat{iMat}) dof{iDof}]) 0]);
@@ -93,7 +101,7 @@ RBear(4,:) = -RBear(4,:);
 
 switch B.Model
     case 'REB'
-        [B.Params,B.Kb,B.Cb] = setupREB(B.Params); 
+        [B.Params,B.Kb,B.Cb,B.Mb] = setupREB(B.Params); 
         B.NDofInt = B.Params.Model.NDofTot;       
         B.bActive = B.Params.bActive;       
 
@@ -104,8 +112,12 @@ switch B.Model
         B.Cxx = B.Cb(1:2,1:2);
         B.Cxy = B.Cb(1:2,3:4);
         B.Cyy = B.Cb(3:4,3:4);
+        
+        B.Mxx = B.Mb(1:2,1:2);
+        B.Mxy = B.Mb(1:2,3:4);
+        B.Myy = B.Mb(3:4,3:4);
     case 'radial'
-        [B.Params,B.Kb,B.Cb] = setupRadial(B.Params); 
+        [B.Params,B.Kb,B.Cb,B.Mb] = setupRadial(B.Params); 
         B.NDofInt = 0;
         B.bActive = B.Params.bActive;   
 
@@ -116,8 +128,12 @@ switch B.Model
         B.Cxx = B.Cb(1:2,1:2);
         B.Cxy = B.Cb(1:2,3:4);
         B.Cyy = B.Cb(3:4,3:4);
+        
+        B.Mxx = B.Mb(1:2,1:2);
+        B.Mxy = B.Mb(1:2,3:4);
+        B.Myy = B.Mb(3:4,3:4);
     case 'SFD'
-       [B.Params,B.Kb,B.Cb] = setupSFD(B.Params);
+        [B.Params,B.Kb,B.Cb,B.Mb] = setupSFD(B.Params);
         B.NDofInt = 0;
         B.bActive = true(4,1);
 
@@ -128,6 +144,26 @@ switch B.Model
         B.Cxx = B.Cb(1:2,1:2);
         B.Cxy = B.Cb(1:2,3:4);
         B.Cyy = B.Cb(3:4,3:4);
+        
+        B.Mxx = B.Mb(1:2,1:2);
+        B.Mxy = B.Mb(1:2,3:4);
+        B.Myy = B.Mb(3:4,3:4);
+    case 'piezo'
+        [B.Params,B.Kb,B.Cb,B.Mb] = setupPiezo(B.Params);
+        B.NDofInt = B.Params.NDofTot;        
+        B.bActive = [true;false;false;false];       
+
+        B.Kxx = B.Kb(1:2,1:2);
+        B.Kxy = B.Kb(1:2,3:4);
+        B.Kyy = B.Kb(3:4,3:4);
+
+        B.Cxx = B.Cb(1:2,1:2);
+        B.Cxy = B.Cb(1:2,3:4);
+        B.Cyy = B.Cb(3:4,3:4);
+        
+        B.Mxx = B.Mb(1:2,1:2);
+        B.Mxy = B.Mb(1:2,3:4);
+        B.Myy = B.Mb(3:4,3:4);
     otherwise
         %throw error if we don't have stiffess
         params_required = {'Kxx','Kyy','Cxx','Cyy'};
@@ -154,9 +190,14 @@ switch B.Model
         B.Kb = kron([1 -1; -1 1],B.Kb);
 
         B.Cb = [B.Cxx B.Cxy;
-                   B.Cxy B.Cyy];
+                B.Cxy B.Cyy];
 
         B.Cb = kron([1 -1; -1 1],B.Cb);
+        
+        B.Mb = [B.Mxx B.Mxy;
+                B.Mxy B.Myy];
+
+        B.Mb = kron([1 -1; -1 1],B.Mb);
 end
 
 R_fields = {'Ri','Ro'};

@@ -39,17 +39,15 @@ if States.bSolve
 end
 
 if nargout<3
-    [Forces,Channels] = feval(model,Params,States);
+    [Forces,Channels] = feval(model,Params,States);  
+    Forces.F  = [R'*Forces.Fi;
+                 R'*Forces.Fo];
 else
     [Forces,Channels,Stiffness] = stiffnessAndDamping(model,Params,States,R);
 end
-Forces.Fi = R'*Forces.Fi;
-Forces.Fo = R'*Forces.Fo;
-Forces.F  = [Forces.Fi;
-             Forces.Fo];
              
-Forces.xInt = States.xInt;
-Forces.xdotInt = States.xdotInt;
+Forces.xInt     = States.xInt;
+Forces.xdotInt  = States.xdotInt;
 Forces.xddotInt = States.xddotInt;
 
 Forces.q = R'*(States.qi - States.qo);
@@ -346,11 +344,6 @@ else
     S.K = S.Kqq;
 end
 
-S.Kii = S.K(1:N,1:N,:);
-S.Kio = S.K(1:N,N+(1:N),:);
-S.Koi = S.K(N+(1:N),1:N,:);
-S.Koo = S.K(N+(1:N),N+(1:N),:);
-
 S.Cqq = [S.Cqiqi S.Cqiqo; 
          S.Cqoqi S.Cqoqo];
 S.Cqx = [S.Cqix; 
@@ -365,10 +358,14 @@ else
     S.C = S.Cqq;
 end
 
-S.Cii = S.C(1:N,1:N,:);
-S.Cio = S.C(1:N,N+(1:N),:);
-S.Coi = S.C(N+(1:N),1:N,:);
-S.Coo = S.C(N+(1:N),N+(1:N),:);
+S.M = 0*S.C;
+S.Mqq = 0*S.Cqq;
+S.Mqx = 0*S.Cqx;
+S.Mxq = 0*S.Cxq;
+S.Mxx = 0*S.Cxx;
+
+F.F  = [R'*Forces.Fi;
+        R'*Forces.Fo];
 
 function J = myinv(M)
 if size(M,1) == 1

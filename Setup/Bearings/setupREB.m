@@ -1,4 +1,4 @@
-function [B,K,C] = setupREB(B)
+function [B,K,C,M] = setupREB(B)
 switch B.Setup.Type
     case 'radial'
         B.bActive = true(4,1);
@@ -109,6 +109,8 @@ K = kron([1 -1; -1 1], B.Setup.KbParallel);
 
 B.CPar = kron([1 -1; -1 1], max(-1E20,min(B.Setup.CbParallel,1E20)));
 C = kron([1 -1; -1 1], B.Setup.CbParallel);
+
+M = 0*C;
 
 function S = createArrangement(Arrangement,Geometry,S)
 S.alpha = Geometry.alpha0 + 0*S.psi;

@@ -58,6 +58,12 @@ for i = 1:length(P.Bearing)
             else
                 ForcesB = linear_model(P.Bearing{i},StatesB);
             end
+        case 'piezo'
+            if nargout > 1
+                [ForcesB,~,StiffnessB] = piezo_model(P.Bearing{i}.Params,StatesB);
+            else
+                ForcesB = piezo_model(P.Bearing{i}.Params,StatesB);
+            end
         otherwise
             if nargout > 1
                 [ForcesB,~,StiffnessB] = empty_model(StatesB);
@@ -91,6 +97,11 @@ for i = 1:length(P.Bearing)
         Stiffness.Cqx = Stiffness.Cqx + mtimesx(R',mtimesx(StiffnessB.Cqx,P.Bearing{i}.V));
         Stiffness.Cxq = Stiffness.Cxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Cxq,R));
         Stiffness.Cxx = Stiffness.Cxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Cxx,P.Bearing{i}.V));
+        
+        Stiffness.Mqq = Stiffness.Mqq + mtimesx(R',mtimesx(StiffnessB.Mqq,R));
+        Stiffness.Mqx = Stiffness.Mqx + mtimesx(R',mtimesx(StiffnessB.Mqx,P.Bearing{i}.V));
+        Stiffness.Mxq = Stiffness.Mxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Mxq,R));
+        Stiffness.Mxx = Stiffness.Mxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Mxx,P.Bearing{i}.V));
     end
 end
 
@@ -145,6 +156,13 @@ Stiffness.Cqq = zeros(NBearingDof,NBearingDof,NPts);
 Stiffness.Cqx = zeros(NBearingDof,P.Mesh.NDofInt,NPts);
 Stiffness.Cxq = zeros(P.Mesh.NDofInt,NBearingDof,NPts);
 Stiffness.Cxx = zeros(P.Mesh.NDofInt,P.Mesh.NDofInt,NPts);
+
+Stiffness.M = zeros(NBearingDof,NBearingDof,NPts);
+
+Stiffness.Mqq = zeros(NBearingDof,NBearingDof,NPts);
+Stiffness.Mqx = zeros(NBearingDof,P.Mesh.NDofInt,NPts);
+Stiffness.Mxq = zeros(P.Mesh.NDofInt,NBearingDof,NPts);
+Stiffness.Mxx = zeros(P.Mesh.NDofInt,P.Mesh.NDofInt,NPts);
 
 function States = default_speeds(States,NPts)
 fields = {'O','A'};
