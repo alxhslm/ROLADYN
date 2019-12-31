@@ -81,7 +81,7 @@ for i = 1:length(B)
     else
         %othwerise need all the internal states
         iInt = [iInt; iDofIn+(1:B{i}.NDofInt)];
-        iSum = [iSum; num2cell(iDofIn+(1:B{i}.NDofInt))];
+        iSum = [iSum; num2cell(iDofIn+(1:B{i}.NDofInt)')];
         iDofIn  = iDofIn  + B{i}.NDofInt;
         Sparsity{i} = ones(B{i}.NDofInt);
     end

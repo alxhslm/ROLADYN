@@ -24,7 +24,7 @@ options.ftol = 1E-8;
 options.xtol = 1E-12;
 options.jacobian = @rotor_equilibrium_jacob;
 options.jacobianstructure = Jstr;
-options.print_level = 0;
+options.print_level = 5;
 
 info.status = 2;
 
@@ -69,7 +69,7 @@ P.Mesh.Bearing.Kb  = mean(Stiffness.Kqq,3);
 P.Mesh.K           = P.Mesh.Rotor.K + P.Mesh.Stator.K + P.Mesh.Bearing.K;
 
 if ~bSuccess
-    error('Failed to find equilibirum position')
+    error('Failed to find equilibrium position')
 end
 
 function [xCG,xInt] = unpack_vector(x,P,N)
@@ -115,8 +115,9 @@ Jqx =  mtimesx(P.Model.Bearing.S',Stiffness.Kqx);
 Jxq =  mtimesx(Stiffness.Kxq,P.Model.Bearing.S);
 Jxx =  Stiffness.Kxx;
 
-J = [-P.Model.Rotor.K-mean(Jqq,3) -catmat(Jqx,2)/N;
-           catmat(Jxq,1)   blkmat(Jxx)];
+Klin = P.Model.Rotor.K+P.Model.Stator.K;
+J = [-Klin-mean(Jqq,3) -catmat(Jqx,2)/N;
+        catmat(Jxq,1)    blkmat(Jxx)];
 
 J = sparse(J);
 

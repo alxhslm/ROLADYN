@@ -136,7 +136,7 @@ for i = 1:NStator
     Ss  = IMapGlobal(P.Stator{i}.iGlobal,:);
     P.Stator{i}.S = Ss;
     
-    P.Stator{i}.Fg = P.Stator{i}.M(1:NDofe,1:NDofe)*[P.g;0;0];
+    P.Stator{i}.Fg = P.Stator{i}.M*[P.g;zeros(P.Stator{i}.NDof-2,1)];
        
     Ms  = Ms  + P.Stator{i}.S'*P.Stator{i}.M*P.Stator{i}.S;
     Cs  = Cs  + P.Stator{i}.S'*P.Stator{i}.C*P.Stator{i}.S;
