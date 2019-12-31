@@ -71,7 +71,7 @@ function E = setupshaker(E)
 essential_fields = {'iStator','Mode'};
 for j = 1:length(essential_fields)
     if ~isfield(E,essential_fields{j})
-        error(['Missing field ' essential_fields{j} ' in P.Excite'])
+        error(['Missing field "' essential_fields{j} '" in P.Excite'])
     end
 end
 
@@ -82,6 +82,15 @@ for j = 1:length(defaultable_fields)
     end
 end
 
+fields = {'K','C','M'};
+if ~any(isfield(E,fields))
+    error('Need either "K","C" or "M"" in P.Excite for shake excitation')
+end
+for i = 1:length(fields)
+    if ~isfield(E,fields{i})
+        E.(fields{i}) = zeros(2);
+    end
+end
+
 E.NInput = 2;
-E.K = eye(2);
 E.u = E.Amplitude.*exp(1i*E.Phase);

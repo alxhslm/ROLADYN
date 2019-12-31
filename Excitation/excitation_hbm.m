@@ -1,5 +1,5 @@
 function U = excitation_hbm(P)
-U = cell(1,2);
+U = repmat({zeros(P.Model.Excite.NExcite,1)},1,2);
 
 for i = 1:length(P.Excite)
      if strcmpi(P.Excite{i}.Mode, 'Sync')
@@ -10,7 +10,7 @@ for i = 1:length(P.Excite)
          error('Unknown excitation frequency type');
      end
         
-     U{iFreq} = [U{iFreq}; P.Excite{i}.u(:)];
+     U{iFreq} = U{iFreq} + P.Excite{i}.S'*P.Excite{i}.u;
 end
 
 if isempty(U{2})
