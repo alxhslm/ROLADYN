@@ -264,11 +264,12 @@ IMapExcite = eye(NExcInputTot);
 Me = zeros(NDofTot,NExcInputTot);
 Ce = zeros(NDofTot,NExcInputTot);
 Ke = zeros(NDofTot,NExcInputTot);
-ue = zeros(NExcInputTot,1);
+usync = zeros(NExcInputTot,1);
+uasync = zeros(NExcInputTot,1);
 
 for i = 1:length(P.Excite)
     Se = IMapExcite(P.Excite{i}.iExcite,:);
-    ue = ue + Se'*P.Excite{i}.u;
+    P.Excite{i}.S = Se;
 
     switch P.Excite{i}.Name
         case 'unbalance'
@@ -285,14 +286,25 @@ for i = 1:length(P.Excite)
             iStator = P.Excite{i}.iStator;
             Ss = P.Stator{iStator}.S(1:2,:);
             Ke = Ke + Ss'*P.Excite{iStator}.K*Se;
+            Ce = Ce + Ss'*P.Excite{iStator}.C*Se;
+            Me = Me + Ss'*P.Excite{iStator}.M*Se;
     end
-    P.Excite{i}.S = Se;
+    
+    switch P.Excite{i}.Mode
+        case 'sync'
+           usync = usync + Se'*P.Excite{i}.u;
+        case 'async'
+           uasync = uasync + Se'*P.Excite{i}.u;
+        otherwise
+            error('Unknown excitation mode "%s"',P.Excite{i}.Mode)
+    end
 end
 
 P.Mesh.Excite.K = Ke;
 P.Mesh.Excite.C = Ce;
 P.Mesh.Excite.M = Me;
-P.Mesh.Excite.u = ue;
+P.Mesh.Excite.uSync  = usync;
+P.Mesh.Excite.uAsync = uasync;
 
 %% Combined
 P.Mesh.M  = P.Mesh.Rotor.M + P.Mesh.Stator.M;

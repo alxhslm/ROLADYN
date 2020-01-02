@@ -28,7 +28,8 @@ T.Bearing.NDofInt = S.Bearing.NDofInt;
 T.Excite.K = A'*S.Excite.K;
 T.Excite.C = A'*S.Excite.C;
 T.Excite.M = A'*S.Excite.M;
-T.Excite.u = S.Excite.u;
+T.Excite.uSync = S.Excite.uSync;
+T.Excite.uAsync = S.Excite.uAsync;
 T.Excite.NExcite = S.Excite.NExcite;
 
 %some useful numbers

@@ -45,7 +45,9 @@ end
 E.NInput = 2;
 E.M = eye(2);
 E.u = E.m * E.r.*exp(1i*(E.Angle + [0; -pi/2*sign(R{E.iRotor}.Speed)]));
-E.Mode = 'Sync';
+if ~isfield(E,'Mode')
+    E.Mode = 'sync';
+end
 
 function E = setupskew(E,R)
 essential_fields = {'iRotor', 'iDisc'};
@@ -65,7 +67,10 @@ end
 E.NInput = 2;
 E.M = (R{E.iRotor}.Disc{E.iDisc}.Inertia.Id - R{E.iRotor}.Disc{E.iDisc}.Inertia.Ip)*eye(2);
 E.u = E.Skew.*exp(1i*(E.Angle + pi/2 + [0; -pi/2*sign(R{E.iRotor}.Speed)]));
-E.Mode = 'Sync';
+
+if ~isfield(E,'Mode')
+    E.Mode = 'sync';
+end
 
 function E = setupshaker(E)
 essential_fields = {'iStator','Mode'};
