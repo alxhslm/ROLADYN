@@ -4,13 +4,19 @@ Speed = getrotorspeeds(P.Rotor);
 
 iCount = 0;
 for i = 1:length(E)
-    switch E{i}.Name
+    switch E{i}.Type
         case 'unbalance'
             E{i} = setupunbalance(E{i},P.Rotor);
         case 'skew'
             E{i} = setupskew(E{i},P.Rotor);
         case 'shaker'
             E{i} = setupshaker(E{i});
+        otherwise
+            error('Unrecognised excitation type')
+    end
+    
+    if ~isfield(E{i},'Name')
+        E{i}.Name = E{i}.Type;
     end
     
     fields = {'K','C','M'};

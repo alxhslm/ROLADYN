@@ -261,48 +261,56 @@ NExcInputTot = sum(NExcInput(:));
 
 IMapExcite = eye(NExcInputTot);
 
-Me = zeros(NDofTot,NExcInputTot);
-Ce = zeros(NDofTot,NExcInputTot);
-Ke = zeros(NDofTot,NExcInputTot);
+Me = zeros(NExcInputTot);
+Ce = zeros(NExcInputTot);
+Ke = zeros(NExcInputTot);
 usync = zeros(NExcInputTot,1);
 uasync = zeros(NExcInputTot,1);
+Se = [];
 
 for i = 1:length(P.Excite)
-    Se = IMapExcite(P.Excite{i}.iExcite,:);
-    P.Excite{i}.S = Se;
+    Ue = IMapExcite(P.Excite{i}.iExcite,:);
+    P.Excite{i}.U = Ue;
 
-    switch P.Excite{i}.Name
+    switch P.Excite{i}.Type
         case 'unbalance'
             iRotor = P.Excite{i}.iRotor;
             iDisc  = P.Excite{i}.iDisc;
-            Sd = P.Rotor{iRotor}.Disc{iDisc}.Hub.S(1:2,:)*P.Rotor{iRotor}.Disc{iDisc}.S*P.Rotor{iRotor}.S;
-            Me = Me + Sd'*P.Excite{i}.M*Se;
+            P.Excite{i}.S = P.Rotor{iRotor}.Disc{iDisc}.Hub.S(1:2,:)*P.Rotor{iRotor}.Disc{iDisc}.S*P.Rotor{iRotor}.S;
+            Me = Me + Ue'*P.Excite{i}.M*Ue;
         case 'skew'
             iRotor = P.Excite{i}.iRotor;
             iDisc  = P.Excite{i}.iDisc;
-            Sd = P.Rotor{iRotor}.Disc{iDisc}.Hub.S(3:4,:)*P.Rotor{iRotor}.Disc{iDisc}.S*P.Rotor{iRotor}.S;
-            Me = Me + Sd'*P.Excite{i}.M*Se;
+            P.Excite{i}.S = P.Rotor{iRotor}.Disc{iDisc}.Hub.S(3:4,:)*P.Rotor{iRotor}.Disc{iDisc}.S*P.Rotor{iRotor}.S;
+            Me = Me + Ue'*P.Excite{i}.M*Ue;
         case 'shaker'
             iStator = P.Excite{i}.iStator;
-            Ss = P.Stator{iStator}.S(1:2,:);
-            Ke = Ke + Ss'*P.Excite{iStator}.K*Se;
-            Ce = Ce + Ss'*P.Excite{iStator}.C*Se;
-            Me = Me + Ss'*P.Excite{iStator}.M*Se;
+            P.Excite{i}.S = P.Stator{iStator}.S(1:2,:);
+            Ke = Ke + Ue'*P.Excite{iStator}.K*Ue;
+            Ce = Ce + Ue'*P.Excite{iStator}.C*Ue;
+            Me = Me + Ue'*P.Excite{iStator}.M*Ue;
     end
-    
+   
+    Se = [Se; P.Excite{i}.S];
     switch P.Excite{i}.Mode
         case 'sync'
-           usync = usync + Se'*P.Excite{i}.u;
+           usync = usync + Ue'*P.Excite{i}.u;
         case 'async'
-           uasync = uasync + Se'*P.Excite{i}.u;
+           uasync = uasync + Ue'*P.Excite{i}.u;
         otherwise
             error('Unknown excitation mode "%s"',P.Excite{i}.Mode)
     end
 end
 
-P.Mesh.Excite.K = Ke;
-P.Mesh.Excite.C = Ce;
-P.Mesh.Excite.M = Me;
+P.Mesh.Excite.Ke = Ke;
+P.Mesh.Excite.Ce = Ce;
+P.Mesh.Excite.Me = Me;
+
+P.Mesh.Excite.K = Se'*Ke;
+P.Mesh.Excite.C = Se'*Ce;
+P.Mesh.Excite.M = Se'*Me;
+P.Mesh.Excite.S = Se;
+
 P.Mesh.Excite.uSync  = usync;
 P.Mesh.Excite.uAsync = uasync;
 
