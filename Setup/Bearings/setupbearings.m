@@ -7,8 +7,8 @@ iInputCount = 0;
 iInternalCount = 0;
 for i = 1:length(B)
     B{i} = setup_each_bearing(B{i},i,R);
-    B{i}.iInputo = iInputCount + (1:4);
-    B{i}.iInputi = iInputCount + (5:8);
+    B{i}.iInputi = iInputCount + (1:4);
+    B{i}.iInputo = iInputCount + (5:8);
     iInputCount = iInputCount + 8;
     
 
@@ -19,7 +19,7 @@ end
 function Node = setupnodes(Node,Rotor)
 if length(Node) == 1
     ground.Type = 'ground';
-    Node = [{ground}; Node];
+    Node = [Node; {ground}];
 end
 for j = 1:length(Node)
     switch Node{j}.Type
@@ -86,13 +86,6 @@ for iMat = 1:3
             B.([mat{iMat} dof{iDof}]) = diag([B.([lower(mat{iMat}) dof{iDof}]) 0]);
         end
     end
-end
-
-if ~isfield(B,'ui')
-    B.ui = zeros(4,1);
-end
-if ~isfield(B,'uo')
-    B.uo = zeros(4,1);
 end
 
 RBear = eye(4);
@@ -206,7 +199,6 @@ for i = 1:2
         B.(R_fields{i}) = RBear;
     end
 end
-B.R = blkdiag(RBear,RBear);
 
 %We can't have infs in the final bearing stiffness matrix as this breaks
 %the FE setup code, so we set these terms to a small value. It must be 

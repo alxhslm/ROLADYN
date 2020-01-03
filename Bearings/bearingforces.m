@@ -76,31 +76,33 @@ for i = 1:length(P.Bearing)
         Forces.FInt = Forces.FInt + P.Bearing{i}.V'*ForcesB.FInt;
         Forces.xInt = Forces.xInt + P.Bearing{i}.V'*ForcesB.xInt;
         Forces.xdotInt = Forces.xdotInt + P.Bearing{i}.V'*ForcesB.xdotInt;
+        Forces.xddotInt = Forces.xddotInt + P.Bearing{i}.V'*ForcesB.xddotInt;
     end
+
+    R = P.Bearing{i}.R;
+    U = P.Bearing{i}.U;
     
-    R  = [P.Bearing{i}.Ri * P.Bearing{i}.Ui;
-          P.Bearing{i}.Ro * P.Bearing{i}.Uo];
-    Forces.F  = Forces.F  + R'*ForcesB.F;
+    Forces.F  = Forces.F  + U'*R'*ForcesB.F;
     
     if nargout>1
         %assemble stiffness structure
-        Stiffness.K   = Stiffness.K   + mtimesx(R',mtimesx(StiffnessB.K,R));
+        Stiffness.K   = Stiffness.K   + mtimesx(U'*R',mtimesx(StiffnessB.K,R*U));
         
-        Stiffness.Kqq = Stiffness.Kqq + mtimesx(R',mtimesx(StiffnessB.Kqq,R));
-        Stiffness.Kqx = Stiffness.Kqx + mtimesx(R',mtimesx(StiffnessB.Kqx,P.Bearing{i}.V));
-        Stiffness.Kxq = Stiffness.Kxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Kxq,R));
+        Stiffness.Kqq = Stiffness.Kqq + mtimesx(U'*R',mtimesx(StiffnessB.Kqq,R*U));
+        Stiffness.Kqx = Stiffness.Kqx + mtimesx(U'*R',mtimesx(StiffnessB.Kqx,P.Bearing{i}.V));
+        Stiffness.Kxq = Stiffness.Kxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Kxq,R*U));
         Stiffness.Kxx = Stiffness.Kxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Kxx,P.Bearing{i}.V));
 
-        Stiffness.C   = Stiffness.C   + mtimesx(R',mtimesx(StiffnessB.C,R));
+        Stiffness.C   = Stiffness.C   + mtimesx(U'*R',mtimesx(StiffnessB.C,R*U));
         
-        Stiffness.Cqq = Stiffness.Cqq + mtimesx(R',mtimesx(StiffnessB.Cqq,R));
-        Stiffness.Cqx = Stiffness.Cqx + mtimesx(R',mtimesx(StiffnessB.Cqx,P.Bearing{i}.V));
-        Stiffness.Cxq = Stiffness.Cxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Cxq,R));
+        Stiffness.Cqq = Stiffness.Cqq + mtimesx(U'*R',mtimesx(StiffnessB.Cqq,R*U));
+        Stiffness.Cqx = Stiffness.Cqx + mtimesx(U'*R',mtimesx(StiffnessB.Cqx,P.Bearing{i}.V));
+        Stiffness.Cxq = Stiffness.Cxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Cxq,R*U));
         Stiffness.Cxx = Stiffness.Cxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Cxx,P.Bearing{i}.V));
         
-        Stiffness.Mqq = Stiffness.Mqq + mtimesx(R',mtimesx(StiffnessB.Mqq,R));
-        Stiffness.Mqx = Stiffness.Mqx + mtimesx(R',mtimesx(StiffnessB.Mqx,P.Bearing{i}.V));
-        Stiffness.Mxq = Stiffness.Mxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Mxq,R));
+        Stiffness.Mqq = Stiffness.Mqq + mtimesx(U'*R',mtimesx(StiffnessB.Mqq,R*U));
+        Stiffness.Mqx = Stiffness.Mqx + mtimesx(U'*R',mtimesx(StiffnessB.Mqx,P.Bearing{i}.V));
+        Stiffness.Mxq = Stiffness.Mxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Mxq,R*U));
         Stiffness.Mxx = Stiffness.Mxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Mxx,P.Bearing{i}.V));
     end
 end

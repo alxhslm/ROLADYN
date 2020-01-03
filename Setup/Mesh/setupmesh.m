@@ -180,24 +180,27 @@ for i = 1:NBearings
                 Sio{j} = P.Stator{P.Bearing{i}.Node{j}.iStator}.S(1:NDofe,:);
         end
     end
+
+    Rio = {P.Bearing{i}.Ri,P.Bearing{i}.Ro};
     
-    P.Bearing{i}.So = Sio{1};
-    P.Bearing{i}.Si = Sio{2};
-    
-    P.Bearing{i}.Ui = IMapInput(P.Bearing{i}.iInputi,:);
-    P.Bearing{i}.Uo = IMapInput(P.Bearing{i}.iInputo,:);
-    P.Bearing{i}.V  = IMapInternal(P.Bearing{i}.iInternal,:);
-    
-    %now compute the stiffness matrices
+    P.Bearing{i}.Si = Sio{1};
+    P.Bearing{i}.So = Sio{2};
     P.Bearing{i}.S = [P.Bearing{i}.Si; P.Bearing{i}.So];
     Sb = [Sb; P.Bearing{i}.S];
-        
-    UBear = [P.Bearing{i}.Ri*P.Bearing{i}.Ui; P.Bearing{i}.Ro*P.Bearing{i}.Uo];
-    Kb = Kb + UBear'*P.Bearing{i}.Kb*UBear;
-    Cb = Cb + UBear'*P.Bearing{i}.Cb*UBear;
+
+    P.Bearing{i}.Ui = IMapInput(P.Bearing{i}.iInputi,:);
+    P.Bearing{i}.Uo = IMapInput(P.Bearing{i}.iInputo,:);
+    P.Bearing{i}.U = [P.Bearing{i}.Ui;P.Bearing{i}.Uo];    
+    
+    P.Bearing{i}.V  = IMapInternal(P.Bearing{i}.iInternal,:);
+    
+    P.Bearing{i}.R = blkdiag(P.Bearing{i}.Ri,P.Bearing{i}.Ro);
+
+    %now compute the stiffness matrices  
+    Kb = Kb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Kb*P.Bearing{i}.R*P.Bearing{i}.U;
+    Cb = Cb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Cb*P.Bearing{i}.R*P.Bearing{i}.U;
     
     %and finally work out the boundary nodes of the rotors
-    Rb = {P.Bearing{i}.Ro,P.Bearing{i}.Ri};
     zBear = NaN(1,2);
     for j = 1:2
         switch P.Bearing{i}.Node{j}.Type
@@ -207,14 +210,14 @@ for i = 1:NBearings
                 
                 P.Rotor{iRotor}.Bearing{end+1}.iBearing = i;
                 P.Rotor{iRotor}.Bearing{end}.iNode = iNode;
-                P.Rotor{iRotor}.Bearing{end}.iActive = findrows(Rb{j}(P.Bearing{i}.bActive,:));
+                P.Rotor{iRotor}.Bearing{end}.iActive = findrows(Rio{j}(P.Bearing{i}.bActive,:));
                 
                 zBear(j) = P.Rotor{iRotor}.Nodes(iNode);
             case 'stator'
                 iStator = P.Bearing{i}.Node{j}.iStator;
                 
                 P.Stator{iStator}.Bearing{end+1}.iBearing = i;
-                P.Stator{iStator}.Bearing{end}.iActive = findrows(Rb{j}(P.Bearing{i}.bActive,:));
+                P.Stator{iStator}.Bearing{end}.iActive = findrows(Rio{j}(P.Bearing{i}.bActive,:));
                 
                 if isfield(P.Stator{iStator},'z')
                     zBear(j) = P.Stator{iStator}.z;
