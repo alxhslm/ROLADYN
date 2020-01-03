@@ -55,11 +55,11 @@ switch part
             Cqx =  mtimesx(P.Model.Bearing.S',Stiffness.Cqx);
             Cxq =  mtimesx(Stiffness.Cxq,P.Model.Bearing.S);
             Cxx =  Stiffness.Cxx;
-
-            Kqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
-            Kxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
-            Cqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
-            Cxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
+            
+            Mqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Mqq,P.Model.Bearing.S));
+            Mqx =  mtimesx(P.Model.Bearing.S',Stiffness.Mqx);
+            Mxq =  mtimesx(Stiffness.Mxq,P.Model.Bearing.S);
+            Mxx =  Stiffness.Mxx;
         else
             f0 = rotor_hbm_model('all',States,hbm,problem);
             h = 1E-10;
@@ -68,8 +68,11 @@ switch part
             Kxq = zeros(P.Model.NDofInt,P.Model.NDof,NPts);
             Cqq = zeros(P.Model.NDof,P.Model.NDof,NPts) + Cgyro;
             Cxq = zeros(P.Model.NDofInt,P.Model.NDof,NPts);
+           
             x0 = States.x;
             xdot0 = States.xdot;
+            xddot0 = States.xddot;
+            
             for i = 1:P.Model.NDof
                 States.x(i,:) = States.x(i,:) + h;
                 f = rotor_hbm_model('all',States,hbm,problem);
@@ -82,35 +85,65 @@ switch part
                 Cqq(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
                 Cxq(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
                 States.xdot = xdot0;
+                
+                States.xdot(i,:) = States.xddot(i,:) + h;
+                f = rotor_hbm_model('all',States,hbm,problem);
+                Mqq(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
+                Mxq(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
+                States.xddot = xddot0;
             end
-
+            
             Kqx = zeros(P.Model.NDof,P.Model.NDofInt,NPts);
             Kxx = zeros(P.Model.NDofInt,P.Model.NDofInt,NPts);
             Cqx = zeros(P.Model.NDof,P.Model.NDofInt,NPts);
             Cxx = zeros(P.Model.NDofInt,P.Model.NDofInt,NPts);
+            Mqx = zeros(P.Model.NDof,P.Model.NDofInt,NPts);
+            Mxx = zeros(P.Model.NDofInt,P.Model.NDofInt,NPts);
             
-            Kqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
-            Kxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
-            Cqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
-            Cxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
+            for i = 1:P.Model.NDofInt
+                States.xInt(i,:) = States.xInt(i,:) + h;
+                f = rotor_hbm_model('all',States,hbm,problem);
+                Kqx(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
+                Kxx(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
+                States.xInt = xInt0;
+                
+                States.xIntdot(i,:) = States.xIntdot(i,:) + h;
+                f = rotor_hbm_model('all',States,hbm,problem);
+                Cqx(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
+                Cxx(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
+                States.xIntdot = xIntdot0;
+                
+                States.xIntdot(i,:) = States.xIntddot(i,:) + h;
+                f = rotor_hbm_model('all',States,hbm,problem);
+                Mqx(:,i,:) = (f(1:P.Model.NDof,:)-f0(1:P.Model.NDof,:))/h;
+                Mxx(:,i,:) = (f(P.Model.NDof+1:end,:)-f0(P.Model.NDof+1:end,:))/h;
+                States.xIntddot = xIntddot0;
+            end
         end
+
+        Kqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
+        Kxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
+        Cqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
+        Cxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
+        Mqu = zeros(P.Model.NDof,P.Model.Excite.NExcite,NPts);
+        Mxu = zeros(P.Model.NDofInt,P.Model.Excite.NExcite,NPts);
         
         switch part
             case 'nl_x'
                 varargout{end+1} = [Kqq Kqx; Kxq Kxx];
             case 'nl_xdot'
                 varargout{end+1} = [Cqq Cqx; Cxq Cxx];
+            case 'nl_xddot'
+                varargout{end+1} = [Mqq Mqx; Mxq Mxx];
             case 'nl_u'
                 varargout{end+1} = [Kqu; Kxu];         
             case 'nl_udot'
                 varargout{end+1} = [Cqu; Cxu]; 
-            case 'nl_xddot'
-                varargout{end+1} = 0*[Kqx; Kxx];
             case 'nl_uddot'
-                varargout{end+1} = 0*[Kqu; Kxu];
+                varargout{end+1} = [Mqu; Mxu];
             case 'nl_w'
-                dF_dO = [P.Model.Rotor.G*States.xdot(1:P.Model.NDof,:)/hbm.harm.rFreqRatio(1); zeros(P.Model.NDofInt,NPts)];
+                %only valid if VC is turned off
+                dF_dO = [P.Model.Rotor.G*States.xdot(1:P.Model.NDof,:); zeros(P.Model.NDofInt,NPts)];
                 varargout{end+1} = {dF_dO; 0*States.x};
-                %too complicated to do analytically
         end
 end
