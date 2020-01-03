@@ -1,4 +1,7 @@
 function P = setupsystem(P,type,O,A)
+
+%% Default inputs
+
 if ~isfield(P,'g')
     P.g = [0 0]';
 end
@@ -12,7 +15,9 @@ if nargin < 4
     A = [];
 end
 
-% Rotors - first setup the mass related parameters for all of the rotors
+%% Setup components
+
+% Rotors - first setup the rotors including shaft FE models etc
 if ~isfield(P,'Rotor')
     P.Rotor = {};
 end
@@ -24,26 +29,27 @@ if ~isfield(P,'Bearing')
 end
 P.Bearing = setupbearings(P.Bearing,P.Rotor);
 
+% Stators - any non-rotating components such as bearing housings etc
 if ~isfield(P,'Stator')
     P.Stator = {};
 end
 P.Stator = setupstators(P.Stator);
 
-% Excitation - now define how the rotor will be excited
+% Excitation - now define how the system will be excited
 if ~isfield(P,'Excite')
     P.Excite = {};
 end
 P = setupexcitation(P);
 
-%% Do the initial setup at x0 = 0
+%% Assembly
 
 % Create mesh using specified nodes
 P = setupmesh(P);
 
-% Assemble the matrices for the rigid shaft model
+% Assemble the matrices and perform model reduction
 P = setupmodel(P,type);
 
-%% Now find equilibrium position & resetup
+%% Find equilibrium position
 P = rotor_equib(P,O,A);
 
 %compute the loads at setup
