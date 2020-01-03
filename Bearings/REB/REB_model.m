@@ -364,8 +364,8 @@ S.Mqx = 0*S.Cqx;
 S.Mxq = 0*S.Cxq;
 S.Mxx = 0*S.Cxx;
 
-F.F  = [R'*Forces.Fi;
-        R'*Forces.Fo];
+F.F  = [R'*F.Fi;
+        R'*F.Fo];
 
 function J = myinv(M)
 if size(M,1) == 1

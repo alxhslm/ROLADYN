@@ -7,9 +7,9 @@ if nargin < 3 || isempty(A)
 end
 N = length(A);
 
-if isfield(P.Mesh,'x0') && length(P.Model.x0) == P.Model.NDof
-    x0 = [P.Mesh.x0;
-          repmat(P.Mesh.xInt,N,1)];
+if isfield(P.Model,'x0') && length(P.Model.x0) == P.Model.NDof
+    x0 = [P.Model.x0;
+          repmat(P.Model.xInt,N,1)];
 else
     x0 = [rand(P.Model.NDof,1)*1E-2;
           rand(P.Model.NDofInt*N,1)*1E-6];
