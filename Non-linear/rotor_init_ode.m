@@ -1,6 +1,6 @@
 function init = rotor_init_ode(harm,P,O,A,x0)
 %work out frequencies
-w0 = O*harm.rFreqRatio;
+w0 = O*harm.rFreqRatio + hbm.harm.wFreq0;
 
 T = 2*pi/O;
 N = 100;

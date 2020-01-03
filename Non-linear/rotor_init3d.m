@@ -1,9 +1,9 @@
-function [X,x,t] = rotor_init3d(hbm,P,w0,A)
+function [X,x,t] = rotor_init3d(hbm,P,w,A)
 if hbm.options.bUseStandardHBM
-    [X,x,t] = rotor_init(hbm,P,w0,A);
+    [X,x,t] = rotor_init(hbm,P,w,A);
     return;
 end
-w0 = w0*hbm.harm.rFreqRatio;
+w0 = w*hbm.harm.rFreqRatio + hbm.harm.wFreq0;
 O = w0(1);
 wc = w0(2);
 

@@ -1,5 +1,5 @@
 function varargout = rotor_hbm_model(part,States,hbm,problem)
-O  = States.w0(1)/hbm.harm.rFreqRatio(1);
+O  = States.w0(1);
 P = problem.P;
 
 NPts = size(States.x,2);
