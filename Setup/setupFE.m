@@ -1,4 +1,4 @@
-function [Rr, Ar] = setupFE(Rotor)
+function [Rr, Ar] = setupFE(Rotor,Bearing)
 % SETUPFE performs model reduction on each rotor, including enforcing rigid
 % body constraints, and Craig-Bampton reduction
 
@@ -72,6 +72,19 @@ for i = 1:length(Rotor)
         end
     end
     
+    Kr = Rotor{i}.K;
+    for j = 1:length(Rotor{i}.Bearing)
+        B = Bearing{Rotor{i}.Bearing{j}.iBearing};
+        switch Rotor{i}.Bearing{j}.iNodeBearing
+            case 1
+                Kb = B.Ri' * B.Kb(1:4,1:4) * B.Ri;
+            case 2
+                Kb = B.Ro' * B.Kb(5:8,5:8) * B.Ro;
+        end
+        Sb = Rotor{i}.SNode{Rotor{i}.Bearing{j}.iNode};
+        Kr = Kr + Sb'*Kb*Sb;
+    end
+    
     %apply any rigid shaft/disc constraints
     if isempty(Rcon)
         A = eye(Rotor{i}.NDof);
@@ -79,7 +92,7 @@ for i = 1:length(Rotor)
         A = null(Rcon,'r');
     end
        
-    Kr   = A'*Rotor{i}.K*A;
+    Kr   = A'*Kr*A;
     Mr   = A'*Rotor{i}.M*A;
     Fgr  = A'*Rotor{i}.Fg;
           
@@ -88,8 +101,10 @@ for i = 1:length(Rotor)
         %work out which nodes are fixed (to bearings)
         iFixed = [];
         for j = 1:length(Rotor{i}.Bearing)
-            iFixed = [iFixed;
-                (Rotor{i}.Bearing{j}.iNode-1)*NDofe + Rotor{i}.Bearing{j}.iActive];
+            if ~Rotor{i}.Bearing{j}.bLinear
+                iFixed = [iFixed;
+                         (Rotor{i}.Bearing{j}.iNode-1)*NDofe + Rotor{i}.Bearing{j}.iActive];
+            end
         end
         
         %compute modes of rotor subsystem

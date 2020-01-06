@@ -173,11 +173,13 @@ IMapInternal = eye(NInternalTot);
 
 Sb = [];
 for i = 1:NBearings
+    bGround = false;
     %work out mapping matrices
     for j = 1:2
         switch P.Bearing{i}.Node{j}.Type
             case 'ground'
                 Sio{j} = zeros(NDofe,NDofTot);
+                bGround = true;
             case 'rotor'
                 iNode = P.Bearing{i}.Node{j}.iNode;
                 Sio{j} = P.Rotor{P.Bearing{i}.Node{j}.iRotor}.S((iNode-1)*NDofe+(1:NDofe),:);
@@ -220,12 +222,14 @@ for i = 1:NBearings
         switch P.Bearing{i}.Node{j}.Type
             case 'rotor'
                 iRotor = P.Bearing{i}.Node{j}.iRotor;
-                iNode  = P.Bearing{i}.Node{j}.iNode(1);
+                iNode  = P.Bearing{i}.Node{j}.iNode;
                 
                 P.Rotor{iRotor}.Bearing{end+1}.iBearing = i;
                 P.Rotor{iRotor}.Bearing{end}.iNode = iNode;
                 P.Rotor{iRotor}.Bearing{end}.iActive = findrows(Rio{j}(P.Bearing{i}.bActive,:));
+                P.Rotor{iRotor}.Bearing{end}.iNodeBearing = j;
                 P.Rotor{iRotor}.Bearing{end}.bLinear = bLinear;
+                P.Rotor{iRotor}.Bearing{end}.bGround = bGround;
                 
                 zBear(j) = P.Rotor{iRotor}.Nodes(iNode);
             case 'stator'
@@ -263,6 +267,7 @@ for i = 1:NBearings
     end
     
     P.Bearing{i}.bLinear = bLinear;
+    P.Bearing{i}.bGround = bGround;
 end
 
 P.Mesh.Bearing.Kb = Kb;

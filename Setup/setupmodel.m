@@ -2,7 +2,7 @@ function P = setupmodel(P,type)
 if strcmpi(type,'rigid')
     RRotor = setuprigid(P.Rotor);
 elseif strcmpi(type,'FE')
-    RRotor = setupFE(P.Rotor);
+    RRotor = setupFE(P.Rotor,P.Bearing);
 else
     error('Unknown model type')
 end
