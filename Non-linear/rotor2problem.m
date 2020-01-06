@@ -21,9 +21,9 @@ problem.Ku = P.Model.Excite.K;
 problem.Cu = P.Model.Excite.C;
 problem.Mu = P.Model.Excite.M;
 
-problem.M  =  P.Model.Rotor.M + P.Model.Stator.M;
-problem.C  =  P.Model.Rotor.C + P.Model.Stator.C;
-problem.K  =  P.Model.Rotor.K + P.Model.Stator.K;
+problem.M  =  P.Model.Rotor.M + P.Model.Stator.M + P.Model.Bearing.Lin.M;
+problem.C  =  P.Model.Rotor.C + P.Model.Stator.C + P.Model.Bearing.Lin.C;
+problem.K  =  P.Model.Rotor.K + P.Model.Stator.K + P.Model.Bearing.Lin.K;
 problem.F0 = -P.Model.Fg;
 
 problem.Ku = [problem.Ku; zeros(NDofInt,size(problem.Ku,2))];
@@ -80,7 +80,7 @@ for i = 1:length(B)
         end
     else
         %othwerise need all the internal states
-        iInt = [iInt; iDofIn+(1:B{i}.NDofInt)];
+        iInt = [iInt; iDofIn+(1:B{i}.NDofInt)'];
         iSum = [iSum; num2cell(iDofIn+(1:B{i}.NDofInt)')];
         iDofIn  = iDofIn  + B{i}.NDofInt;
         Sparsity{i} = ones(B{i}.NDofInt);

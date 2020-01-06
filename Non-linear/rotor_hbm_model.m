@@ -13,31 +13,45 @@ varargout = {};
 switch part
     case  {'nl','all','output'}
         Fgyro = O*P.Model.Rotor.G*States.xdot(1:P.Model.NDof,:);
-        Forces = bearingforces(P,bearing_states);
-        
-        Flin = P.Model.Bearing.F0 + ...
-               P.Model.Bearing.K*(States.x(1:P.Model.NDof,:)-P.Model.x0) + ...
-               P.Model.Bearing.C*States.xdot(1:P.Model.NDof,:);
-        
+
         if P.Model.bNL
-            Fb = P.Model.Bearing.S'*Forces.F;
+            Forces = bearingforces(P,bearing_states);
+            Fb = Forces.F;
+            
+            Flin = P.Model.Bearing.Lin.F0 + ...
+                   P.Model.Bearing.Lin.K*(States.x(1:P.Model.NDof,:)-P.Model.x0) + ...
+                   P.Model.Bearing.Lin.C*States.xdot(1:P.Model.NDof,:) + ...
+                   P.Model.Bearing.Lin.M*States.xddot(1:P.Model.NDof,:);
+            
+            Fnl = P.Model.Bearing.S'*Forces.F - Flin;
+            
+            if P.Model.bCompressREB
+                Fi = Forces.FInt(P.Model.Reduced.iInt,:);
+            else
+                Fi = Forces.FInt;
+            end
         else
-            Fb = Flin;
+            Fb = P.Mesh.Bearing.Fb + ...
+                 P.Mesh.Bearing.Kb*P.Mesh.Bearing.S*P.Model.A*(States.x(1:P.Model.NDof,:)-P.Model.x0) + ...
+                 P.Mesh.Bearing.Cb*P.Mesh.Bearing.S*P.Model.A*States.xdot(1:P.Model.NDof,:) + ...
+                 P.Mesh.Bearing.Mb*P.Mesh.Bearing.S*P.Model.A*States.xddot(1:P.Model.NDof,:);
+              
+            Fnl = P.Model.Bearing.NL.F0 + ...
+                  P.Model.Bearing.NL.K*(States.x(1:P.Model.NDof,:)-P.Model.x0) + ...
+                  P.Model.Bearing.NL.C*States.xdot(1:P.Model.NDof,:)  + ...
+                  P.Model.Bearing.NL.M*States.xddot(1:P.Model.NDof,:);
+              
+            Fi = zeros(0,NPts);
         end
         
-        Fnl = Fb + Fgyro;
-        if P.Model.bCompressREB
-            Fi = Forces.FInt(P.Model.Reduced.iInt,:);
-        else
-            Fi = Forces.FInt;
-        end
+        Fnl = Fnl + Fgyro;
         
         if strcmp(part,'output')
-            varargout{end+1} = Forces.F;
+            varargout{end+1} = Fb;
         elseif strcmp(part,'nl')
-                varargout{end+1} = [Fnl; Fi];
+            varargout{end+1} = [Fnl; Fi];
         elseif strcmp(part,'all')
-             varargout{end+1} = [Fnl; Fi];
+            varargout{end+1} = [Fnl; Fi];
         else
             error('Unknown option');
         end
@@ -46,17 +60,17 @@ switch part
         if P.Model.bAnalyticalDerivs
             [Forces,Stiffness] = bearingforces(P,bearing_states);
             
-            Kqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Kqq,P.Model.Bearing.S));
+            Kqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Kqq,P.Model.Bearing.S)) - P.Model.Bearing.Lin.K;
             Kqx =  mtimesx(P.Model.Bearing.S',Stiffness.Kqx);
             Kxq =  mtimesx(Stiffness.Kxq,P.Model.Bearing.S);
             Kxx =  Stiffness.Kxx;
                 
-            Cqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Cqq,P.Model.Bearing.S)) + Cgyro;
+            Cqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Cqq,P.Model.Bearing.S)) - P.Model.Bearing.Lin.C  + Cgyro;
             Cqx =  mtimesx(P.Model.Bearing.S',Stiffness.Cqx);
             Cxq =  mtimesx(Stiffness.Cxq,P.Model.Bearing.S);
             Cxx =  Stiffness.Cxx;
             
-            Mqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Mqq,P.Model.Bearing.S));
+            Mqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Mqq,P.Model.Bearing.S)) - P.Model.Bearing.Lin.M;
             Mqx =  mtimesx(P.Model.Bearing.S',Stiffness.Mqx);
             Mxq =  mtimesx(Stiffness.Mxq,P.Model.Bearing.S);
             Mxx =  Stiffness.Mxx;

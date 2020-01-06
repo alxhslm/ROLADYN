@@ -21,6 +21,10 @@ T.Stator.Fg = A'*S.Stator.Fg;
 
 T.Bearing.K = A'*S.Bearing.K*A;
 T.Bearing.C = A'*S.Bearing.C*A;
+T.Bearing.M = A'*S.Bearing.M*A;
+T.Bearing.Lin.K = A'*S.Bearing.Lin.K*A;
+T.Bearing.Lin.C = A'*S.Bearing.Lin.C*A;
+T.Bearing.Lin.M = A'*S.Bearing.Lin.M*A;
 T.Bearing.S = S.Bearing.S*A;
 T.Bearing.NDofInt = S.Bearing.NDofInt;
 

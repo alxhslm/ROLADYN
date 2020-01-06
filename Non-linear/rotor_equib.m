@@ -54,19 +54,47 @@ States.bSolve = 0;
 
 [Forces, Stiffness] = bearingforces(P,States);
 
-P.Model.Rotor.F0    = P.Model.Rotor.K*P.Model.x0;
-P.Model.Stator.F0   = P.Model.Stator.K*P.Model.x0;
-P.Model.Bearing.F0  = P.Model.Bearing.S'*mean(Forces.F,2);
-P.Model.Bearing.K   = P.Model.Bearing.S'*mean(Stiffness.Kqq,3)*P.Model.Bearing.S;
-P.Model.K           = P.Model.Rotor.K + P.Model.Stator.K + P.Model.Bearing.K;
+%% Model
+P.Model.Rotor.F0       = P.Model.Rotor.K*P.Model.x0;
+P.Model.Stator.F0      = P.Model.Stator.K*P.Model.x0;
+P.Model.Bearing.Lin.F0 = P.Model.Bearing.Lin.K*P.Model.x0;
 
-P.Mesh.Rotor.F0    = P.Mesh.Rotor.K*P.Mesh.x0;
-P.Mesh.Stator.F0   = P.Mesh.Stator.K*P.Mesh.x0;
-P.Mesh.Bearing.F0  = P.Mesh.Bearing.S'*mean(Forces.F,2);
-P.Mesh.Bearing.Fb  = mean(Forces.F,2);
-P.Mesh.Bearing.K   = P.Mesh.Bearing.S'*mean(Stiffness.Kqq,3)*P.Mesh.Bearing.S;
-P.Mesh.Bearing.Kb  = mean(Stiffness.Kqq,3);
-P.Mesh.K           = P.Mesh.Rotor.K + P.Mesh.Stator.K + P.Mesh.Bearing.K;
+P.Model.Bearing.F0     = P.Model.Bearing.S'*mean(Forces.F,2);
+P.Model.Bearing.NL.F0  = P.Model.Bearing.F0 - P.Model.Bearing.Lin.F0;
+P.Model.Bearing.K      = P.Model.Bearing.S'*mean(Stiffness.K,3)*P.Model.Bearing.S;
+P.Model.Bearing.NL.K   = P.Model.Bearing.K  - P.Model.Bearing.Lin.K;
+P.Model.Bearing.C      = P.Model.Bearing.S'*mean(Stiffness.C,3)*P.Model.Bearing.S;
+P.Model.Bearing.NL.C   = P.Model.Bearing.C  - P.Model.Bearing.Lin.C;
+P.Model.Bearing.M      = P.Model.Bearing.S'*mean(Stiffness.M,3)*P.Model.Bearing.S;
+P.Model.Bearing.NL.M   = P.Model.Bearing.M  - P.Model.Bearing.Lin.M;
+
+P.Model.K            = P.Model.Rotor.K + P.Model.Stator.K + P.Model.Bearing.K;
+
+%% Mesh
+P.Mesh.Rotor.F0       = P.Mesh.Rotor.K*P.Mesh.x0;
+P.Mesh.Stator.F0      = P.Mesh.Stator.K*P.Mesh.x0;
+P.Mesh.Bearing.Lin.F0 = P.Mesh.Bearing.Lin.K*P.Mesh.x0;
+P.Mesh.Bearing.Lin.Fb = P.Mesh.Bearing.Lin.Kb*P.Mesh.Bearing.S*P.Mesh.x0;
+
+P.Mesh.Bearing.F0     = P.Mesh.Bearing.S'*mean(Forces.F,2);
+P.Mesh.Bearing.NL.F0  = P.Mesh.Bearing.F0 - P.Mesh.Bearing.Lin.F0;
+P.Mesh.Bearing.K      = P.Mesh.Bearing.S'*mean(Stiffness.K,3)*P.Mesh.Bearing.S;
+P.Mesh.Bearing.NL.K   = P.Mesh.Bearing.K - P.Mesh.Bearing.Lin.K;
+P.Mesh.Bearing.C      = P.Mesh.Bearing.S'*mean(Stiffness.C,3)*P.Mesh.Bearing.S;
+P.Mesh.Bearing.NL.C   = P.Mesh.Bearing.C - P.Mesh.Bearing.Lin.C;
+P.Mesh.Bearing.M      = P.Mesh.Bearing.S'*mean(Stiffness.M,3)*P.Mesh.Bearing.S;
+P.Mesh.Bearing.NL.M   = P.Mesh.Bearing.M - P.Mesh.Bearing.Lin.M;
+
+P.Mesh.Bearing.Fb     = mean(Forces.F,2);
+P.Mesh.Bearing.NL.Fb  = P.Mesh.Bearing.Fb - P.Mesh.Bearing.Lin.Fb;
+P.Mesh.Bearing.Kb     = mean(Stiffness.K,3);
+P.Mesh.Bearing.NL.Kb  = P.Mesh.Bearing.Kb - P.Mesh.Bearing.Lin.Kb;
+P.Mesh.Bearing.Cb     = mean(Stiffness.C,3);
+P.Mesh.Bearing.NL.Cb  = P.Mesh.Bearing.Cb - P.Mesh.Bearing.Lin.Cb;
+P.Mesh.Bearing.Mb     = mean(Stiffness.M,3);
+P.Mesh.Bearing.NL.Mb  = P.Mesh.Bearing.Mb - P.Mesh.Bearing.Lin.Mb;
+
+P.Mesh.K              = P.Mesh.Rotor.K + P.Mesh.Stator.K + P.Mesh.Bearing.K;
 
 if ~bSuccess
     error('Failed to find equilibrium position')
@@ -108,7 +136,7 @@ States.x = (P.Model.Bearing.S*xCG)*wons;
 States.xInt = xInt;
 States.bSolve = 0;
 
-[Forces, Stiffness] = bearingforces(P,States);
+[~, Stiffness] = bearingforces(P,States);
 
 Jqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Kqq,P.Model.Bearing.S));
 Jqx =  mtimesx(P.Model.Bearing.S',Stiffness.Kqx);
