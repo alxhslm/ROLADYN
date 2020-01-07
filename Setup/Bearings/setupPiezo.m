@@ -11,4 +11,4 @@ K = kron([1 -1; -1 1], diag([Piezo.Mech.kS,Inf,Inf,Inf]));
 C = kron([1 -1; -1 1], diag([Piezo.Mech.c, 0,0,0]));
 M = kron([1 -1; -1 1], zeros(4));
 
-Piezo.NDofTot = 1;
+Piezo.NDofTot = 2;

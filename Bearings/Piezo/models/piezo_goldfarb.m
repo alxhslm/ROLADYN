@@ -1,17 +1,18 @@
 function [F,V,S] = piezo_goldfarb(B,States)
 
-xPz    = States.qi(1,:)    - States.qo(1,:);
-xPzdot = States.qidot(1,:) - States.qodot(1,:);
-xPzddot = States.qiddot(1,:) - States.qoddot(1,:);
+xPz     = States.qi     - States.qo;
+xPzdot  = States.qidot  - States.qodot;
 
-z    = States.xInt;
-zdot = States.xIntdot;
+Vpz     = States.xInt(1,:);
+Vpzdot  = States.xIntdot(1,:);
 
-Fm    = B.Mech.k*xPz    + B.Mech.c*xPzdot;
-Fmdot = B.Mech.k*xPzdot + B.Mech.c*xPzddot;
+z    = States.xInt(2,:);
+zdot = States.xIntdot(2,:);
 
-q    = B.T*xPz    + B.C/B.T*Fm;
-qdot = B.T*xPzdot + B.C/B.T*Fmdot;
+Ve = B.G*States.u;
+
+q    = B.T*xPz    + B.C*Vpz;
+qdot = B.T*xPzdot + B.C*Vpzdot;
 
 if nargout < 2
     zdot_model = bouc_wen_ode(B.Bouc_wen,qdot,z);
@@ -19,37 +20,49 @@ else
     [zdot_model,dzdot_dz,dzdot_dqdot] = bouc_wen_ode(B.Bouc_wen,qdot,z);
 end
 
-F.F = B.Mech.k*xPz + B.Mech.c*xPzdot - B.T*z/B.Cm;
-F.FInt = (zdot - zdot_model);
+Vh = z/B.Cm;
 
-V.q = q;
+F.F = B.Mech.k*xPz + B.Mech.c*xPzdot - B.T*Vpz;
+
+F.FInt = [Vpz + Vh - Ve;
+          (zdot - zdot_model)];
+
+V.q    = q;
 V.qdot = qdot;
-V.Vpz = Fm/B.T;
-V.Vh  = z/B.Cm;
+
+V.z    = z;
+V.zdot = zdot;
+
+V.Vpz  = Vpz;
+V.Vh   = Vh;
+V.Ve   = Ve;
+
+V.Fpz  = B.T*Vpz;
 
 if nargout > 1
-    S.Kqq =  B.Mech.k;
-    S.Kqx = -B.T/B.Cm;
-    S.Kxq =  0;
-    S.Kxx = -dzdot_dz;
+    wons = permute(0*xPz,[1 3 2])+1;
+    S.Kqq =  B.Mech.k*wons;
+    S.Kqx = [-B.T*wons 0*wons];
+    S.Kxq = [0*wons;
+             0*wons];
+    S.Kxx =  [wons       1/B.Cm*wons;
+              0*wons   -permute(dzdot_dz,[1 3 2])];
+    S.Kqu = 0*wons;
+    S.Kxu = [-B.T*B.G*wons;
+             0*wons];
     
-    S.K = -B.kS;
-    
-    S.Cqq = B.Mech.c;
-    S.Cqx =  0;
-    S.Cxq = -dzdot_dqdot * (B.T + B.C/B.T*B.Mech.k);
-    S.Cxx = 1;
-    S.C = -B.Mech.c;
-    
-    S.Mqq = 0;
-    S.Mqx = 0;
-    S.Mxq = -dzdot_dqdot * (B.C/B.T*B.Mech.c);
-    S.Mxx = 0;
-    S.M   = 0;
+    S.Cqq = B.Mech.c*wons;
+    S.Cqx = [0*wons 0*wons];
+    S.Cxq = [0*wons;
+             -permute(dzdot_dqdot .* B.T,[1 3 2])];
+    S.Cxx = [0*wons    0*wons;
+             -permute(dzdot_dqdot .* B.C,[1 3 2]) wons];
+    S.Cqu = 0*wons;
+    S.Cxu = [0*wons;
+             0*wons];
 end
 
 function [zdot,dzdot_dz,dzdot_dqdot] = bouc_wen_ode(p,qdot,z)
-z = z + eps;
 zdot = qdot  - p.beta*abs(qdot).*(abs(z).^(p.n-1)).*z - p.gamma*qdot.*(abs(z).^p.n);
 dzdot_dqdot = 1 - p.beta*sign(qdot).*(abs(z).^(p.n-1)).*z - p.gamma.*(abs(z).^p.n);
-dzdot_dz = - p.beta*abs(qdot).*((abs(z).^(p.n-1)) + (p.n-1)*(abs(z).^(p.n-2)).*sign(z).*z) - p.n*p.gamma.*(abs(z).^(p.n-1)).*sign(z);
+dzdot_dz = - p.beta*abs(qdot).*((abs(z).^(p.n-1)) + (p.n-1)*(abs(z).^(p.n-2)).*sign(z).*z) - p.n*p.gamma*qdot.*(abs(z).^(p.n-1)).*sign(z);
