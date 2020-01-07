@@ -86,6 +86,7 @@ for i = 1:length(P.Bearing)
     
     if nargout>1
         %assemble stiffness structure
+        StiffnessB = default_stiffness_j(P.Bearing{i},StiffnessB);
         Stiffness.K   = Stiffness.K   + mtimesx(U'*R',mtimesx(StiffnessB.K,R*U));
         
         Stiffness.Kqq = Stiffness.Kqq + mtimesx(U'*R',mtimesx(StiffnessB.Kqq,R*U));
@@ -100,10 +101,52 @@ for i = 1:length(P.Bearing)
         Stiffness.Cxq = Stiffness.Cxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Cxq,R*U));
         Stiffness.Cxx = Stiffness.Cxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Cxx,P.Bearing{i}.V));
         
+        Stiffness.M   = Stiffness.M   + mtimesx(U'*R',mtimesx(StiffnessB.M,R*U));
+
         Stiffness.Mqq = Stiffness.Mqq + mtimesx(U'*R',mtimesx(StiffnessB.Mqq,R*U));
         Stiffness.Mqx = Stiffness.Mqx + mtimesx(U'*R',mtimesx(StiffnessB.Mqx,P.Bearing{i}.V));
         Stiffness.Mxq = Stiffness.Mxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Mxq,R*U));
         Stiffness.Mxx = Stiffness.Mxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Mxx,P.Bearing{i}.V));
+    end
+end
+
+function Stiffness = default_stiffness_j(B,Stiffness)
+NPts = size(Stiffness.K,3);
+NDof = 2*4;
+NInt = size(Stiffness.Kxx,1);
+
+defaultable_fields = {'C','M'};
+for i = 1:2
+    if ~isfield(Stiffness,defaultable_fields{i})
+        Stiffness.(defaultable_fields{i}) = zeros(NDof,NDof,NPts);
+    end
+end
+
+defaultable_fields = {'Cqq','Mqq'};
+for i = 1:2
+    if ~isfield(Stiffness,defaultable_fields{i})
+        Stiffness.(defaultable_fields{i}) = zeros(NDof,NDof,NPts);
+    end
+end
+
+defaultable_fields = {'Cqx','Mqx'};
+for i = 1:2
+    if ~isfield(Stiffness,defaultable_fields{i})
+        Stiffness.(defaultable_fields{i}) = zeros(NDof,NInt,NPts);
+    end
+end
+
+defaultable_fields = {'Cxq','Mxq'};
+for i = 1:2
+    if ~isfield(Stiffness,defaultable_fields{i})
+        Stiffness.(defaultable_fields{i}) = zeros(NInt,NDof,NPts);
+    end
+end
+
+defaultable_fields = {'Cxx','Mxx'};
+for i = 1:2
+    if ~isfield(Stiffness,defaultable_fields{i})
+        Stiffness.(defaultable_fields{i}) = zeros(NInt,NInt,NPts);
     end
 end
 

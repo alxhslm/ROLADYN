@@ -358,12 +358,6 @@ else
     S.C = S.Cqq;
 end
 
-S.M = 0*S.C;
-S.Mqq = 0*S.Cqq;
-S.Mqx = 0*S.Cqx;
-S.Mxq = 0*S.Cxq;
-S.Mxx = 0*S.Cxx;
-
 F.F  = [R'*F.Fi;
         R'*F.Fo];
 
