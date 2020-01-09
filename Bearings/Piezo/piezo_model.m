@@ -32,56 +32,85 @@ if isempty(Stiffness)
     Stiffness = struct();
     
     h = 1E-10;
-    q0 = States.qi;
-    qdot0 = States.qidot;
-    xInt0 = States.xInt;
-    xIntdot0 = States.xIntdot;
     F0 = Forces.F;
     FInt0 = Forces.FInt;
-    NDofInt = length(FInt0);
+    NDofInt = size(States.xInt,1);
+    NPts = size(States.qi,2);
         
     %stiffness
+    q0 = States.qi;
     States.qi = q0 + h;
     Forces = feval(model,Params,States);
-    States.qi = q0; 
     Stiffness.Kqq = permute((Forces.F-F0)./h,[1 3 2]);
     Stiffness.Kxq = permute((Forces.FInt-FInt0)./h,[1 3 2]);
+    States.qi = q0; 
 
+    xInt0 = States.xInt;
+    Stiffness.Kqx = zeros(1,NDofInt,NPts);
+    Stiffness.Kxx = zeros(NDofInt,NDofInt,NPts);
     for i = 1:NDofInt
-        States.xInt(i) = xInt0(i) + h;
+        States.xInt(i,:) = xInt0(i,:) + h;
         Forces = feval(model,Params,States);
-        Stiffness.Kqx(:,i) = permute((Forces.F-F0)./h,[1 3 2]);
-        Stiffness.Kxx(:,i) = permute((Forces.FInt-FInt0)./h,[1 3 2]);
+        Stiffness.Kqx(:,i,:) = permute((Forces.F-F0)./h,[1 3 2]);
+        Stiffness.Kxx(:,i,:) = permute((Forces.FInt-FInt0)./h,[1 3 2]);
         States.xInt = xInt0; 
     end
 
     %damping 
+    qdot0 = States.qidot;
     States.qidot = qdot0 + h;
     Forces = feval(model,Params,States);
-    States.qidot = qdot0; 
     Stiffness.Cqq = permute((Forces.F-F0)./h,[1 3 2]);
     Stiffness.Cxq = permute((Forces.FInt-FInt0)./h,[1 3 2]);
-
+    States.qidot = qdot0; 
+    
+    xdotInt0 = States.xdotInt;
+    Stiffness.Cqx = zeros(1,NDofInt,NPts);
+    Stiffness.Cxx = zeros(NDofInt,NDofInt,NPts);
     for i = 1:NDofInt
-        States.xIntdot(i) = xIntdot0(i) + h;
+        States.xdotInt(i,:) = xdotInt0(i,:) + h;
         Forces = feval(model,Params,States);
-        Stiffness.Cqx(:,i) = permute((Forces.F-F0)./h,[1 3 2]);
-        Stiffness.Cxx(:,i) = permute((Forces.FInt-FInt0)./h,[1 3 2]);
-        States.xIntdot = xIntdot0; 
+        Stiffness.Cqx(:,i,:) = permute((Forces.F-F0)./h,[1 3 2]);
+        Stiffness.Cxx(:,i,:) = permute((Forces.FInt-FInt0)./h,[1 3 2]);
+        States.xdotInt = xdotInt0; 
     end
+    
+    %input
+    u0 = States.u;
+    States.u = u0 + h;
+    Forces = feval(model,Params,States);
+    Stiffness.Kqu = permute((Forces.F-F0)./h,[1 3 2]);
+    Stiffness.Kxu = permute((Forces.FInt-FInt0)./h,[1 3 2]);
+    States.u = u0; 
+
+    udot0 = States.udot;
+    States.udot = udot0 + h;
+    Forces = feval(model,Params,States);
+    Stiffness.Cqu = permute((Forces.F-F0)./h,[1 3 2]);
+    Stiffness.Cxu = permute((Forces.FInt-FInt0)./h,[1 3 2]);
+    States.udot = udot0; 
 end
 
 Forces.F  = mkron([1;-1],R'*Forces.F);
 
-A = -mtimesx(minvx(Stiffness.Kxx + 1i*Stiffness.Cxx),Stiffness.Kxq + 1i*Stiffness.Cxq);
 
-Stiffness.K = Stiffness.Kqq + mtimesx(Stiffness.Kqx,A);
-Stiffness.C = Stiffness.Cqq + mtimesx(Stiffness.Cqx,A);
+if Params.NDofTot > 0
+    A = -mtimesx(minvx(Stiffness.Kxx + 1i*Stiffness.Cxx),Stiffness.Kxq + 1i*Stiffness.Cxq);
+    B = -mtimesx(minvx(Stiffness.Kxx + 1i*Stiffness.Cxx),Stiffness.Kxu + 1i*Stiffness.Cxu);
+    
+    Stiffness.K = Stiffness.Kqq + mtimesx(Stiffness.Kqx,A);
+    Stiffness.C = Stiffness.Cqq + mtimesx(Stiffness.Cqx,A);
 
-B = -mtimesx(minvx(Stiffness.Kxx + 1i*Stiffness.Cxx),Stiffness.Kxu + 1i*Stiffness.Cxu);
+    Stiffness.Ku = Stiffness.Kqu + mtimesx(Stiffness.Kqx,B);
+    Stiffness.Cu = Stiffness.Cqu + mtimesx(Stiffness.Cqx,B);
+else
+    Stiffness.K = Stiffness.Kqq;
+    Stiffness.C = Stiffness.Cqq;
+    
+    Stiffness.Ku = Stiffness.Kqu;
+    Stiffness.Cu = Stiffness.Cqu;    
+end
 
-Stiffness.Ku = Stiffness.Kqu + mtimesx(Stiffness.Kqx,B);
-Stiffness.Cu = Stiffness.Cqu + mtimesx(Stiffness.Cqx,B);
 
 %Combine stiffness terms
 Stiffness.Kqq = mkron([1 -1; -1 1],mtimesx(R',mtimesx(Stiffness.Kqq,R)));
@@ -106,14 +135,14 @@ end
 if ~isfield(States,'xInt')
     States.xInt = zeros(0,NPts);
 end
-if ~isfield(States,'xIntdot')
-    States.xIntdot = 0*States.xInt;
+if ~isfield(States,'xdotInt')
+    States.xdotInt = 0*States.xInt;
 end
-if ~isfield(States,'xIntddot')
-    States.xIntddot = 0*States.xInt;
+if ~isfield(States,'xddotInt')
+    States.xddotInt = 0*States.xInt;
 end
 
-function States = default_inputs(States,Rq,Ru)
+function States = default_inputs(States,R)
 if ~isfield(States,'qo')
     States.qo = 0*States.qi;
 end
@@ -132,7 +161,7 @@ suffix = {'' ,'dot','ddot'};
 IO = {'i','o'};
 for i = 1:length(suffix)
     for k = 1:2
-        States.(['q' IO{k} suffix{i}]) = Rq*States.(['q' IO{k} suffix{i}]);
+        States.(['q' IO{k} suffix{i}]) = R*States.(['q' IO{k} suffix{i}]);
     end
 end
 
