@@ -1,8 +1,9 @@
 function [F,V,S] = linear_model(B, States) 
 xBearing = [States.qi; States.qo];
 dxBearing = [States.qidot; States.qodot];
+ddxBearing = [States.qiddot; States.qoddot];
 
-fb = B.Kb*xBearing + B.Cb*dxBearing + B.Mb*dxBearing;
+fb = B.Kb*xBearing + B.Cb*dxBearing + B.Mb*ddxBearing;
 
 NPts = size(xBearing,2);
 F.F = fb;

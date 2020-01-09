@@ -106,11 +106,11 @@ end
 if ~isfield(States,'xInt')
     States.xInt = zeros(0,NPts);
 end
-if ~isfield(States,'xIntdot')
-    States.xIntdot = 0*States.xInt;
+if ~isfield(States,'xdotInt')
+    States.xdotInt = 0*States.xInt;
 end
-if ~isfield(States,'xIntddot')
-    States.xIntddot = 0*States.xInt;
+if ~isfield(States,'xddotInt')
+    States.xddotInt = 0*States.xInt;
 end
 
 function States = default_inputs(States,R)
