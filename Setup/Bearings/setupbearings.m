@@ -88,10 +88,6 @@ for iMat = 1:3
     end
 end
 
-RBear = eye(4);
-RBear = RBear([1 4 2 3],:);
-RBear(4,:) = -RBear(4,:);
-
 switch B.Model
     case 'REB'
         [B.Params,B.Kb,B.Cb,B.Mb] = setupREB(B.Params); 
@@ -193,11 +189,16 @@ switch B.Model
         B.Mb = kron([1 -1; -1 1],B.Mb);
 end
 
+RBear = eye(4);
+RBear = RBear([1 4 2 3],:);
+RBear(4,:) = -RBear(4,:);
+
 R_fields = {'Ri','Ro'};
 for i = 1:2
     if ~isfield(B,R_fields{i})
-        B.(R_fields{i}) = RBear;
+        B.(R_fields{i}) = eye(4);
     end
+    B.(R_fields{i}) = RBear * B.(R_fields{i});
 end
 
 %We can't have infs in the final bearing stiffness matrix as this breaks
