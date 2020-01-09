@@ -79,34 +79,46 @@ for i = 1:length(P.Bearing)
         Forces.xddotInt = Forces.xddotInt + P.Bearing{i}.V'*ForcesB.xddotInt;
     end
 
-    R = P.Bearing{i}.R;
-    U = P.Bearing{i}.U;
+    R  = P.Bearing{i}.R;
+    U  = P.Bearing{i}.U;
+    V  = P.Bearing{i}.V;
+    Ue = P.Bearing{i}.Ue;
     
     Forces.F  = Forces.F  + U'*R'*ForcesB.F;
     
     if nargout>1
         %assemble stiffness structure
         StiffnessB = default_stiffness_j(P.Bearing{i},StiffnessB);
-        Stiffness.K   = Stiffness.K   + mtimesx(U'*R',mtimesx(StiffnessB.K,R*U));
         
+        Stiffness.K   = Stiffness.K   + mtimesx(U'*R',mtimesx(StiffnessB.K,R*U));
         Stiffness.Kqq = Stiffness.Kqq + mtimesx(U'*R',mtimesx(StiffnessB.Kqq,R*U));
-        Stiffness.Kqx = Stiffness.Kqx + mtimesx(U'*R',mtimesx(StiffnessB.Kqx,P.Bearing{i}.V));
-        Stiffness.Kxq = Stiffness.Kxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Kxq,R*U));
-        Stiffness.Kxx = Stiffness.Kxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Kxx,P.Bearing{i}.V));
+        Stiffness.Kqx = Stiffness.Kqx + mtimesx(U'*R',mtimesx(StiffnessB.Kqx,V));
+        Stiffness.Kxq = Stiffness.Kxq + mtimesx(V',mtimesx(StiffnessB.Kxq,R*U));
+        Stiffness.Kxx = Stiffness.Kxx + mtimesx(V',mtimesx(StiffnessB.Kxx,V));
+        
+        Stiffness.Ku  = Stiffness.Ku  + mtimesx(U'*R',mtimesx(StiffnessB.Ku,Ue));
+        Stiffness.Kqu = Stiffness.Kqu + mtimesx(U'*R',mtimesx(StiffnessB.Kqu,Ue));
+        Stiffness.Kxu = Stiffness.Kxu + mtimesx(V',mtimesx(StiffnessB.Kxu,Ue));
 
         Stiffness.C   = Stiffness.C   + mtimesx(U'*R',mtimesx(StiffnessB.C,R*U));
-        
         Stiffness.Cqq = Stiffness.Cqq + mtimesx(U'*R',mtimesx(StiffnessB.Cqq,R*U));
-        Stiffness.Cqx = Stiffness.Cqx + mtimesx(U'*R',mtimesx(StiffnessB.Cqx,P.Bearing{i}.V));
-        Stiffness.Cxq = Stiffness.Cxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Cxq,R*U));
-        Stiffness.Cxx = Stiffness.Cxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Cxx,P.Bearing{i}.V));
+        Stiffness.Cqx = Stiffness.Cqx + mtimesx(U'*R',mtimesx(StiffnessB.Cqx,V));
+        Stiffness.Cxq = Stiffness.Cxq + mtimesx(V',mtimesx(StiffnessB.Cxq,R*U));
+        Stiffness.Cxx = Stiffness.Cxx + mtimesx(V',mtimesx(StiffnessB.Cxx,V));
+        
+        Stiffness.Cu  = Stiffness.Cu  + mtimesx(U'*R',mtimesx(StiffnessB.Cu,Ue));
+        Stiffness.Cqu = Stiffness.Cqu + mtimesx(U'*R',mtimesx(StiffnessB.Cqu,Ue));
+        Stiffness.Cxu = Stiffness.Cxu + mtimesx(V',mtimesx(StiffnessB.Cxu,Ue));
         
         Stiffness.M   = Stiffness.M   + mtimesx(U'*R',mtimesx(StiffnessB.M,R*U));
-
         Stiffness.Mqq = Stiffness.Mqq + mtimesx(U'*R',mtimesx(StiffnessB.Mqq,R*U));
-        Stiffness.Mqx = Stiffness.Mqx + mtimesx(U'*R',mtimesx(StiffnessB.Mqx,P.Bearing{i}.V));
-        Stiffness.Mxq = Stiffness.Mxq + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Mxq,R*U));
-        Stiffness.Mxx = Stiffness.Mxx + mtimesx(P.Bearing{i}.V',mtimesx(StiffnessB.Mxx,P.Bearing{i}.V));
+        Stiffness.Mqx = Stiffness.Mqx + mtimesx(U'*R',mtimesx(StiffnessB.Mqx,V));
+        Stiffness.Mxq = Stiffness.Mxq + mtimesx(V',mtimesx(StiffnessB.Mxq,R*U));
+        Stiffness.Mxx = Stiffness.Mxx + mtimesx(V',mtimesx(StiffnessB.Mxx,V));
+        
+        Stiffness.Mu  = Stiffness.Mu  + mtimesx(U'*R',mtimesx(StiffnessB.Mu,Ue));
+        Stiffness.Mqu = Stiffness.Mqu + mtimesx(U'*R',mtimesx(StiffnessB.Mqu,Ue));
+        Stiffness.Mxu = Stiffness.Mxu + mtimesx(V',mtimesx(StiffnessB.Mxu,Ue));
     end
 end
 
@@ -114,6 +126,7 @@ function Stiffness = default_stiffness_j(B,Stiffness)
 NPts = size(Stiffness.K,3);
 NDof = 2*4;
 NInt = size(Stiffness.Kxx,1);
+NExc = B.NExcite;
 
 defaultable_fields = {'C','M'};
 for i = 1:2
@@ -150,6 +163,26 @@ for i = 1:2
     end
 end
 
+defaultable_fields = {'Ku','Cu','Mu'};
+for i = 1:3
+    if ~isfield(Stiffness,defaultable_fields{i})
+        Stiffness.(defaultable_fields{i}) = zeros(NDof,NExc,NPts);
+    end
+end
+
+defaultable_fields = {'Kqu','Cqu','Mqu'};
+for i = 1:3
+    if ~isfield(Stiffness,defaultable_fields{i})
+        Stiffness.(defaultable_fields{i}) = zeros(NDof,NExc,NPts);
+    end
+end
+defaultable_fields = {'Kxu','Cxu','Mxu'};
+for i = 1:3
+    if ~isfield(Stiffness,defaultable_fields{i})
+        Stiffness.(defaultable_fields{i}) = zeros(NInt,NExc,NPts);
+    end
+end
+
 function StatesB = states_init_j(B,Oshaft,Ashaft,States)
 StatesB.qo     = B.Ro * (B.Uo * States.x);
 StatesB.qodot  = B.Ro * (B.Uo * States.xdot);
@@ -166,6 +199,10 @@ StatesB.xInt     = B.V*States.xInt;
 StatesB.xdotInt  = B.V*States.xdotInt;
 StatesB.xddotInt = B.V*States.xddotInt;
 
+StatesB.u     = B.Ue*States.u;
+StatesB.udot  = B.Ue*States.udot;
+StatesB.uddot = B.Ue*States.uddot;
+
 StatesB.bSolve = States.bSolve;
 
 function States = default_inputs(States,P,NPts)
@@ -178,6 +215,15 @@ end
 if ~isfield(States,'xddot')
     States.xddot = 0*States.x;
 end
+if ~isfield(States,'u')
+    States.u = zeros(P.Mesh.Excite.NExcite,NPts);
+end
+if ~isfield(States,'udot')
+    States.udot = 0*States.u;
+end
+if ~isfield(States,'uddot')
+    States.uddot = 0*States.u;
+end
 
 function Forces = forces_init(P,NPts)
 Forces.F = zeros(P.Mesh.Bearing.NInput,NPts);
@@ -188,26 +234,36 @@ Forces.xddotInt = zeros(P.Mesh.NDofInt,NPts);
 
 function Stiffness = stiffness_init(P,NPts)
 NBearingDof = P.Mesh.Bearing.NInput;
+NExcite = P.Mesh.Excite.NExcite;
 Stiffness.K = zeros(NBearingDof,NBearingDof,NPts);
-
 Stiffness.Kqq = zeros(NBearingDof,NBearingDof,NPts);
 Stiffness.Kqx = zeros(NBearingDof,P.Mesh.NDofInt,NPts);
 Stiffness.Kxq = zeros(P.Mesh.NDofInt,NBearingDof,NPts);
 Stiffness.Kxx = zeros(P.Mesh.NDofInt,P.Mesh.NDofInt,NPts);
 
-Stiffness.C = zeros(NBearingDof,NBearingDof,NPts);
+Stiffness.Ku = zeros(NBearingDof,NExcite,NPts);
+Stiffness.Kqu = zeros(NBearingDof,NExcite,NPts);
+Stiffness.Kxu = zeros(P.Mesh.NDofInt,NExcite,NPts);
 
+Stiffness.C = zeros(NBearingDof,NBearingDof,NPts);
 Stiffness.Cqq = zeros(NBearingDof,NBearingDof,NPts);
 Stiffness.Cqx = zeros(NBearingDof,P.Mesh.NDofInt,NPts);
 Stiffness.Cxq = zeros(P.Mesh.NDofInt,NBearingDof,NPts);
 Stiffness.Cxx = zeros(P.Mesh.NDofInt,P.Mesh.NDofInt,NPts);
 
-Stiffness.M = zeros(NBearingDof,NBearingDof,NPts);
+Stiffness.Cu = zeros(NBearingDof,NExcite,NPts);
+Stiffness.Cqu = zeros(NBearingDof,NExcite,NPts);
+Stiffness.Cxu = zeros(P.Mesh.NDofInt,NExcite,NPts);
 
+Stiffness.M = zeros(NBearingDof,NBearingDof,NPts);
 Stiffness.Mqq = zeros(NBearingDof,NBearingDof,NPts);
 Stiffness.Mqx = zeros(NBearingDof,P.Mesh.NDofInt,NPts);
 Stiffness.Mxq = zeros(P.Mesh.NDofInt,NBearingDof,NPts);
 Stiffness.Mxx = zeros(P.Mesh.NDofInt,P.Mesh.NDofInt,NPts);
+
+Stiffness.Mu = zeros(NBearingDof,NExcite,NPts);
+Stiffness.Mqu = zeros(NBearingDof,NExcite,NPts);
+Stiffness.Mxu = zeros(P.Mesh.NDofInt,NExcite,NPts);
 
 function States = default_speeds(States,NPts)
 fields = {'O','A'};

@@ -65,6 +65,9 @@ States.xddot = 0*States.x;
 States.xInt = P.Mesh.xInt*wons;
 States.xdotInt = 0*States.xInt;
 States.xddotInt = 0*States.xInt;
+States.u = 0*P.Mesh.Excite.uSync*wons;
+States.udot = 0*P.Mesh.Excite.uSync*wons;
+States.uddot = 0*P.Mesh.Excite.uSync*wons;
 States.bSolve = 0;
 
 for i = 1:NBearing
@@ -130,5 +133,9 @@ StatesB.Ao = Ashaft(1,:); StatesB.Ai = Ashaft(2,:);
 StatesB.xInt     = B.V*States.xInt;
 StatesB.xdotInt  = B.V*States.xdotInt;
 StatesB.xddotInt = B.V*States.xddotInt;
+
+StatesB.u     = B.Ue*States.u;
+StatesB.udot  = B.Ue*States.udot;
+StatesB.uddot = B.Ue*States.uddot;
 
 StatesB.bSolve = States.bSolve;

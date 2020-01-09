@@ -11,6 +11,8 @@ for i = 1:length(E)
             E{i} = setupskew(E{i},P.Rotor);
         case 'shaker'
             E{i} = setupshaker(E{i});
+        case 'bearing'
+            E{i} = setupbearing(E{i});
         otherwise
             error('Unrecognised excitation type')
     end
@@ -95,7 +97,7 @@ end
 
 fields = {'K','C','M'};
 if ~any(isfield(E,fields))
-    error('Need either "K","C" or "M"" in P.Excite for shake excitation')
+    error('Need either "K","C" or "M"" in P.Excite for shaker excitation')
 end
 for i = 1:length(fields)
     if ~isfield(E,fields{i})
@@ -105,3 +107,21 @@ end
 
 E.NInput = 2;
 E.u = E.Amplitude.*exp(1i*E.Phase);
+
+function E = setupbearing(E)
+essential_fields = {'iBearing','Mode'};
+for j = 1:length(essential_fields)
+    if ~isfield(E,essential_fields{j})
+        error(['Missing field "' essential_fields{j} '" in P.Excite'])
+    end
+end
+
+defaultable_fields = {'Amplitude', 'Phase'};
+for j = 1:length(defaultable_fields)
+    if ~isfield(E,defaultable_fields{j})
+        E.(defaultable_fields{j}) = 0;
+    end
+end
+
+E.u = E.Amplitude.*exp(1i*E.Phase);
+E.NInput = length(E.u);

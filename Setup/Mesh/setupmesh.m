@@ -309,6 +309,11 @@ usync = zeros(NExcInputTot,1);
 uasync = zeros(NExcInputTot,1);
 Se = [];
 
+for i = 1:NBearings
+    P.Bearing{i}.NExcite = 0;
+    P.Bearing{i}.Ue = zeros(0,NExcInputTot);
+end
+
 for i = 1:length(P.Excite)
     Ue = IMapExcite(P.Excite{i}.iExcite,:);
     P.Excite{i}.U = Ue;
@@ -327,9 +332,14 @@ for i = 1:length(P.Excite)
         case 'shaker'
             iStator = P.Excite{i}.iStator;
             P.Excite{i}.S = P.Stator{iStator}.S(1:2,:);
-            Ke = Ke + Ue'*P.Excite{iStator}.K*Ue;
-            Ce = Ce + Ue'*P.Excite{iStator}.C*Ue;
-            Me = Me + Ue'*P.Excite{iStator}.M*Ue;
+            Ke = Ke + Ue'*P.Excite{i}.K*Ue;
+            Ce = Ce + Ue'*P.Excite{i}.C*Ue;
+            Me = Me + Ue'*P.Excite{i}.M*Ue;
+        case 'bearing'
+            iBearing = P.Excite{i}.iBearing;
+            P.Excite{i}.S = zeros(P.Excite{i}.NInput,NDofTot);           
+            P.Bearing{iBearing}.NExcite = P.Excite{i}.NInput;
+            P.Bearing{iBearing}.Ue = Ue;
     end
    
     Se = [Se; P.Excite{i}.S];
