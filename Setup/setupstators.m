@@ -38,5 +38,5 @@ for i = 1:length(fields)
 end
 
 S.Ks = S.K;
-ii = isinf(S.K); S.K(ii) = 100;
-ii = isinf(S.C); S.C(ii) = 100;
+ii = isinf(S.K); S.K(ii) = 0;
+ii = isinf(S.C); S.C(ii) = 0;

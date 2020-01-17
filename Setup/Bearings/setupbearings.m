@@ -202,12 +202,10 @@ for i = 1:2
 end
 
 %We can't have infs in the final bearing stiffness matrix as this breaks
-%the FE setup code, so we set these terms to a small value. It must be 
-%non-zero so we can detect which direction they can exert forces, for the 
-%C-B model reduciton on the rotor
+%the FE setup code, so we set these terms to a zero. 
 
 %Don't worry, we'll check Kxx etc later to find the Infs to determine fixed
 %nodes. The values therefore won't contribute to the final stiffness matrix.
 
-ii = isinf(B.Kb); B.Kb(ii) = 100;
-ii = isinf(B.Cb); B.Cb(ii) = 100;
+ii = isinf(B.Kb); B.Kb(ii) = 0;
+ii = isinf(B.Cb); B.Cb(ii) = 0;
