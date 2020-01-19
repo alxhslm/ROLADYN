@@ -34,6 +34,7 @@ if ~isfield(S.Section,'ri')
 end
 S.Section.A = pi*(S.Section.ro^2 - S.Section.ri^2);
 S.Section.I = pi/4*(S.Section.ro^4 - S.Section.ri^4);
+S.Section.Z = S.Section.I/S.Section.ro;
 
 %% Options
 if ~isfield(S,'Options')
