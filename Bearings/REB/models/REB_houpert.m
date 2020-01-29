@@ -21,9 +21,8 @@ if B.bCentrifugal
     Fcent = 0.5*B.mBall*B.dm*Ocage.^2;
     
     gamma = Fcent/cos(B.alpha0)./(B.Inner.K*sgn_power(Dr*cos(B.alpha0),B.n));
-    lambda = (B.Outer.K / B.Inner.K)^(1/B.n);
     
-    [La,Lr] = integrals_centrifugal(gamma,lambda,A,B.n);
+    [La,Lr] = integrals_centrifugal(gamma,B.Contact.lambda,A,B.n);
     
     Fr =  B.Inner.K * ((Dr*cos(B.alpha0)).^B.n) * cos(B.alpha0) * B.Setup.Z * Lr;
     Fz =  B.Inner.K * ((Dr*cos(B.alpha0)).^B.n) * sin(B.alpha0) * B.Setup.Z * La;
@@ -75,7 +74,7 @@ V.alpha_i = alpha_i; V.alpha_o = alpha_o;
 %stiffnesses
 S = struct([]);
 
-function [La,Lr] = integrals_centrifugal(gamma,lambda,A,n)
+function [La,Lr] = integrals_centrifugal(gamma,B.Contact.lambda,A,n)
 
 p0a = [0.2716
     2.2174
@@ -95,13 +94,13 @@ p0r = [0.2581
     0.0161
     ];
 
-La = poly(gamma,lambda,A,p0a,n);
-Lr = poly(gamma,lambda,A,p0r,n);
+La = poly(gamma,B.Contact.lambda,A,p0a,n);
+Lr = poly(gamma,B.Contact.lambda,A,p0r,n);
 
-function y = poly(gamma,lambda,A,p,n)
+function y = poly(gamma,B.Contact.lambda,A,p,n)
 gamma = gamma + eps;
 f = exp(-p(7)*gamma);
-y = maxSmooth(p(1) * f.* (1 + A).^p(2) .* (1 - 1./(1+lambda)).^n + (1-f).*(p(3).*gamma.^p(4) .* lambda.^p(5)).*(1 + A).^p(6),0,1E-6);
+y = maxSmooth(p(1) * f.* (1 + A).^p(2) .* (1 - 1./(1+B.Contact.lambda)).^n + (1-f).*(p(3).*gamma.^p(4) .* B.Contact.lambda.^p(5)).*(1 + A).^p(6),0,1E-6);
 
 
 function [La,Lr] = integrals(A,n)

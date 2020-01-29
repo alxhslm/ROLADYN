@@ -17,7 +17,7 @@ end
 
 [qr,qO] = meshgrid(r,O);
 
-Qi = hertz_contact(REB.Contact.Inner.K,REB.Contact.Inner.n,qr-w,1E-8);
+Qi = hertz_contactlaw(REB.Contact.Inner.K,REB.Contact.Inner.n,qr-w,1E-8);
 
 %fit a model for each speed
 K = REB.Contact.K;
@@ -56,7 +56,7 @@ Q = maxSmooth(p(1,:).*sgn_power(r,p(2,:)),0,1E-8);
 function [f,Q_i,Q_o] = ball_equib(x,r,Ocage,REB)
 Fc = (REB.Dynamics.mb * Ocage.^2 * REB.Geometry.dm/2);
 
-Q_i = hertz_contact(REB.Contact.Inner.K,REB.Contact.Inner.n,r-x,1E-8);
-Q_o = hertz_contact(REB.Contact.Outer.K,REB.Contact.Outer.n,x,1E-8);
+Q_i = hertz_contactlaw(REB.Contact.Inner.K,REB.Contact.Inner.n,r-x,1E-8);
+Q_o = hertz_contactlaw(REB.Contact.Outer.K,REB.Contact.Outer.n,x,1E-8);
 
 f = Q_i + Fc - Q_o;

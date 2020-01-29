@@ -1,13 +1,13 @@
 function mat = setupmaterial(material)
 
 if ischar(material)
-    material_orig.name = material;
+    material_orig.Name = material;
 else
     material_orig = material;
 end
 
-mat.name = material_orig.name;
-switch mat.name
+mat.Name = material_orig.Name;
+switch mat.Name
     case 'steel'   
         mat.E = 200E9;
         mat.v = 0.3;

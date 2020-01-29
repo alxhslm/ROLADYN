@@ -6,7 +6,7 @@ assert(length(O) == size(R,3));
 
 F = [F; 0*F];
 
-if nargin > 5 %asynchronous
+if nargin > 4 %asynchronous
     q = zeros(2*NDof,length(w),length(O));
     assert(length(w) == size(F,2));
     for i = 1:length(O)

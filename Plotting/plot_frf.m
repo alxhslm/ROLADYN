@@ -69,7 +69,7 @@ end
 %Initialise some figures and axes
 if bGenPlots
     mag = figure('Name','FRF: Magnitude');
-    ax_mag = zeros(NOutput,NInput);
+    ax_mag = gobjects(NOutput,NInput);
     for i = 1:NOutput
         for j = 1:NInput
             ax_mag(i,j) = subplot(NOutput,NInput,(i-1)*NInput + j);
@@ -78,7 +78,7 @@ if bGenPlots
     end
 
     pha = figure('Name','FRF: Phase');
-    ax_ph = zeros(NOutput,NInput);
+    ax_ph = gobjects(NOutput,NInput);
     for i = 1:NOutput
         for j = 1:NInput
             ax_ph(i,j) = subplot(NOutput,NInput,(i-1)*NInput + j);
@@ -91,7 +91,7 @@ h_mag = zeros(NOutput,NInput);
 h_ph  = zeros(NOutput,NInput);
 
 for j = 1:NInput
-    q = Q{j};   
+    q = mtimesx(P.Model.A,Q{j});   
     
     for i = 1:NOutput
         if bAsync %async - 3d surfaces

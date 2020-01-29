@@ -1,4 +1,7 @@
 function P = setupsystem(P,type,O,A)
+
+%% Default inputs
+
 if ~isfield(P,'g')
     P.g = [0 0]';
 end
@@ -12,51 +15,42 @@ if nargin < 4
     A = [];
 end
 
-% Rotors - first setup the mass related parameters for all of the rotors
+%% Setup components
+
+% Rotors - first setup the rotors including shaft FE models etc
+if ~isfield(P,'Rotor')
+    P.Rotor = {};
+end
 P.Rotor = setuprotors(P.Rotor);
 
 % Bearings - now setup the bearing stiffness matrices etc
-if isfield(P,'Bearing')
-    P.Bearing = setupbearings(P.Bearing,P.Rotor,O);
-else
+if ~isfield(P,'Bearing')
     P.Bearing = {};
 end
+P.Bearing = setupbearings(P.Bearing,P.Rotor);
 
-% Excitation - now define how the rotor will be excited
+% Stators - any non-rotating components such as bearing housings etc
+if ~isfield(P,'Stator')
+    P.Stator = {};
+end
+P.Stator = setupstators(P.Stator);
+
+% Excitation - now define how the system will be excited
+if ~isfield(P,'Excite')
+    P.Excite = {};
+end
 P = setupexcitation(P);
 
-%% Do the initial setup at x0 = 0
+%% Assembly
 
 % Create mesh using specified nodes
 P = setupmesh(P);
 
-% Assemble the matrices for the rigid shaft model
+% Assemble the matrices and perform model reduction
 P = setupmodel(P,type);
 
-% Intial guess for x0
-if isfield(P.Model,'x0') && length(P.Model.x0) == P.Model.NDof
-    x0 = [P.Model.x0;
-        P.Mesh.Bearing.xInt];
-else
-    x0 = [(P.Model.K+1E5*eye(P.Model.NDof))\P.Model.Fg;
-        P.Mesh.Bearing.xInt];
-end
+%% Find equilibrium position
+P = rotor_equib(P,O,A);
 
-%% Now find equilibrium position & resetup
-x0 = rotor_equib(P,x0,O,A);
-
-P.Model.x0 = x0(1:P.Model.NDof);
-P.Model.xInt = x0(P.Model.NDof+1:end);
-
-P.Mesh.x0 = P.Model.A * x0(1:P.Model.NDof);
-P.Mesh.xInt = x0(P.Model.NDof+1:end);
-
-% Bearings - now setup the bearing stiffness matrices etc
-P.Rotor = setuprotors(P.Rotor,P.Mesh.x0);
-P.Bearing = setupbearings(P.Bearing,P.Rotor,O,P.Mesh.x0);
-
-% Create mesh using specified nodes
-P = setupmesh(P);
-
-% Assemble the matrices for the rigid shaft model
-P = setupmodel(P,type);
+%compute the loads at setup
+P = setuploadandstiffness(P,O,A);

@@ -1,52 +1,92 @@
 function [F,V,S] = radial_model(B, States) 
 xBearing = States.qi - States.qo;
 dxBearing = States.qidot - States.qodot;
+ddxBearing = States.qiddot - States.qoddot;
 
-n = xBearing([1 3],:);
-r = sqrt(sum(n.^2));
-n = n ./ (repmat(r,2,1) + eps);
-rdot = sum(dxBearing([1 3],:) .* n,1);
 
-fr = B.K * max(r-B.c,0).^B.n + B.C * rdot;
+x = xBearing([1 3],:);
+xdot = dxBearing([1 3],:);
+xddot = ddxBearing([1 3],:);
 
-fb = zeros(4,size(xBearing,2));
-fb([1 3],:) = repmat(fr,[2 1]).*n;
+r = sqrt(sum(x.^2));
+n = x ./ (repmat(r,2,1) + eps);
+t = [n(2,:); -n(1,:)];
 
-F.F = fb;
+rdot = xdot .* n;
+rddot = xddot .* n;
+
+fel = getforces(B,r);
+fdamp = B.C * rdot;
+finer = B.M * rddot;
+
+NPts = size(States.qi,2);
+fb = zeros(4,NPts);
+fb([1 3],:) = (fel + fdamp + finer).*n;
+
+F.F = [fb; -fb];
 F.FInt     = zeros(0,NPts);
 F.xInt     = zeros(0,NPts);
 F.xdotInt  = zeros(0,NPts);
 F.xddotInt = zeros(0,NPts);
 
-V.Fr = fr;
+V.Fr = fb;
 V.r  = r;
 V.rdot = rdot;
 
 if nargout > 2
-    Kr = B.K * B.n * max(r-B.c,0).^(B.n-1);
-    Cr = B.C * (0*r+1);
+    [fel,Kr] = getforces(B,r);
 
-    n  = permute(n,[1 3 2]);
-    nt = permute(n,[2 1 3]);
-    N = mtimesx(n,nt);
+    Krot = zeros(2,2,NPts);
+    Krot(1,1,:) = Kr;
+    Krot(2,2,:) = fel./(r+eps);
+
+    Crot = zeros(2,2,NPts);
+    Crot(1,1,:) = B.C;
+    
+    Mrot = zeros(2,2,NPts);
+    Mrot(1,1,:) = B.M;
+
+    R(:,1,:) = permute(n,[1 3 2]);
+    R(:,2,:) = permute(t,[1 3 2]);
+    Rt = mtransposex(R);
 
     Kb = zeros(4,4,size(xBearing,2));
-    Kb([1 3],[1 3],:) = repmat(permute(Kr,[1 3 2]),2)*N;
+    Kb([1 3],[1 3],:) = mtimesx(Rt,mtimesx(Krot,R));
 
     Cb = zeros(4,4,size(xBearing,2));
-    Cb([1 3],[1 3],:) = repmat(permute(Cr,[1 3 2]),2)*N;
+    Cb([1 3],[1 3],:) = mtimesx(Rt,mtimesx(Crot,R));
     
-    S.K = Kb;
-    S.C = Cb;
+    Mb = zeros(4,4,size(xBearing,2));
+    Mb([1 3],[1 3],:) = mtimesx(Rt,mtimesx(Mrot,R));
+    
+    K = [Kb -Kb; -Kb Kb];
+    C = [Cb -Cb; -Cb Cb];
+    M = [Mb -Mb; -Mb Mb];
         
-    S.Kqq = Kb;
-    S.Cqq = Kb;
+    S.K = K;
+    S.C = C;
+    S.M = M;
+
+    S.Kqq = K;
+    S.Cqq = C; 
+    S.Mqq = M;
     
-    S.Kqx = zeros(4,0,NPts);
-    S.Kxq = zeros(0,4,NPts);
+    S.Kqx = zeros(8,0,NPts);
+    S.Kxq = zeros(0,8,NPts);
     S.Kxx = zeros(0,0,NPts);
 
-    S.Cqx = zeros(4,0,NPts);
-    S.Cxq = zeros(0,4,NPts);
+    S.Cqx = zeros(8,0,NPts);
+    S.Cxq = zeros(0,8,NPts);
     S.Cxx = zeros(0,0,NPts);
+    
+    S.Mqx = zeros(8,0,NPts);
+    S.Mxq = zeros(0,8,NPts);
+    S.Mxx = zeros(0,0,NPts);
+end
+
+function [fel,Kr] = getforces(B,r)
+fel = B.K * max(r-B.c,0).^B.n;
+
+if nargout > 1
+    Kr = B.K * B.n * max(r-B.c,0).^(B.n-1) .* (r > B.c);
 end

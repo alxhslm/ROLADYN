@@ -1,39 +1,39 @@
-function [FMExcite,uExcite,duExcite,dduExcite] = excitation_ode(P,O,w,int_O_dt,int_w_dt,dO_dt,dw_dt)
+function [U,Udot,Uddot] = excitation_ode(P,O,w,int_O_dt,int_w_dt,dO_dt,dw_dt)
 
-NDofTot   = P.FE.NDofFull;
-NBearings = length(P.Bearing);
-uExcite   = zeros(4*2*NBearings,size(O,1),size(O,2));
-duExcite  = zeros(4*2*NBearings,size(O,1),size(O,2));
-dduExcite = zeros(4*2*NBearings,size(O,1),size(O,2));
-FMExcite  = zeros(NDofTot,size(O,1),size(O,2));
+if nargin < 6
+    dO_dt = 0*O;
+end
+if nargin < 7
+    dw_dt = 0*w;
+end
+
+U     = zeros(P.Model.Excite.NExcite,length(O));
+Udot  = zeros(P.Model.Excite.NExcite,length(O));
+Uddot = zeros(P.Model.Excite.NExcite,length(O));
 
 for i = 1:length(P.Excite)
-     if strcmpi(P.Excite(i).Mode, 'Sync')
+     if strcmpi(P.Excite{i}.Mode, 'Sync')
          phase      = int_O_dt;
          omega      = O;
          domega_dt  = dO_dt;
-     elseif strcmpi(P.Excite(i).Mode, 'Async')
+     elseif strcmpi(P.Excite{i}.Mode, 'Async')
          phase      = int_w_dt;
          omega      = w;
          domega_dt  = dw_dt;
      else
          error('Unknown excitation frequency type');
      end
-
-     [F,u,du,ddu] = feval(['exc_' P.Excite(i).Name],P.Excite(i).Params,P,omega,phase,domega_dt);
-     FMExcite  = FMExcite  + F;
-     uExcite   = uExcite   + u;
-     duExcite  = duExcite  + du;
-     dduExcite = dduExcite + ddu;
+     
+     u     =  P.Excite{i}.u.*exp(1i.*phase);
+     udot  =  u*1i.*omega;
+     uddot = -u.*omega.^2 + u*1i.*domega_dt;
+     
+     U     = U   + P.Excite{i}.S'*u;
+     Udot  = Udot  + P.Excite{i}.S'*udot;
+     Uddot = Uddot + P.Excite{i}.S'*uddot;
 end
 
 %remove any singular dimensions
-FMExcite  = squeeze(FMExcite);
-uExcite   = squeeze(uExcite);
-duExcite  = squeeze(duExcite);
-dduExcite = squeeze(dduExcite);
-
-FMExcite  = real(FMExcite);
-uExcite   = real(uExcite);
-duExcite  = real(duExcite);
-dduExcite = real(dduExcite);
+U     = real(U);
+Udot  = real(Udot);
+Uddot = real(Uddot);

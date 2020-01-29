@@ -39,17 +39,15 @@ if States.bSolve
 end
 
 if nargout<3
-    [Forces,Channels] = feval(model,Params,States);
+    [Forces,Channels] = feval(model,Params,States);  
+    Forces.F  = [R'*Forces.Fi;
+                 R'*Forces.Fo];
 else
     [Forces,Channels,Stiffness] = stiffnessAndDamping(model,Params,States,R);
 end
-Forces.Fi = R'*Forces.Fi;
-Forces.Fo = R'*Forces.Fo;
-Forces.F  = [Forces.Fi;
-             Forces.Fo];
              
-Forces.xInt = States.xInt;
-Forces.xdotInt = States.xdotInt;
+Forces.xInt     = States.xInt;
+Forces.xdotInt  = States.xdotInt;
 Forces.xddotInt = States.xddotInt;
 
 Forces.q = R'*(States.qi - States.qo);
@@ -198,14 +196,14 @@ end
 function [F,V,S] = stiffnessAndDamping(model,Params,States,R)
 [F,V,S] = feval(model,Params,States);
 
+N = size(R,2);
+NPts = size(States.qi,2);
 if ~Params.Options.bAnalyticalDeriv || isempty(S)
     S = struct();
     Fi0 = F.Fi;
     Fo0 = F.Fo;
     Fx = F.FInt;
     h = 1E-10;
-    N = size(R,2);
-    NPts = size(States.qi,2);
     H = zeros(N,NPts);
     
     %%%%%%%%%%%%%%%% STIFFNESS %%%%%%%%%%%%%%%%%
@@ -255,26 +253,7 @@ if ~Params.Options.bAnalyticalDeriv || isempty(S)
         S.Kxx(:,i,:) = permute((Forces.FInt-Fx)./h,[1 3 2]);
         States.xInt = x;
     end
-    
-    S.Kqq = [S.Kqiqi S.Kqiqo; 
-             S.Kqoqi S.Kqoqo];
-    S.Kqx = [S.Kqix;
-             S.Kqox];
-    S.Kxq = [S.Kxqi S.Kxqo];
-    
-    %now work out effective stiffness
-    Kxxinv = ball_inv(S.Kxx,Params.Model.NDof);
-    if Params.Model.NDof > 0
-        S.K = S.Kqq - mtimesx(S.Kqx,mtimesx(Kxxinv,S.Kxq));
-    else
-        S.K = S.Kqq;
-    end
-    
-    S.Kii = S.K(1:N,1:N,:);
-    S.Kio = S.K(1:N,N+(1:N),:);
-    S.Koi = S.K(N+(1:N),1:N,:);
-    S.Koo = S.K(N+(1:N),N+(1:N),:);
-    
+        
     %%%%%%%%%%%%%%%% DAMPING %%%%%%%%%%%%%%%%%
     
     %qi derivatives
@@ -324,24 +303,63 @@ if ~Params.Options.bAnalyticalDeriv || isempty(S)
         States.xdotInt = xdot;
     end
     
-    S.Cqq = [S.Cqiqi S.Cqiqo; 
-             S.Cqoqi S.Cqoqo];
-    S.Cqx = [S.Cqix; 
-             S.Cqox];
-    S.Cxq = [S.Cxqi S.Cxqo];
     
-    Cxxinv = ball_inv(S.Cxx,Params.Model.NDof);
-    if Params.Model.NDof > 0
-        S.C = S.Cqq - mtimesx(S.Cqx,mtimesx(Cxxinv,S.Cxq));
-    else
-        S.C = S.Cqq;
-    end
+else
+    %just need to multiply by R to make sure the sizes are consistent
+    S.Kqiqi = mtimesx(R',mtimesx(S.Kqiqi,R));
+    S.Kqoqi = mtimesx(R',mtimesx(S.Kqoqi,R));
+    S.Kqiqo = mtimesx(R',mtimesx(S.Kqiqo,R));
+    S.Kqoqo = mtimesx(R',mtimesx(S.Kqoqo,R));
     
-    S.Cii = S.C(1:N,1:N,:);
-    S.Cio = S.C(1:N,N+(1:N),:);
-    S.Coi = S.C(N+(1:N),1:N,:);
-    S.Coo = S.C(N+(1:N),N+(1:N),:);
+    S.Kxqi = mtimesx(S.Kxqi,R);
+    S.Kxqo = mtimesx(S.Kxqo,R);
+    
+    S.Kqix = mtimesx(R',S.Kqix);
+    S.Kqox = mtimesx(R',S.Kqox);
+           
+    S.Cqiqi = mtimesx(R',mtimesx(S.Cqiqi,R));
+    S.Cqoqi = mtimesx(R',mtimesx(S.Cqoqi,R));
+    S.Cqiqo = mtimesx(R',mtimesx(S.Cqiqo,R));
+    S.Cqoqo = mtimesx(R',mtimesx(S.Cqoqo,R));
+    
+    S.Cxqi = mtimesx(S.Cxqi,R);
+    S.Cxqo = mtimesx(S.Cxqo,R);
+    
+    S.Cqix = mtimesx(R',S.Cqix);
+    S.Cqox = mtimesx(R',S.Cqox);
 end
+
+%Combine stiffness terms
+S.Kqq = [S.Kqiqi S.Kqiqo; 
+         S.Kqoqi S.Kqoqo];
+S.Kqx = [S.Kqix;
+         S.Kqox];
+S.Kxq = [S.Kxqi S.Kxqo];
+
+%now work out effective stiffness
+Kxxinv = ball_inv(S.Kxx,Params.Model.NDof);
+if Params.Model.NDof > 0
+    S.K = S.Kqq - mtimesx(S.Kqx,mtimesx(Kxxinv,S.Kxq));
+else
+    S.K = S.Kqq;
+end
+
+S.Cqq = [S.Cqiqi S.Cqiqo; 
+         S.Cqoqi S.Cqoqo];
+S.Cqx = [S.Cqix; 
+         S.Cqox];
+S.Cxq = [S.Cxqi S.Cxqo];
+
+%now work out effective damping
+Cxxinv = ball_inv(S.Cxx,Params.Model.NDof);
+if Params.Model.NDof > 0
+    S.C = S.Cqq - mtimesx(S.Cqx,mtimesx(Cxxinv,S.Cxq));
+else
+    S.C = S.Cqq;
+end
+
+F.F  = [R'*F.Fi;
+        R'*F.Fo];
 
 function J = myinv(M)
 if size(M,1) == 1

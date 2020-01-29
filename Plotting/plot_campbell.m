@@ -95,15 +95,7 @@ end
 NRotor = length(P.Rotor);
 dir = cell(NRotor,1);
 for j = 1:NModes
-    if options.bAsymmetric
-        hLine_o(j) = plot(ax_o(j),Omega*rad2rpm,freq(2*j-1,:)*rad2hz,'color',col(j,:));
-        plot(ax_o(j),Omega*rad2rpm,freq(2*j,:)*rad2hz,'color',col(j,:));
-    else
-        hLine_o(j) =  plot(ax_o(j),Omega*rad2rpm,freq(j,:)*rad2hz,'color',col(j,:));
-    end
-    hLine_z(j) = plot(ax_z(j),Omega*rad2rpm,zeta(j,:)*frac2percent,'color',col(j,:));
-
-    for i = 1:NRotor
+        for i = 1:NRotor
         kap = kappa(P.Rotor{i}.iGlobal(iNodes(i)),j,2:end);
         if mostly(kap>0,0.95)
             dir{i} = 'FW';
@@ -120,8 +112,25 @@ for j = 1:NModes
             end
         end
     end
-%      leg_modes{j} = [sprintf('Mode %d ',j) '(' sprintf('%s;',dir{:}) ')'];
-     leg_modes{j} = sprintf('Mode %d (%s)',j,dir{1});
+    
+    switch dir{1}        
+        case 'BW'
+            linestyle = '--';
+        otherwise
+            linestyle = '-';
+    end
+        
+    if options.bAsymmetric
+        hLine_o(j) = plot(ax_o(j),Omega*rad2rpm,freq(2*j-1,:)*rad2hz,'color',col(j,:),'LineStyle',linestyle);
+        plot(ax_o(j),Omega*rad2rpm,freq(2*j,:)*rad2hz,'color',col(j,:),'LineStyle',linestyle);
+    else
+        hLine_o(j) =  plot(ax_o(j),Omega*rad2rpm,freq(j,:)*rad2hz,'color',col(j,:),'LineStyle',linestyle);
+    end
+    hLine_z(j) = plot(ax_z(j),Omega*rad2rpm,zeta(j,:)*frac2percent,'color',col(j,:),'LineStyle',linestyle);
+
+    dir_label = sprintf('%s;',dir{:});
+    dir_label = dir_label(1:end-1);
+    leg_modes{j} = sprintf('Mode %d (%s)',j,dir_label);
 end
 
 if bGenPlots

@@ -1,4 +1,4 @@
-function [omega,zeta,modes] = eig2modes(V,d,iSort)
+function [omega,zeta,modesR,modesL] = eig2modes(V,d,W,iSort)
 
 NModes = size(d,1)/2;
 NSweep = size(d,2);
@@ -6,12 +6,14 @@ NDof   = size(V,1)/2;
 
 omega = zeros(NModes,NSweep);
 zeta  = zeros(NModes,NSweep);
-modes = zeros(NDof,NModes,NSweep);
+modesR = zeros(NDof,NModes,NSweep);
+modesL = zeros(NDof,NModes,NSweep);
 
 %group by the complex parts into complex conjugate pairs
 [~,ii] = sort(abs(imag(d(:,1))));
 d = d(ii,:);
 V = V(:,ii,:);
+W = W(:,ii,:);
 
 %now ensure that the +ve imag part comes first
 for j = 1:size(d,2)
@@ -19,6 +21,7 @@ for j = 1:size(d,2)
         if abs(imag(d(i,j)))>1E-10 && imag(d(i,j)) < 0
            d(i+[0 1],j) = d(i+[1 0],j);
            V(:,i+[0 1],j) = V(:,i+[1 0],j);
+           W(:,i+[0 1],j) = W(:,i+[1 0],j);
         end
     end
 end
@@ -35,16 +38,18 @@ for i = 1:NSweep
     zeta(:,i) = -mu./omega(:,i);
     
     %trim off to just the displacement DOF
-    modes(:,:,i) = V(NDof+1:end,1:2:end,i);
+    modesR(:,:,i) = V(NDof+1:end,1:2:end,i);
+    modesL(:,:,i) = W(NDof+1:end,1:2:end,i);
 end
 
 omega = real(omega);
 zeta = real(zeta);
 
 %sort if necessary
-if nargin > 2   
+if nargin > 3  
     [~,ii] = sort(omega(:,iSort));
     omega  = omega(ii,:);
     zeta   = zeta(ii,:);
-    modes  = modes(:,ii,:);
+    modesR  = modesR(:,ii,:);
+    modesL  = modesL(:,ii,:);
 end

@@ -18,20 +18,20 @@ for i = 1:length(P.Rotor)
     rNodes{i} = 0*P.Rotor{i}.Nodes;
     
     for j = 1:length(P.Rotor{i}.Shaft)
-        for k = 1:length(P.Rotor{i}.Shaft{j}.le)
-            [X,Y,Z] = plot_cylinder(P.Rotor{i}.Shaft{j}.ri, P.Rotor{i}.Shaft{j}.ro, P.Rotor{i}.Shaft{j}.ze(k), P.Rotor{i}.Shaft{j}.le(k));
+        for k = 1:length(P.Rotor{1}.Shaft{1}.Element)
+            [X,Y,Z] = plot_cylinder(P.Rotor{i}.Shaft{j}.Section.ri, P.Rotor{i}.Shaft{j}.Section.ro, P.Rotor{i}.Shaft{j}.Element{k}.z, P.Rotor{i}.Shaft{j}.Element{k}.L);
             h.Rotor{i}.Shaft{j} = surf(Z,X,Y,'edgecolor','k','facecolor',col(i,:),'facealpha',0.3);
-            rNodes{i}(P.Rotor{i}.Shaft{j}.iNodes(k)) = max(P.Rotor{i}.Shaft{j}.ro,rNodes{i}(P.Rotor{i}.Shaft{j}.iNodes(k)));
+            rNodes{i}(P.Rotor{i}.Shaft{j}.iNodes(k)) = max(P.Rotor{i}.Shaft{j}.Section.ro,rNodes{i}(P.Rotor{i}.Shaft{j}.iNodes(k)));
         end
     end
     
     %and the discs
     for j = 1:length(P.Rotor{i}.Disc)
-        for k = 1:P.Rotor{i}.Disc{j}.NSegments
-            [X,Y,Z] = plot_cylinder(P.Rotor{i}.Disc{j}.R(k),P.Rotor{i}.Disc{j}.R(k+1),P.Rotor{i}.Disc{j}.z, P.Rotor{i}.Disc{j}.t(k));
+        for k = 1:length(P.Rotor{i}.Disc{j}.Ring.Geometry.t)
+            [X,Y,Z] = plot_cylinder(P.Rotor{i}.Disc{j}.Ring.Geometry.R(k),P.Rotor{i}.Disc{j}.Ring.Geometry.R(k+1),P.Rotor{i}.Disc{j}.z, P.Rotor{i}.Disc{j}.Ring.Geometry.t(k));
             h.Rotor{i}.Disc{j}(k) = surf(Z,X,Y,'edgecolor','k','facecolor',col(i,:));
         end
-        rNodes{i}(P.Rotor{i}.Disc{j}.iNode) = max(P.Rotor{i}.Disc{j}.R(end),rNodes{i}(P.Rotor{i}.Disc{j}.iNode));
+        rNodes{i}(P.Rotor{i}.Disc{j}.iNode) = max(P.Rotor{i}.Disc{j}.Ring.Geometry.R(end),rNodes{i}(P.Rotor{i}.Disc{j}.iNode));
     end 
     
     Rotor_Names{i} = P.Rotor{i}.Name;
@@ -42,25 +42,24 @@ for i = 1:length(P.Bearing)
     roBearing = 0;
     riBearing = Inf;
     for j = 1:2
-        iRotor = P.Bearing{i}.iRotor(j);
-        if ~isnan(iRotor)
+        if strcmp(P.Bearing{i}.Node{j}.Type,'rotor')
+            iRotor = P.Bearing{i}.Node{j}.iRotor;
             for k = 1:length(P.Rotor{iRotor}.Shaft)
-                if any(P.Rotor{iRotor}.Shaft{k}.iNodes ==  P.Bearing{i}.iNode(j))
+                if any(P.Rotor{iRotor}.Shaft{k}.iNodes ==  P.Bearing{i}.Node{j}.iNode)
                     if j == 1 %then inner rotor
-                        riBearing = min(riBearing,P.Rotor{iRotor}.Shaft{k}.ro);
+                        riBearing = min(riBearing,P.Rotor{iRotor}.Shaft{k}.Section.ro);
                     else %otherwise this is the outer rotor
-                        roBearing = max(roBearing,P.Rotor{iRotor}.Shaft{k}.ri);
+                        roBearing = max(roBearing,P.Rotor{iRotor}.Shaft{k}.Section.ri);
                     end
                 end
             end
         end
     end
     
-    %if the bearing is connected to ground, then arbitrarily make it 0.01m
-    % thick
-    if isnan(P.Bearing{i}.iRotor(2))
+    %if the bearing is connected to ground, then arbitrarily make it 0.01m thick
+    if strcmp(P.Bearing{i}.Node{1}.Type,'ground') && strcmp(P.Bearing{i}.Node{2}.Type,'rotor') 
         roBearing = riBearing + 0.01;
-        rNodes{P.Bearing{i}.iRotor(1)}(P.Bearing{i}.iNode(1)) = max(roBearing,rNodes{P.Bearing{i}.iRotor(1)}(P.Bearing{i}.iNode(1)));
+        rNodes{P.Bearing{i}.Node{2}.iRotor}(P.Bearing{i}.Node{2}.iNode) = max(roBearing,rNodes{P.Bearing{i}.Node{2}.iRotor}(P.Bearing{i}.Node{2}.iNode));
     end
     
     [X,Y,Z] = plot_cylinder(riBearing,roBearing,P.Bearing{i}.z,P.Bearing{i}.t);
@@ -75,8 +74,8 @@ if bLabel
     for i = 1:length(P.Bearing)
         rPlot = 0;
         for j = 1:2
-            if ~isnan(P.Bearing{i}.iRotor(j))
-                rPlot = max(rPlot,rNodes{P.Bearing{i}.iRotor(j)}(P.Bearing{i}.iNode(j)));
+            if strcmp(P.Bearing{i}.Node{j}.Type,'rotor')
+                rPlot = max(rPlot,rNodes{P.Bearing{i}.Node{j}.iRotor}(P.Bearing{i}.Node{j}.iNode));
             end
         end
 

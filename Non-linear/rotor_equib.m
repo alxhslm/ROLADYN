@@ -1,18 +1,18 @@
-function x = rotor_equib(P,x0,O,A)
-if nargin < 3 || isempty(O)
+function P = rotor_equib(P,O,A)
+if nargin < 2 || isempty(O)
     O = 0;
 end
-if nargin < 4 || isempty(A)
+if nargin < 3 || isempty(A)
     A = linspace(0,2*pi,100);
 end
 N = length(A);
 
-if nargin < 2 || isempty(x0)
+if isfield(P.Model,'x0') && length(P.Model.x0) == P.Model.NDof
+    x0 = [P.Model.x0;
+          repmat(P.Model.xInt,N,1)];
+else
     x0 = [rand(P.Model.NDof,1)*1E-2;
           rand(P.Model.NDofInt*N,1)*1E-6];
-else
-    x0 = [x0(1:P.Model.NDof);
-           repmat(x0(P.Model.NDof+1:end),N,1)];
 end
 
 Jb = get_sparsity(P.Bearing);
@@ -24,7 +24,7 @@ options.ftol = 1E-8;
 options.xtol = 1E-12;
 options.jacobian = @rotor_equilibrium_jacob;
 options.jacobianstructure = Jstr;
-options.print_level = 0;
+options.print_level = 5;
 
 info.status = 2;
 
@@ -32,19 +32,114 @@ iter = 0;
 bSuccess = 0;
 while ~bSuccess && iter < 20
     [x,info] = fipopt([],x0,@rotor_equilibrium,options,P,O,A);
-    % constr = rotor_equilibrium(x,P,O,A);
     bSuccess = any(info.status == [0 1]);
     x0 = x;
     iter = iter + 1;
 end
 
-J = full(rotor_equilibrium_jacob(x,P,O,A));
 [xCG,xInt] = unpack_vector(x,P,N);
-x = [xCG; 
-    mean(xInt,2)];
+
+P.Model.x0   = xCG;
+P.Model.xInt = mean(xInt,2);
+
+P.Mesh.x0   = P.Model.A * P.Model.x0;
+P.Mesh.xInt = P.Model.xInt;
+
+P.Mesh.Bearing.xb   = P.Model.Bearing.S * P.Model.x0;
+
+wons = (0*A+1);
+States.O = O*wons; 
+States.A = A;
+States.x = (P.Model.Bearing.S*xCG)*wons;
+States.xInt = xInt;
+States.bSolve = 0;
+
+[Forces, Stiffness] = bearingforces(P,States);
+
+P.Mesh.Bearing.Kqq  = Stiffness.Kqq;
+P.Mesh.Bearing.Kqx =  Stiffness.Kqx;
+P.Mesh.Bearing.Kxq =  Stiffness.Kxq;
+P.Mesh.Bearing.Kxx =  Stiffness.Kxx;
+
+P.Mesh.Bearing.Kqu =  Stiffness.Kqu;
+P.Mesh.Bearing.Kxu =  Stiffness.Kxu;
+
+P.Mesh.Bearing.Cqq =  Stiffness.Cqq;
+P.Mesh.Bearing.Cqx =  Stiffness.Cqx;
+P.Mesh.Bearing.Cxq =  Stiffness.Cxq;
+P.Mesh.Bearing.Cxx =  Stiffness.Cxx;
+
+P.Mesh.Bearing.Cqu =  Stiffness.Cqu;
+P.Mesh.Bearing.Cxu =  Stiffness.Cxu;
+
+P.Mesh.Bearing.Mqq =  Stiffness.Mqq;
+P.Mesh.Bearing.Mqx =  Stiffness.Mqx;
+P.Mesh.Bearing.Mxq =  Stiffness.Mxq;
+P.Mesh.Bearing.Mxx =  Stiffness.Mxx;
+
+P.Mesh.Bearing.Mqu =  Stiffness.Mqu;
+P.Mesh.Bearing.Mxu =  Stiffness.Mxu;
+
+%% Model
+P.Model.Rotor.F0       = P.Model.Rotor.K*P.Model.x0;
+P.Model.Stator.F0      = P.Model.Stator.K*P.Model.x0;
+P.Model.Bearing.Lin.F0 = P.Model.Bearing.Lin.K*P.Model.x0;
+
+P.Model.Bearing.F0     = P.Model.Bearing.S'*mean(Forces.F,2);
+P.Model.Bearing.NL.F0  = P.Model.Bearing.F0 - P.Model.Bearing.Lin.F0;
+P.Model.Bearing.K      = P.Model.Bearing.S'*mean(Stiffness.K,3)*P.Model.Bearing.S;
+P.Model.Bearing.NL.K   = P.Model.Bearing.K  - P.Model.Bearing.Lin.K;
+P.Model.Bearing.C      = P.Model.Bearing.S'*mean(Stiffness.C,3)*P.Model.Bearing.S;
+P.Model.Bearing.NL.C   = P.Model.Bearing.C  - P.Model.Bearing.Lin.C;
+P.Model.Bearing.M      = P.Model.Bearing.S'*mean(Stiffness.M,3)*P.Model.Bearing.S;
+P.Model.Bearing.NL.M   = P.Model.Bearing.M  - P.Model.Bearing.Lin.M;
+
+P.Model.Bearing.Ku     = P.Model.Bearing.S'*mean(Stiffness.Ku,3);
+P.Model.Bearing.Cu     = P.Model.Bearing.S'*mean(Stiffness.Cu,3);
+P.Model.Bearing.Mu     = P.Model.Bearing.S'*mean(Stiffness.Mu,3);
+
+P.Model.K            = P.Model.Rotor.K + P.Model.Stator.K + P.Model.Bearing.K;
+P.Model.C            = P.Model.Rotor.C + P.Model.Stator.C + P.Model.Bearing.C;
+P.Model.M            = P.Model.Rotor.M + P.Model.Stator.M + P.Model.Bearing.M;
+
+%% Mesh
+P.Mesh.Rotor.F0       = P.Mesh.Rotor.K*P.Mesh.x0;
+P.Mesh.Stator.F0      = P.Mesh.Stator.K*P.Mesh.x0;
+P.Mesh.Bearing.Lin.F0 = P.Mesh.Bearing.Lin.K*P.Mesh.x0;
+P.Mesh.Bearing.Lin.Fb = P.Mesh.Bearing.Lin.Kb*P.Mesh.Bearing.S*P.Mesh.x0;
+
+P.Mesh.Bearing.Fb     = mean(Forces.F,2);
+P.Mesh.Bearing.NL.Fb  = P.Mesh.Bearing.Fb - P.Mesh.Bearing.Lin.Fb;
+P.Mesh.Bearing.Kb     = mean(Stiffness.K,3);
+P.Mesh.Bearing.NL.Kb  = P.Mesh.Bearing.Kb - P.Mesh.Bearing.Lin.Kb;
+P.Mesh.Bearing.Cb     = mean(Stiffness.C,3);
+P.Mesh.Bearing.NL.Cb  = P.Mesh.Bearing.Cb - P.Mesh.Bearing.Lin.Cb;
+P.Mesh.Bearing.Mb     = mean(Stiffness.M,3);
+P.Mesh.Bearing.NL.Mb  = P.Mesh.Bearing.Mb - P.Mesh.Bearing.Lin.Mb;
+
+P.Mesh.Bearing.Kbu     = mean(Stiffness.Ku,3);
+P.Mesh.Bearing.Cbu     = mean(Stiffness.Cu,3);
+P.Mesh.Bearing.Mbu     = mean(Stiffness.Mu,3);
+
+P.Mesh.Bearing.F0     = P.Mesh.Bearing.S'*P.Mesh.Bearing.Fb;
+P.Mesh.Bearing.NL.F0  = P.Mesh.Bearing.S'*P.Mesh.Bearing.NL.Fb;
+P.Mesh.Bearing.K      = P.Mesh.Bearing.S'*P.Mesh.Bearing.Kb*P.Mesh.Bearing.S;
+P.Mesh.Bearing.NL.K   = P.Mesh.Bearing.K - P.Mesh.Bearing.Lin.K;
+P.Mesh.Bearing.C      = P.Mesh.Bearing.S'*P.Mesh.Bearing.Cb*P.Mesh.Bearing.S;
+P.Mesh.Bearing.NL.C   = P.Mesh.Bearing.C - P.Mesh.Bearing.Lin.C;
+P.Mesh.Bearing.M      = P.Mesh.Bearing.S'*P.Mesh.Bearing.Mb*P.Mesh.Bearing.S;
+P.Mesh.Bearing.NL.M   = P.Mesh.Bearing.M - P.Mesh.Bearing.Lin.M;
+
+P.Mesh.Bearing.Ku     = P.Mesh.Bearing.S'*P.Mesh.Bearing.Kbu;
+P.Mesh.Bearing.Cu     = P.Mesh.Bearing.S'*P.Mesh.Bearing.Cbu;
+P.Mesh.Bearing.Mu     = P.Mesh.Bearing.S'*P.Mesh.Bearing.Mbu;
+
+P.Mesh.K              = P.Mesh.Rotor.K + P.Mesh.Stator.K + P.Mesh.Bearing.K;
+P.Mesh.C              = P.Mesh.Rotor.C + P.Mesh.Stator.C + P.Mesh.Bearing.C;
+P.Mesh.M              = P.Mesh.Rotor.M + P.Mesh.Stator.M + P.Mesh.Bearing.M;
 
 if ~bSuccess
-    error('Failed to find equilibirum position')
+    error('Failed to find equilibrium position')
 end
 
 function [xCG,xInt] = unpack_vector(x,P,N)
@@ -56,76 +151,54 @@ wons = (0*A+1);
 N = length(A);
 
 [xCG,xInt] = unpack_vector(x,P,N);
-uGnd = P.Mesh.Bearing.u0;     
      
 States.O = O*wons; 
 States.A = A;
-States.x = (P.Model.A*xCG)*wons;
-States.u = uGnd*wons;
+States.x = (P.Model.Bearing.S*xCG)*wons;
 States.xInt = xInt;
 States.bSolve = 0;
 
 Forces = bearingforces(P,States);
 
-Fr  = P.Model.Rotor.K*xCG;
+Fr  = (P.Model.Rotor.K+P.Model.Stator.K)*xCG;
 Fg  = P.Model.Fg;
-Fb  = P.Model.A'*Forces.F;
+Fb  = P.Model.Bearing.S'*Forces.F;
 
 constr = [Fg - Fr - mean(Fb,2); Forces.FInt(:)];
 
-if any(isnan(constr))
-    1
-end
-
 function J = rotor_equilibrium_jacob(x,P,O,A)
-if 1
-    N = length(A);
-    wons = (0*A+1);
+N = length(A);
+wons = (0*A+1);
 
-    [xCG,xInt] = unpack_vector(x,P,N);
-    uGnd = P.Mesh.Bearing.u0;     
+[xCG,xInt] = unpack_vector(x,P,N);
 
-    States.O = O*wons; 
-    States.A = A;               
-    States.x = (P.Model.A*xCG)*wons;
-    States.u = uGnd*wons;
-    States.xInt = xInt;
-    States.bSolve = 0;
+States.O = O*wons; 
+States.A = A;               
+States.x = (P.Model.Bearing.S*xCG)*wons;
+States.xInt = xInt;
+States.bSolve = 0;
 
-    [Forces, Stiffness] = bearingforces(P,States);
+[~, Stiffness] = bearingforces(P,States);
 
-    Fr  = P.Model.Rotor.K*xCG*wons;
-    Fg  = P.Model.Fg*wons;
-    Fb  = P.Model.A'*Forces.F;
+Jqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Kqq,P.Model.Bearing.S));
+Jqx =  mtimesx(P.Model.Bearing.S',Stiffness.Kqx);
+Jxq =  mtimesx(Stiffness.Kxq,P.Model.Bearing.S);
+Jxx =  Stiffness.Kxx;
 
-    Jqq =  mtimesx(P.Model.A',mtimesx(Stiffness.Kqq,P.Model.A));
-    Jqx =  mtimesx(P.Model.A',Stiffness.Kqx);
-    Jxq =  mtimesx(Stiffness.Kxq,P.Model.A);
-    Jxx =  Stiffness.Kxx;
-
-    J = [-P.Model.Rotor.K-mean(Jqq,3) -catmat(Jqx,2)/N;
-               catmat(Jxq,1)   blkmat(Jxx)];
-
-else
-    J = jacobian(@rotor_equilibrium,x,P,O,A);
-end
-
-if any(isnan(J))
-    1
-end
+Klin = P.Model.Rotor.K+P.Model.Stator.K;
+J = [-Klin-mean(Jqq,3) -catmat(Jqx,2)/N;
+        catmat(Jxq,1)    blkmat(Jxx)];
 
 J = sparse(J);
 
 function Sparsity = get_sparsity(B)
 Sparsity = cell(length(B),2);
 for i = 1:length(B)
-    for j = 1:2
-        if strcmp(B{i}.Model{j},'REB')
-            REB = B{i}.Params{j};
-            Sparsity{i,j} = repmat(eye(REB.Setup.Z),B{i}.Params{j}.Model.NDof);
-        else
-            Sparsity{i,j} = ones(B{i}.NDofInt(j));
-        end
+    if strcmp(B{i}.Model,'REB')
+        REB = B{i}.Params;
+        Sparsity{i} = repmat(eye(REB.Setup.Z),B{i}.Params.Model.NDof);
+    else
+        Sparsity{i} = ones(B{i}.NDofInt);
     end
 end
 

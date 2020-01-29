@@ -2,9 +2,9 @@ function [X,x,t] = rotor_init(hbm,P,w0,A)
 O = w0;
 
 NDof  = P.Model.NDof;
-NHarm = hbm.harm.NHarm;
+NHarm = hbm.harm.NHarm(1);
 NFreq = hbm.harm.NFreq;
-Nfft  = hbm.harm.Nfft;
+Nfft  = hbm.harm.Nfft(1);
 
 Fe = excitation_hbm(P);
 U = A*packharm(Fe{1},NHarm);
@@ -43,16 +43,8 @@ Uddot = Udot.*Wu;
 
 %create the time series from the fourier series
 xCG     = freq2time(X,NHarm,Nfft)';
-%     xCG2    = real(hbm.aft.IFFT*X)';
-%     X2      = hbm.aft.FFT*xCG2';
-
 xdotCG  = freq2time(Xdot,NHarm,Nfft)';
 xddotCG = freq2time(Xddot,NHarm,Nfft)';
-
-%create the vector of inputs
-uGnd     = freq2time(U*P.Mesh.Excite.Sgd.',NHarm,Nfft)';
-udotGnd  = freq2time(Udot*P.Mesh.Excite.Sgd.',NHarm,Nfft)';
-uddotGnd = freq2time(Uddot*P.Mesh.Excite.Sgd.',NHarm,Nfft)';
 
 fe = freq2time(Fe,NHarm,Nfft)';
 
@@ -69,14 +61,11 @@ u0 = P.Mesh.Bearing.u0*(0*O+1);
 
 fe = fe + P.Model.Fg;
 fL = P.Model.Rotor.K*(xCG-x0)   + P.Model.Rotor.C*xdotCG   + P.Model.Rotor.M*xddotCG + P.Model.Rotor.F0;
-fB = P.Model.Bearing.K*(xCG-x0) + P.Model.Bearing.C*xdotCG + P.Model.Excite.Kgd*(uGnd-u0) + P.Model.Bearing.F0 + Fgyro;
+fB = P.Model.Bearing.K*(xCG-x0) + P.Model.Bearing.C*xdotCG + P.Model.Bearing.F0 + Fgyro;
 
 States.x     = P.Model.A*xCG;
 States.xdot  = P.Model.A*xdotCG;
 States.xddot = P.Model.A*xddotCG;
-States.u     = uGnd;
-States.udot  = udotGnd;
-States.uddot = uddotGnd;
 States.A = A;
 States.O = O;
 States.bSolve = 1;
@@ -85,8 +74,8 @@ fNL = P.Model.A'*Forces.F + Fgyro;
 xInt = Forces.xInt;
 
 
-FNL = time2freq(fNL',NHarm,hbm.harm.iSub,Nfft);   
-FNL2 = hbm.aft.FFT*fNL'; 
+% FNL = time2freq(fNL',NHarm,Nfft);   
+% FNL2 = hbm.nonlin.FFT*fNL'; 
 % Nf = size(fNL,1);
 % 
 % figure

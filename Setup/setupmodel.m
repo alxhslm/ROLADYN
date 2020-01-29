@@ -1,84 +1,53 @@
 function P = setupmodel(P,type)
 if strcmpi(type,'rigid')
-    Ar = setuprigid(P.Rotor);
+    RRotor = setuprigid(P.Rotor);
 elseif strcmpi(type,'FE')
-    Ar = setupFE(P.Rotor);
+    RRotor = setupFE(P.Rotor,P.Bearing);
 else
     error('Unknown model type')
 end
 
-%Now add on bearing DOF
-Ab = [];
-for i = 1:length(P.Bearing)
-    Ab  = [Ab P.Bearing{i}.Sb'];
-end
-A = [Ar Ab];
-
 %Impose bearing constraints
-AConstr = [];
-for i = 1:length(P.Bearing)
-    for j = 1:2
-        RbSb = (P.Bearing{i}.Ro{j}*P.Bearing{i}.So{j} - P.Bearing{i}.Ri{j}*P.Bearing{i}.Si{j});
-        for k = 1:2
-            if isinf(P.Bearing{i}.Kxx{j}(k,k))
-                AConstr(end+1,:) = RbSb(k,:);
-            end
-            if isinf(P.Bearing{i}.Kyy{j}(k,k))
-                AConstr(end+1,:) = RbSb(k+2,:);
-            end
+RBearing = [];
+NBearings = length(P.Bearing);
+RbBearing = zeros(2*4*NBearings,size(RRotor,1));
+for i = 1:NBearings
+    RbSb = (P.Bearing{i}.Ri*P.Bearing{i}.Si - P.Bearing{i}.Ro*P.Bearing{i}.So);
+    RbUb = (P.Bearing{i}.Ri*P.Bearing{i}.Ui - P.Bearing{i}.Ro*P.Bearing{i}.Uo);
+    for k = 1:2
+        if isinf(P.Bearing{i}.Kxx(k,k))
+            RBearing(end+1,:) = RbSb(k,:);
+            RbBearing(:,end+1) = RbUb(k,:);
+        end
+        if isinf(P.Bearing{i}.Kyy(k,k))
+            RBearing(end+1,:) = RbSb(k+2,:);
+            RbBearing(:,end+1) = RbUb(k+2,:);
         end
     end
 end
-if ~isempty(AConstr)
-    Af = A;
-    A = Af*null(AConstr*Af,'r');
+
+RStator = [];
+for i = 1:length(P.Stator)
+    Ss = P.Stator{i}.S;
+    for k = 1:4
+        if isinf(P.Stator{i}.Ks(k,k))
+            RStator(end+1,:) = Ss(k,:);
+            RbBearing(:,end+1) = 0;
+        end
+    end
 end
 
-%now combine all of the rotor mass matrices into global matrices
-M   = A'*(P.Mesh.Rotor.M  + P.Mesh.Bearing.M)*A;
-G   = A'*(P.Mesh.Rotor.G                    )*A;
-K   = A'*(P.Mesh.Rotor.K  + P.Mesh.Bearing.K)*A;
-C   = A'*(P.Mesh.Rotor.C  + P.Mesh.Bearing.C)*A;
-Fg  = A'*(P.Mesh.Rotor.Fg + P.Mesh.Bearing.Fg);
-F0  = A'*(P.Mesh.Rotor.F0 + P.Mesh.Bearing.F0);
+AConstr = [RRotor; RBearing; RStator];
+if ~isempty(AConstr)
+    A = null(AConstr,'r');
+else
+    A = eye(P.Mesh.NDof);
+end
 
-%store the matrices
-P.Model.M  = M;
-P.Model.G  = G;
-P.Model.K  = K;
-P.Model.C  = C;
-P.Model.Fg  = Fg;
-P.Model.F0  = F0;
-P.Model.A = A;
+P.Model = enforce_constraints(P.Mesh,A);
 
-%now the rotor & bearing matrices
-P.Model.Rotor.M = A'*P.Mesh.Rotor.M*A;
-P.Model.Rotor.G = A'*P.Mesh.Rotor.G*A;
-P.Model.Rotor.C = A'*P.Mesh.Rotor.C*A;
-P.Model.Rotor.K = A'*P.Mesh.Rotor.K*A;
-P.Model.Rotor.Fg = A'*P.Mesh.Rotor.Fg;
-P.Model.Rotor.F0 = A'*P.Mesh.Rotor.F0;
-
-P.Model.Bearing.K = A'*P.Mesh.Bearing.K*A;
-P.Model.Bearing.C = A'*P.Mesh.Bearing.C*A;
-P.Model.Bearing.M = A'*P.Mesh.Bearing.M*A;
-P.Model.Bearing.Fg = A'*P.Mesh.Bearing.Fg;
-P.Model.Bearing.F0 = A'*P.Mesh.Bearing.F0;
-
-%and finally the excitation matrices
-P.Model.Excite.Kgd = A'*P.Mesh.Excite.Kgd;
-P.Model.Excite.Cgd = A'*P.Mesh.Excite.Cgd;
-P.Model.Excite.Mgd = A'*P.Mesh.Excite.Mgd;
-
-P.Model.Excite.Kub = A'*P.Mesh.Excite.Kub;
-P.Model.Excite.Cub = A'*P.Mesh.Excite.Cub;
-P.Model.Excite.Mub = A'*P.Mesh.Excite.Mub;
-
-P.Model.Excite.Ke = A'*P.Mesh.Excite.Ke;
-P.Model.Excite.Ce = A'*P.Mesh.Excite.Ce;
-P.Model.Excite.Me = A'*P.Mesh.Excite.Me;
-
-%some useful numbers
-P.Model.NDof = size(P.Model.M,1);
-P.Model.NDofInt = P.Mesh.NDofInt;
-P.Model.NDofTot = P.Model.NDof + P.Mesh.NDofInt;
+P.Mesh.R = [RRotor; RBearing; RStator]';
+P.Mesh.Rotor.R    = [RRotor; 0*RBearing; 0*RStator]';
+P.Mesh.Bearing.R  = [0*RRotor; RBearing; 0*RStator]';
+P.Mesh.Bearing.Rb = RbBearing;
+P.Mesh.Stator.R   = [0*RRotor; 0*RBearing; RStator]';

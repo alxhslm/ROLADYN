@@ -55,7 +55,7 @@ if bNewFig
 
     hBall = NaN(REB.Elements.N,1);
     
-    if strncmpi(REB.Setup.Arrangement,'double',6)
+    if strncmpi(REB.Setup.ElementArrangement,'double',6)
         hRace = NaN(2,2);
     else
         hRace = NaN(2,1);
@@ -74,7 +74,7 @@ end
 hRace(1,1) = plot_race(hRace(1,1),  q ,REB.Geometry.zRacei*m2mm, REB.Geometry.RRacei*m2mm,REB.Geometry.rRacei*m2mm,REB.Elements.z(1)*m2mm,REB.Geometry.D*m2mm,Ai,'FaceAlpha',0.5,'FaceColor','k');
 hRace(2,1) = plot_race(hRace(2,1), 0*q,REB.Geometry.zRaceo*m2mm,-REB.Geometry.RRaceo*m2mm,REB.Geometry.rRaceo*m2mm,REB.Elements.z(1)*m2mm,REB.Geometry.D*m2mm,Ao,'FaceAlpha',0.5,'FaceColor','k');
 
-if strncmpi(REB.Setup.Arrangement,'double',6)
+if strncmpi(REB.Setup.ElementArrangement,'double',6)
     hRace(1,2) = plot_race(hRace(1,2),  q,-REB.Geometry.zRacei*m2mm, REB.Geometry.RRacei*m2mm,REB.Geometry.rRacei*m2mm,REB.Elements.z(2)*m2mm,REB.Geometry.D*m2mm,Ai,'FaceAlpha',0.5,'FaceColor','k');
     hRace(2,2) = plot_race(hRace(2,2),0*q,-REB.Geometry.zRaceo*m2mm,-REB.Geometry.RRaceo*m2mm,REB.Geometry.rRaceo*m2mm,REB.Elements.z(2)*m2mm,REB.Geometry.D*m2mm,Ao,'FaceAlpha',0.5,'FaceColor','k');
 end

@@ -1,9 +1,9 @@
-function [X,x,t] = rotor_init3d(hbm,P,w0,A)
+function [X,x,t] = rotor_init3d(hbm,P,w,A)
 if hbm.options.bUseStandardHBM
-    [X,x,t] = rotor_init(hbm,P,w0,A);
+    [X,x,t] = rotor_init(hbm,P,w,A);
     return;
 end
-w0 = w0*hbm.harm.rFreqRatio;
+w0 = w*hbm.harm.rFreqRatio + hbm.harm.wFreq0;
 O = w0(1);
 wc = w0(2);
 
@@ -54,23 +54,13 @@ switch hbm.options.aft_method
         xdotCG  = freq2time3d(Xdot,NHarm,hbm.harm.iSub,Nfft)';
         xddotCG = freq2time3d(Xddot,NHarm,hbm.harm.iSub,Nfft)';
         
-        %create the vector of inputs
-        uGnd     = freq2time3d(U*P.Mesh.Excite.Sgd.',NHarm,hbm.harm.iSub,Nfft)';
-        udotGnd  = freq2time3d(Udot*P.Mesh.Excite.Sgd.',NHarm,hbm.harm.iSub,Nfft)';
-        uddotGnd = freq2time3d(Uddot*P.Mesh.Excite.Sgd.',NHarm,hbm.harm.iSub,Nfft)';
-        
         fe = freq2time3d(Fe,NHarm,hbm.harm.iSub,Nfft)';
     case 'mat'
         %create the time series from the fourier series
         xCG     = real(hbm.nonlin.IFFT*X)';
         xdotCG  = real(hbm.nonlin.IFFT*Xdot)';
         xddotCG = real(hbm.nonlin.IFFT*Xddot)';
-        
-        %create the vector of inputs
-        uGnd     = real(hbm.nonlin.IFFT*U*P.Mesh.Excite.Sgd.')';
-        udotGnd  = real(hbm.nonlin.IFFT*Udot*P.Mesh.Excite.Sgd.')';
-        uddotGnd = real(hbm.nonlin.IFFT*Uddot*P.Mesh.Excite.Sgd.')';
-        
+
         fe = real(hbm.nonlin.IFFT*Fe)';
 end
 
@@ -86,7 +76,7 @@ u0 = P.Mesh.Bearing.u0*(0*t(1,:)+1);
 %compute the response of the linearised system
 Fgyro = O*P.Model.Rotor.G*xdotCG;
 fR = P.Model.Rotor.K*(xCG-x0)   + P.Model.Rotor.C*xdotCG   + P.Model.Rotor.M*xddotCG      + P.Model.Rotor.F0;
-fB = P.Model.Bearing.K*(xCG-x0) + P.Model.Bearing.C*xdotCG + P.Model.Excite.Kgd*(uGnd-u0) + P.Model.Bearing.F0 + Fgyro;
+fB = P.Model.Bearing.K*(xCG-x0) + P.Model.Bearing.C*xdotCG + P.Model.Bearing.F0 + Fgyro;
 
 %now compute the response of the fully non-linear system
 States.x     = P.Model.A*xCG;

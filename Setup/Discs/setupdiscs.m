@@ -1,236 +1,310 @@
-function D = setupdiscs(D,N,x0)
+function D = setupdiscs(D,N)
 if ~iscell(D)
     D = {D};
 end
 
 iDofCount = length(N)*4;
 for i = 1:length(D)
-    if  nargin > 2 && ~isempty(x0)
-        x{i} = D{i}.S*x0;
-    else
-        x{i} = [];
+    if ~isfield(D{i}, 'Name')
+        D{i}.Name = sprintf('Disc %d',i);
     end
-    D{i} = setup_each_disc(D{i},N,x{i});
+    D{i} = setup_each_disc(D{i},N);
     D{i}.iLocal = [(D{i}.iNode-1)*4 + (1:4) iDofCount + (1:D{i}.NDof)];
     iDofCount = iDofCount + D{i}.NDof;
 end
 
-function D = setup_each_disc(D,N,x0)
+function D = setup_each_disc(D,N)
 
-if ~isfield(D,'Material')
-    error('Missing field Material');
+if ~isfield(D,'iNode')
+    error('Missing field "iNode" from disc "%s"',D.Name);
 end
 
-D.z   = N(D.iNode);
+D.z = N(D.iNode);
 
-D.Material = setupmaterial(D.Material);
-
-if isfield(D,'m') 
-    if isnan(D.Material.rho)
-        if isfield(D,'R') && isfield(D,'t')
-            %only know geometric properties
-            D = dim2mass(D);
-        else
-            error('Disc not fully defined');
-        end
-    elseif ~(isfield(D,'Id') && isfield(D,'R'))
-        %only know inertia properties
-        D = mass2dim(D);   
-    end
-elseif isnan(D.Material.rho) && ~isfield(D,'R')
-    error('Disc not fully defined');
+if ~isfield(D,'Type')
+    error('Missing field "Type" from disc "%s"',D.Name);
 end
 
-required_fields = {'R','t'};
+if ~isfield(D,'Ring')
+    error('Missing field "Ring from disc "%s"',D.Name);
+end
+
+%% Options
+if ~isfield(D,'Options')
+    D.Options = struct();
+end
+if ~isfield(D.Options,'bGyro')
+    D.Options.bGyro = 1;
+end
+
+%ndof
+D.Hub.NDof = 4;
+D.Root.NDof = 4;
+
+%% Ring
+%actual body of disc
+switch D.Type
+    case 'Rigid'
+        D = setupRigidDisc(D);
+    case 'Flexible'
+        D = setupFlexibleDisc(D);
+end
+
+%% Hub inertia
+%central mass to which the rings connect
+D.Hub.S = zeros(D.Hub.NDof,D.NDofTot); D.Hub.S(:,D.Root.NDof+(1:D.Hub.NDof)) = eye(D.Hub.NDof);
+
+required_fields = {'m','Id','Ip'};
 for i = 1:length(required_fields)
-    if ~isfield(D,required_fields{i})
-        error('Missing field %s from Disc',required_fields{i});
+    if ~isfield(D.Hub,required_fields{i})
+        D.Hub.(required_fields{i}) = 0;
     end
 end
 
-if ~isfield(D,'bGyro')
-    D.bGyro = 1;
-end
+D.Hub.M = diag([D.Hub.m D.Hub.m D.Hub.Id D.Hub.Id]);
+D.Hub.G = D.Options.bGyro*blkdiag(zeros(2),D.Hub.Ip*antidiag([1 -1]));
 
-D.NSegments = length(D.t);
-
-if ~isfield(D,'NrSegment')
-    D.NrSegment = 1;
-end
-if length(D.NrSegment) == 1
-    D.NrSegment = D.NrSegment*ones(1,D.NSegments);
-end
-
-if ~isfield(D,'Nt')
-    D.Nt = 4;
-end
-
-required_fields = {'Material'};
+%% Root compliance
+%flexible joint between hub and shaft
+D.Root.S = zeros(D.Root.NDof,D.NDofTot); D.Root.S(:,1:D.Root.NDof) = eye(D.Root.NDof);
+required_fields = {'Krr','Ktt'};
 for i = 1:length(required_fields)
-    if ~isfield(D,required_fields{i})
-        error('Missing field %s from Disc',required_fields{i});
+    if ~isfield(D.Root,required_fields{i})
+        D.Root.(required_fields{i}) = Inf;
     end
 end
-
-D.r = D.R(1);
-D.iSegment = [];
-for i = 1:D.NSegments
-    [D.mSegment(i),D.IdSegment(i),D.IpSegment(i)] = disc_properties(D.Material.rho,D.R(i),D.R(i+1),D.t(i));
-    rSeg = linspace(D.R(i),D.R(i+1),D.NrSegment(i)+1);
-    D.r = [D.r rSeg(2:end)];
-    D.iSegment = [D.iSegment i*ones(1,D.NrSegment(i))];
-end
-D.dr = diff(D.r);
-D.Nr = length(D.r);
-
-D.mDisc = sum(D.mSegment);
-D.IdDisc = sum(D.IdSegment);
-D.IpDisc = sum(D.IpSegment);
-
-D.theta = linspace(0,2*pi,D.Nt+1);
-D.beta = diff(D.theta);
-D.theta = D.theta(1:end-1);
-
-params_required = {'iNode'};
-for i = 1:length(params_required)
-    if ~isfield(D,params_required{i})
-        error('Cannot find parameter "%s" in the P.Rotor.Disc structure',params_required{i});
+default_fields = {'Krt','Crr','Crt','Ctt'};
+for i = 1:length(default_fields)
+    if ~isfield(D.Root,default_fields{i})
+        D.Root.(default_fields{i}) = 0;
     end
 end
+    
+D.Root.K = [diag(D.Root.Krr*[1 1])   D.Root.Krt*eye(2);
+              D.Root.Krt*eye(2)    diag(D.Root.Ktt*[1 1])];
+     
+ii = isinf(D.Root.K); D.Root.K(ii) = 0;
+% D.Root.K = max(min(D.Root.K,1E20),-1E20);
 
-%finite elements
+D.Root.C = [diag(D.Root.Crr*[1 1])   D.Root.Crt*eye(2);
+              D.Root.Crt*eye(2)    diag(D.Root.Ctt*[1 1])];
+         
+ii = isinf(D.Root.C); D.Root.C(ii) = 0;
+% D.Root.C = max(min(D.Root.C,1E20),-1E20);
+
+%% Totals
+D.Inertia.m  = D.Hub.m  + sum(D.Ring.Inertia.m);
+D.Inertia.Id = D.Hub.Id + sum(D.Ring.Inertia.Id);
+D.Inertia.Ip = D.Hub.Ip + sum(D.Ring.Inertia.Ip);
+
+%compute the various matrices in the principal axes of the disk
+D.M = diag([D.Inertia.m D.Inertia.m D.Inertia.Id D.Inertia.Id]);
+
+%gyroscopic terms
+D.G = D.Options.bGyro*blkdiag(zeros(2),D.Inertia.Ip*antidiag([1 -1]));
+
+function D = setupFlexibleDisc(D)
+
+if ~isfield(D.Ring.Geometry,'t')
+    error('Need disc thickness "t" for disc "%s" of type "Flexible"',D.Name);
+end
+if ~isfield(D.Ring.Geometry,'R')
+    error('Need disc radius "R" for disc "%s" of type "Flexible"',D.Name);
+end
+
+if length(D.Ring.Geometry.R) == length(D.Ring.Geometry.t)
+    D.Ring.Geometry.R = [0 D.Ring.Geometry.R];
+end
+
+if length(D.Ring.Geometry.R) ~= (length(D.Ring.Geometry.t) + 1)
+    error('Mismatching lengths for "R" and "t" for disc "%s" of type "Flexible"',D.Name);
+end
+
+NSegments = length(D.Ring.Geometry.t);
+
+%number of radial points per ring
+if ~isfield(D.Ring,'Nr')
+    D.Ring.Nr = 1;
+end
+if length(D.Ring.Nr) == 1
+    D.Ring.Nr = D.Ring.Nr*ones(1,NSegments);
+end
+
+% Compute mass of each ring
+D.Ring.m = zeros(NSegments,1);
+D.Ring.Id = zeros(NSegments,1);
+D.Ring.Ip = zeros(NSegments,1);
+for i = 1:NSegments
+    [D.Ring.m(i),D.Ring.Id(i),D.Ring.Ip(i)] = disc_properties(D.Material.rho,D.Ring.R(i),D.Ring.R(i+1),D.Ring.t(i));
+end
+
+%totals
+D.Ring.Inertia.m  = sum(D.Ring.m);
+D.Ring.Inertia.Id = sum(D.Ring.Id);
+D.Ring.Inertia.Ip = sum(D.Ring.Ip);
+        
+%need to store radial inertia of each ring, as this is not accounted for by FE model
+D.Ring.M = diag([D.Ring.Inertia.m  D.Ring.Inertia.m  0 0]);
+D.Ring.G = zeros(4);
+
+%% Finite element model
+%create mesh
+D.Mesh.r = D.Ring.R(1);
+D.Mesh.t = [];
+
+for i = 1:NSegments
+    rSeg = linspace(D.Ring.R(i),D.Ring.R(i+1),D.Ring.Nr(i)+1);
+    tSeg = ones(1,D.Ring.Nr(i))*D.Ring.t(i);
+    D.Mesh.r = [D.Mesh.r rSeg(2:end)];
+    D.Mesh.t = [D.Mesh.t tSeg];
+end
+D.Mesh.dr = diff(D.Mesh.r);
+D.Mesh.Nr = length(D.Mesh.r);
+
+if ~isfield(D.Mesh,'Nt')
+    D.Mesh.Nt = 4;
+end
+
+% transformation matrices
 NDofe = 3;
 NEle = 4;
-NHub = 4;
-NRoot = 4;
-D.NDof = D.Nt * D.Nr * NDofe + NHub;
-NDofTot = D.NDof + NRoot;
+D.NDof = D.Mesh.Nt * D.Mesh.Nr * NDofe + D.Hub.NDof;
+D.NDofTot = D.NDof + D.Root.NDof;
 
-for i = 1:D.Nt
-    for j = 1:D.Nr
-      D.SNode{i,j} = zeros(NDofe,NDofTot);
-      D.SNode{i,j}(:,NHub+NRoot+((i-1)*D.Nr   + j - 1)*NDofe+(1:NDofe)) = eye(NDofe);
-        
+theta = linspace(0,2*pi,D.Mesh.Nt+1);
+D.Mesh.dtheta = diff(theta);
+D.Mesh.theta  = theta(1:end-1);
+
+for i = 1:D.Mesh.Nt
+    for j = 1:D.Mesh.Nr
+      D.Mesh.SNode{i,j} = zeros(NDofe,D.NDofTot);
+      D.Mesh.SNode{i,j}(:,D.Hub.NDof+D.Root.NDof+((i-1)*D.Mesh.Nr   + j - 1)*NDofe+(1:NDofe)) = eye(NDofe);
+
       %rotation matrix from Hub -> Disc Node coords
-      D.RHub{i,j} = [0        0    D.r(j)*sin(D.theta(i))    -D.r(j)*cos(D.theta(i)); %w
-                     0        0    D.r(j)*cos(D.theta(i))     D.r(j)*sin(D.theta(i))  %dw_dt
-                     0        0     sin(D.theta(i))           -cos(D.theta(i))];      %dw_dr
+      D.Mesh.RHub{i,j} = [0        0    D.Mesh.r(j)*sin(D.Mesh.theta(i))    -D.Mesh.r(j)*cos(D.Mesh.theta(i)); %w
+                          0        0    D.Mesh.r(j)*cos(D.Mesh.theta(i))     D.Mesh.r(j)*sin(D.Mesh.theta(i))  %dw_dt
+                          0        0     sin(D.Mesh.theta(i))                -cos(D.Mesh.theta(i))];      %dw_dr
     end
 end
-for i = 1:D.Nt
-    if i < D.Nt
-        ip1 = i+1;
-    else
-        ip1 = 1;
-    end
-    for j = 1:(D.Nr-1)
-        A = D.beta(i)/2*((D.r(j)+D.dr(j))^2 - D.r(j)^2);
-        iSeg = D.iSegment(j);
-        
-        D.me(i,j) = D.Material.rho*A*D.t(iSeg);
-        
-        D.Se{i,j} = [D.SNode{i,j};
-                     D.SNode{i,j+1};
-                     D.SNode{ip1,j+1};
-                     D.SNode{ip1,j}];
-        
-        D.Re{i,j} = eye(NDofe*NEle);
-        
-        [D.Ke{i,j},D.Me{i,j},D.Ge{i,j}] = annular(D.Material,D.t(iSeg),D.theta(i),D.r(j),D.beta(i),D.dr(j));
-        if ~D.bGyro
-            D.Ge{i,j} = 0*D.Ge{i,j};
-        end
-        
+
+% elements mass etc
+for i = 1:D.Mesh.Nt
+    iNext = mod(i,D.Mesh.Nt)+1;
+    for j = 1:(D.Mesh.Nr-1)
+        A = D.Mesh.dtheta(i)/2*(D.Mesh.r(j+1)^2 - D.Mesh.r(j)^2);
+
+        D.Element{i,j}.m = D.Material.rho*A*D.Mesh.t(j);
+
+        D.Element{i,j}.S = [D.Mesh.SNode{i,j};
+                            D.Mesh.SNode{i,j+1};
+                            D.Mesh.SNode{iNext,j+1};
+                            D.Mesh.SNode{iNext,j}];
+
+        D.Element{i,j}.R = eye(NDofe*NEle);
+
+        [D.Element{i,j}.K,D.Element{i,j}.M,D.Element{i,j}.G] = disc_annular(D.Material,D.Mesh.t(j),D.Mesh.r(j),D.Mesh.dtheta(i),D.Mesh.dr(j));
+
+        D.Element{i,j}.G = D.Options.bGyro*D.Element{i,j}.G;
+
         if ~isempty(x0)
-            D.Fe0{i,j} = D.Ke{i,j}*D.Re{i,j}*D.Se{i,j}*x0;
+            D.Element{i,j}.F0 = D.Element{i,j}.K*D.Element{i,j}.R*D.Element{i,j}.S*x0;
         else
-            D.Fe0{i,j} = zeros(NDofe*NEle,1);
+            D.Element{i,j}.F0 = zeros(NDofe*NEle,1);
         end
     end   
 end    
 
-%% Edge stiffness and damping
-required_fields = {'KEdge_tt','KEdge_rr','KEdge_zz'};
+%% Edge stiffness
+% connection to inner hub
+
+%stiffness and damping
+if ~isfield(D,'Edge')
+    D.Edge = struct();
+end
+
+required_fields = {'Ktt','Krr','Kzz'};
 for i = 1:length(required_fields)
-    if ~isfield(D,required_fields{i})
-        D.(required_fields{i}) = Inf;
+    if ~isfield(D.Edge,required_fields{i})
+        D.Edge.(required_fields{i}) = Inf;
     end
 end
-required_fields = {'CEdge_tt','CEdge_rr','CEdge_zz','KEdge_rt','CEdge_rt'};
+required_fields = {'Ctt','Crr','Czz','Krt','Crt'};
 for i = 1:length(required_fields)
-    if ~isfield(D,required_fields{i})
-        D.(required_fields{i}) = 0;
+    if ~isfield(D.Edge,required_fields{i})
+        D.Edge.(required_fields{i}) = 0;
     end
 end
 
-D.KEdge = blkdiag(D.KEdge_zz, [D.KEdge_tt D.KEdge_rt;
-                             D.KEdge_rt D.KEdge_rr]);
-% D.KEdge = max(min(D.KEdge,1E20),-1E20);
-ii = isinf(D.KEdge); D.KEdge(ii) = 0;
+D.Edge.K = blkdiag(D.Edge.Kzz, [D.Edge.Ktt D.Edge.Krt;
+                                D.Edge.Krt D.Edge.Krr]);
+ii = isinf(D.Edge.K); D.Edge.K(ii) = 0;
 
-D.CEdge = blkdiag(D.CEdge_zz, [D.CEdge_tt D.CEdge_rt;
-                      D.CEdge_rt D.CEdge_rr]);
-D.CEdge = max(min(D.CEdge,1E20),-1E20);
-ii = isinf(D.CEdge); D.CEdge(ii) = 0;
+D.Edge.C = blkdiag(D.Edge.Czz, [D.Edge.Ctt D.Edge.Crt;
+                                D.Edge.Crt D.Edge.Crr]);
+ii = isinf(D.Edge.C); D.C(ii) = 0;
 
-%% Hub inertia
-D.SHub = zeros(NHub,NDofTot); D.SHub(:,NRoot+(1:NHub)) = eye(NHub);
+function D = setupRigidDisc(D)
 
-required_fields = {'mHub','IdHub'};
-for i = 1:length(required_fields)
-    if ~isfield(D,required_fields{i})
-        D.(required_fields{i}) = 0;
+if isfield(D.Ring,'Inertia')
+    %have inertial properties -- just use them
+    required_fields = {'m','Id','Ip'};
+    for i = 1:length(required_fields)
+        if ~isfield(D.Ring.Inertia,required_fields{i})
+            error('Need disc inertia "%s" for disc "%s" of type "Rigid"',required_fields{i},D.Name);
+        end
     end
-end
-
-if ~isfield(D,'IpHub')
-    D.IpHub = 2*D.IdHub;
-end
-
-D.m  = D.mHub  + D.mDisc;
-D.Id = D.IdHub + D.IdDisc;
-D.Ip = D.IpHub + D.IpDisc;
-
-D.MHub = diag([D.m D.m D.IdHub D.IdHub]);
-D.GHub = D.bGyro*blkdiag(zeros(2),D.IpHub*antidiag([1 -1]));
-
-%% Root compliance
-D.SRoot = zeros(NRoot,NDofTot); D.SRoot(:,1:NRoot) = eye(NRoot);
-required_fields = {'KRoot_rr','KRoot_tt'};
-for i = 1:length(required_fields)
-    if ~isfield(D,required_fields{i})
-        D.(required_fields{i}) = Inf;
-    end
-end
-default_fields = {'KRoot_rt','CRoot_rr','CRoot_rt','CRoot_tt'};
-for i = 1:length(default_fields)
-    if ~isfield(D,default_fields{i})
-        D.(default_fields{i}) = 0;
-    end
-end
     
-D.KRoot = [diag(D.KRoot_rr*[1 1])       D.KRoot_rt*eye(2);
-              D.KRoot_rt*eye(2)  diag(D.KRoot_tt*[1 1])];
-     
-ii = isinf(D.KRoot); D.KRoot(ii) = 0;
-% D.KRoot = max(min(D.KRoot,1E20),-1E20);
+    if ~isfield(D.Ring,'Geometry')
+        D.Ring.Geometry = struct();
+    end
 
-D.CRoot = [diag(D.CRoot_rr*[1 1])       D.CRoot_rt*eye(2);
-              D.CRoot_rt*eye(2)  diag(D.CRoot_tt*[1 1])];
-         
-ii = isinf(D.CRoot); D.CRoot(ii) = 0;
-% D.CRoot = max(min(D.CRoot,1E20),-1E20);
-
-if ~isempty(x0)
-    D.F0Root = D.KRoot*(D.SHub-D.SRoot)*x0;
+    optional_fields = {'R','t'};
+    default_val = {0.1,0.02};
+    for i = 1:length(optional_fields)
+        if ~isfield(D.Ring.Geometry,optional_fields{i})
+            warning('Default disc diemsion "%s" for disc "%s" of type "Rigid"',optional_fields{i},D.Name);
+            D.Ring.(optional_fields{i}) = default_val(i);
+        end
+    end
+elseif  isfield(D.Ring,'Geometry')
+    if ~isfield(D,'Material')
+        error('Missing field "Material" from disc "%s" of type "%s"',D.Name,D.Type);
+    end
+    D.Material = setupmaterial(D.Material);
+    D = setupRingGeometry(D);
 else
-    D.F0Root = zeros(4,1);
+    error('Not enough information given for disc "%s" of type "Rigid"',D.Name);
 end
 
-%% Totals
+%need to store radial inertia of each ring, as this is not accounted for by FE model
+D.Ring.M = diag([sum(D.Ring.Inertia.m) sum(D.Ring.Inertia.m) sum(D.Ring.Inertia.Id) sum(D.Ring.Inertia.Id)]);
+D.Ring.G = D.Options.bGyro*blkdiag(zeros(2),sum(D.Ring.Inertia.Ip)*antidiag([1 -1]));
 
-%compute the various matricies in the principal axes of the disk
-D.M = diag([D.m D.m D.Id D.Id]);
+D.NDof = D.Hub.NDof;
+D.NDofTot = D.NDof + D.Root.NDof;
 
-%gyroscopic terms
-D.G = D.bGyro*blkdiag(zeros(2),D.Ip*antidiag([1 -1]));
+function D = setupRingGeometry(D)
+if ~isfield(D.Ring.Geometry,'t')
+    error('Need disc thickness "t" for disc "%s" of type "Flexible"',D.Name);
+end
+if ~isfield(D.Ring.Geometry,'R')
+    error('Need disc radius "R" for disc "%s" of type "Flexible"',D.Name);
+end
+
+if length(D.Ring.Geometry.R) == length(D.Ring.Geometry.t)
+    D.Ring.Geometry.R = [0 D.Ring.Geometry.R];
+end
+
+if length(D.Ring.Geometry.R) ~= (length(D.Ring.Geometry.t) + 1)
+    error('Mismatching lengths for "R" and "t" for disc "%s" of type "Flexible"',D.Name);
+end
+
+NSegments = length(D.Ring.Geometry.t);
+
+% Compute mass of each ring
+D.Ring.Inertia.m = zeros(NSegments,1);
+D.Ring.Inertia.Id = zeros(NSegments,1);
+D.Ring.Inertia.Ip = zeros(NSegments,1);
+for i = 1:NSegments
+    [D.Ring.Inertia.m(i),D.Ring.Inertia.Id(i),D.Ring.Inertia.Ip(i)] = disc_properties(D.Material.rho,D.Ring.Geometry.R(i),D.Ring.Geometry.R(i+1),D.Ring.Geometry.t(i));
+end

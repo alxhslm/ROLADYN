@@ -1,62 +1,65 @@
-function B = setupbearings(B,R,O,x0)
+function B = setupbearings(B,R)
 if ~iscell(B)
     B = {B};
 end
-if nargin > 3
-    for i = 1:length(B)
-        for j = 1:2
-            qi{i}{j} = B{i}.Ri{j} * B{i}.Si{j} * x0;
-            qo{i}{j} = B{i}.Ro{j} * B{i}.So{j} * x0;
-        end
-    end
-else
-    for i = 1:length(B)
-        for j = 1:2
-            qi{i}{j} = zeros(4,1);
-            qo{i}{j} = zeros(4,1);
-        end
-    end
-end
+
 iInputCount = 0;
 iInternalCount = 0;
 for i = 1:length(B)
-    %if connected to ground, pad the iRotor vector
-    if length(B{i}.iRotor) == 1
-        B{i}.iRotor = [NaN B{i}.iRotor];
-        B{i}.iNode  = [NaN B{i}.iNode];
-    end
+    B{i} = setup_each_bearing(B{i},i,R);
+    B{i}.iInputi = iInputCount + (1:4);
+    B{i}.iInputo = iInputCount + (5:8);
+    iInputCount = iInputCount + 8;
     
-    if ~isnan(B{i}.iRotor(1))
-        Oo = R{B{i}.iRotor(1)}.Speed*O;
-    else
-        Oo = 0;
-    end
-    
-    if ~isnan(B{i}.iRotor(2))
-        Oi = R{B{i}.iRotor(2)}.Speed*O;
-    else
-        Oi = 0;
-    end
-        
-    B{i} = setup_each_bearing(B{i},i,R,qi{i},qo{i},Oi,Oo);
-    for j = 1:2
-        B{i}.iInputo{j} = iInputCount + (1:4);
-        B{i}.iInputi{j} = iInputCount + (5:8);
-        iInputCount = iInputCount + 8;
-    end
-    
-    for j = 1:2
-        B{i}.iInternal{j} = iInternalCount + (1:B{i}.NDofInt(j));
-        iInternalCount = iInternalCount + B{i}.NDofInt(j);
-    end
+
+    B{i}.iInternal = iInternalCount + (1:B{i}.NDofInt);
+    iInternalCount = iInternalCount + B{i}.NDofInt;
 end
 
-function B = setup_each_bearing(B,ind,R,xi,xo,Oi,Oo)
+function Node = setupnodes(Node,Rotor)
+if length(Node) == 1
+    ground.Type = 'ground';
+    Node = [Node; {ground}];
+end
+for j = 1:length(Node)
+    switch Node{j}.Type
+        case 'ground'
+            Node{j}.Speed = 0;
+        case 'rotor'
+            Node{j}.Speed = Rotor{Node{j}.iRotor}.Speed;
+        case 'stator'
+            Node{j}.Speed = 0;
+        otherwise
+            error('Unknown connection type "%s"',Node{j}.Type)
+    end
+    
+end
+
+function B = setup_each_bearing(B,ind,R)
+if ~isfield(B, 'Name')
+    B.Name = sprintf('Bearing %d',ind);
+end
+
+%error if we don't have the connection details
+if ~isfield(B,'Node')
+    error('Cannot find parameter "Node" for bearing "%s"',B.Name);
+end
+
+B.Node = setupnodes(B.Node,R);
+
 %no damping as default
 damping_fields = {'cxx','cxy','cyy'};
 for i = 1:length(damping_fields)
     if ~isfield(B,damping_fields{i})
         B.(damping_fields{i}) = 0;
+    end
+end
+
+%or inertia
+inertia_fields = {'mxx','mxy','myy'};
+for i = 1:length(inertia_fields)
+    if ~isfield(B,inertia_fields{i})
+        B.(inertia_fields{i}) = 0;
     end
 end
 
@@ -74,103 +77,83 @@ if ~isfield(B,'t')
     B.t = 0.01;
 end
 
-if ~isfield(B, 'Name')
-    B.Name = sprintf('Bearing %d',ind);
-end
-
-%error if we don't have the connection details
-params_required = {'iRotor','iNode'};
-for i = 1:length(params_required)
-    if ~isfield(B,params_required{i})
-        error('Cannot find parameter "%s" for %s',params_required{i},B.Name);
-    end
-end
-
 %convert any linear stiffness properties (kxx) into stiffness matrices (Kxx)
 dof = {'xx','xy','yy'};
-mat = {'K','C'};
-for iMat = 1:2
+mat = {'K','C','M'};
+for iMat = 1:3
     for iDof = 1:3
         if ~isfield(B,[mat{iMat} dof{iDof}]) && isfield(B,[lower(mat{iMat}) dof{iDof}])
-            if ~iscell(B.([lower(mat{iMat}) dof{iDof}]))
-                B.([lower(mat{iMat}) dof{iDof}]) = {B.([lower(mat{iMat}) dof{iDof}])};
-            end
-            for j = 1:length(B.([lower(mat{iMat}) dof{iDof}]))
-                B.([mat{iMat} dof{iDof}]){j} = diag([B.([lower(mat{iMat}) dof{iDof}]){j} 0]);
-            end
+            B.([mat{iMat} dof{iDof}]) = diag([B.([lower(mat{iMat}) dof{iDof}]) 0]);
         end
     end
 end
 
-if ~isfield(B,'ui')
-    B.ui = {zeros(4,1),zeros(4,1)};
-end
-if ~isfield(B,'uo')
-    B.uo = {zeros(4,1),zeros(4,1)};
-end
+switch B.Model
+    case 'REB'
+        [B.Params,B.Kb,B.Cb,B.Mb] = setupREB(B.Params); 
+        B.NDofInt = B.Params.Model.NDofTot;       
+        B.bActive = B.Params.bActive;       
 
-%now extend everything to 2
-for iMat = 1:2
-    for iDof = 1:3
-        if isfield(B,[mat{iMat} dof{iDof}])
-            if ~iscell(B.([mat{iMat} dof{iDof}]))
-                B.([mat{iMat} dof{iDof}]) = {B.([mat{iMat} dof{iDof}])};
-            end
-            if length(B.([mat{iMat} dof{iDof}])) == 1
-                if iMat == 1 %k
-                    B.([mat{iMat} dof{iDof}]) = [{diag([inf inf])} B.([mat{iMat} dof{iDof}])];
-                else %c
-                    B.([mat{iMat} dof{iDof}]){end+1} = zeros(2);
-                end
-            end
-        else
-            if iDof ~= 2
-                B.([mat{iMat} dof{iDof}]) = {diag([inf inf]) diag([inf inf])};
-            else
-                B.([mat{iMat} dof{iDof}]) = {zeros(2) zeros(2)};  
-            end
-        end
-    end
-end
+        B.Kxx = B.Kb(1:2,1:2);
+        B.Kxy = B.Kb(1:2,3:4);
+        B.Kyy = B.Kb(3:4,3:4);
 
-model_fields = {'Model','Params'};
-for iField = 1:2
-    if ~iscell(B.(model_fields{iField}))
-        B.(model_fields{iField}) = {B.(model_fields{iField})};
-    end
-    if length(B.(model_fields{iField})) == 1
-        B.(model_fields{iField}) = [{''} B.(model_fields{iField})];
-    end
-end
-
-RBear = eye(4);
-RBear = RBear([1 4 2 3],:);
-RBear(4,:) = -RBear(4,:);
-
-for j = 1:2
-    if strncmp(B.Model{j},'REB',3)
-        [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupREB(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo); 
-        B.NDofInt(j) = B.Params{j}.Model.NDofTot;       
-
-        B.Kxx{j} = B.Kb{j}(1:2,1:2);
-        B.Kxy{j} = B.Kb{j}(1:2,3:4);
-        B.Kyy{j} = B.Kb{j}(3:4,3:4);
+        B.Cxx = B.Cb(1:2,1:2);
+        B.Cxy = B.Cb(1:2,3:4);
+        B.Cyy = B.Cb(3:4,3:4);
         
-        B.Cxx{j} = B.Cb{j}(1:2,1:2);
-        B.Cxy{j} = B.Cb{j}(1:2,3:4);
-        B.Cyy{j} = B.Cb{j}(3:4,3:4);
-    elseif strncmp(B.Model{j},'SFD',3)
-        [B.Params{j},B.Fb{j},B.Kb{j},B.Cb{j},B.xInt{j}] = setupSFD(B.Params{j},xi{j}+B.ui{j},xo{j}+B.uo{j},Oi,Oo);
-        B.NDofInt(j) = 0;
+        B.Mxx = B.Mb(1:2,1:2);
+        B.Mxy = B.Mb(1:2,3:4);
+        B.Myy = B.Mb(3:4,3:4);
+    case 'radial'
+        [B.Params,B.Kb,B.Cb,B.Mb] = setupRadial(B.Params); 
+        B.NDofInt = 0;
+        B.bActive = B.Params.bActive;   
 
-        B.Kxx{j} = B.Kb{j}(1:2,1:2);
-        B.Kxy{j} = B.Kb{j}(1:2,3:4);
-        B.Kyy{j} = B.Kb{j}(3:4,3:4);
+        B.Kxx = B.Kb(1:2,1:2);
+        B.Kxy = B.Kb(1:2,3:4);
+        B.Kyy = B.Kb(3:4,3:4);
+
+        B.Cxx = B.Cb(1:2,1:2);
+        B.Cxy = B.Cb(1:2,3:4);
+        B.Cyy = B.Cb(3:4,3:4);
         
-        B.Cxx{j} = B.Cb{j}(1:2,1:2);
-        B.Cxy{j} = B.Cb{j}(1:2,3:4);
-        B.Cyy{j} = B.Cb{j}(3:4,3:4);
-    else
+        B.Mxx = B.Mb(1:2,1:2);
+        B.Mxy = B.Mb(1:2,3:4);
+        B.Myy = B.Mb(3:4,3:4);
+    case 'SFD'
+        [B.Params,B.Kb,B.Cb,B.Mb] = setupSFD(B.Params);
+        B.NDofInt = 0;
+        B.bActive = true(4,1);
+
+        B.Kxx = B.Kb(1:2,1:2);
+        B.Kxy = B.Kb(1:2,3:4);
+        B.Kyy = B.Kb(3:4,3:4);
+
+        B.Cxx = B.Cb(1:2,1:2);
+        B.Cxy = B.Cb(1:2,3:4);
+        B.Cyy = B.Cb(3:4,3:4);
+        
+        B.Mxx = B.Mb(1:2,1:2);
+        B.Mxy = B.Mb(1:2,3:4);
+        B.Myy = B.Mb(3:4,3:4);
+    case 'piezo'
+        [B.Params,B.Kb,B.Cb,B.Mb] = setupPiezo(B.Params);
+        B.NDofInt = B.Params.NDofTot;        
+        B.bActive = [true;false;false;false];       
+
+        B.Kxx = B.Kb(1:2,1:2);
+        B.Kxy = B.Kb(1:2,3:4);
+        B.Kyy = B.Kb(3:4,3:4);
+
+        B.Cxx = B.Cb(1:2,1:2);
+        B.Cxy = B.Cb(1:2,3:4);
+        B.Cyy = B.Cb(3:4,3:4);
+        
+        B.Mxx = B.Mb(1:2,1:2);
+        B.Mxy = B.Mb(1:2,3:4);
+        B.Myy = B.Mb(3:4,3:4);
+    otherwise
         %throw error if we don't have stiffess
         params_required = {'Kxx','Kyy','Cxx','Cyy'};
         for i = 1:length(params_required)
@@ -178,83 +161,51 @@ for j = 1:2
                 error('Cannot find parameter "%s" in the B structure',params_required{i});
             end
         end
-        
+
         params2default = {'Kxy','Cxy'}; %off-diagonal stiffness terms
         for i = 1:length(params2default)
             if ~isfield(B,params2default{i})
-                [B.(params2default{i})] = deal(repmat({zeros(2)},1,2));
+                [B.(params2default{i})] = zeros(2);
             end
         end
-          
-        B.NDofInt(j) = 0;
-               
-        B.Kb{j} = [B.Kxx{j} B.Kxy{j};
-                   B.Kxy{j} B.Kyy{j}];
+
+        B.NDofInt = 0;
+
+        B.Kb = [B.Kxx B.Kxy;
+                B.Kxy B.Kyy];
+
+        B.bActive = abs(diag(B.Kb)) > 0;
+
+        B.Kb = kron([1 -1; -1 1],B.Kb);
+
+        B.Cb = [B.Cxx B.Cxy;
+                B.Cxy B.Cyy];
+
+        B.Cb = kron([1 -1; -1 1],B.Cb);
         
-        B.Kb{j} = kron([1 -1; -1 1],B.Kb{j});
-               
-        B.Cb{j} = [B.Cxx{j} B.Cxy{j};
-                   B.Cxy{j} B.Cyy{j}];
-       
-        B.Cb{j} = kron([1 -1; -1 1],B.Cb{j});
-        
-        Kb = max(-1E20,min(B.Kb{j},1E20));
-        B.Fb{j} = Kb*[xi{j}+B.ui{j};xo{j}+B.uo{j}];
-        
-        B.xInt{j} = [];
+        B.Mb = [B.Mxx B.Mxy;
+                B.Mxy B.Myy];
+
+        B.Mb = kron([1 -1; -1 1],B.Mb);
+end
+
+RBear = eye(4);
+RBear = RBear([1 4 2 3],:);
+RBear(4,:) = -RBear(4,:);
+
+R_fields = {'Ri','Ro'};
+for i = 1:2
+    if ~isfield(B,R_fields{i})
+        B.(R_fields{i}) = eye(4);
     end
-    B.Mb{j} = zeros(8);
-    B.R{j} = blkdiag(RBear,RBear);
-    B.Ri{j} = RBear;
-    B.Ro{j} = RBear;
-end
-
-if isfield(B,'m') && ~isfield(B,'mx')
-    B.mx = B.m;
-    B.my = B.m;
-end
-
-if isfield(B,'I') && ~isfield(B,'Ixx')
-    B.Ixx = B.I;
-    B.Iyy = B.I;
-end
-
-params2default = {'mx','my','Ixx','Iyy'}; %mass terms
-for i = 1:length(params2default)
-    if ~isfield(B,params2default{i})
-        [B.(params2default{i})] = deal(0);
-    end
-end
-
-%setup the transformation and stiffness/damping matrices for each
-%bearing
-B.M = diag([B.mx B.my B.Ixx B.Iyy]);
-
-%store the z position
-B.z = R{B.iRotor(end)}.Nodes(B.iNode(end));
-
-%throw an error if the z coords of the nodes on different rotors
-%don't match
-for j = 1:2
-    if ~isnan(B.iRotor)
-        if abs(B.z - R{B.iRotor(j)}.Nodes(B.iNode(j))) > 1E-6
-            warning('The z position of Rotor %d, Node %d does not match that of Rotor %d, Node %d, leading to a misalignment for Bearing %d',B.iRotor(j),B.iNode(j),B.iRotor(1),B.iNode(1),i);
-        end
-    end
-
+    B.(R_fields{i}) = RBear * B.(R_fields{i});
 end
 
 %We can't have infs in the final bearing stiffness matrix as this breaks
-%the FE setup code, so we set these terms to a small value. It must be 
-%non-zero so we can detect which direction they can exert forces, for the 
-%C-B model reduciton on the rotor
+%the FE setup code, so we set these terms to a zero. 
 
 %Don't worry, we'll check Kxx etc later to find the Infs to determine fixed
 %nodes. The values therefore won't contribute to the final stiffness matrix.
 
-for j = 1:2
-    ii = isinf(B.Kb{j}); B.Kb{j}(ii) = 100;
-    ii = isinf(B.Cb{j}); B.Cb{j}(ii) = 100;
-    %         B.Kb{j}  = max(min(B.Kb{j},1E20),-1E20);
-    %         B.Cb{j}  = max(min(B.Cb{j},1E20),-1E20);
-end
+ii = isinf(B.Kb); B.Kb(ii) = 0;
+ii = isinf(B.Cb); B.Cb(ii) = 0;

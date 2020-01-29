@@ -43,7 +43,6 @@ else
             States.qi = q; 
         end
         Damping.K = KBearing; 
-        %     KBearing = 0.5*(KBearing + permute(KBearing,[2 1 3]));
     end
 
     if ~isfield(Damping,'C')
@@ -58,7 +57,6 @@ else
             States.qidot = qdot; 
         end
         Damping.C = CBearing;
-    %     CBearing = 0.5*(CBearing + permute(CBearing,[2 1 3]));
     end
 
     if ~isfield(Damping,'M')
@@ -73,14 +71,33 @@ else
             States.qiddot = qddot; 
         end
         Damping.M = MBearing;
-        %     MBearing = 0.5*(MBearing + permute(MBearing,[2 1 3]));
     end
-
-    Damping.K = mtimesx(R',mtimesx(Damping.K,R));
-    Damping.C = mtimesx(R',mtimesx(Damping.C,R));
-    Damping.M = mtimesx(R',mtimesx(Damping.M,R));
 end
-Forces.F = R'*Forces.F;
+
+Forces.F  = kron([1; -1],R'*Forces.F);
+
+Forces.q = R'*(States.qi - States.qo);
+
+if nargout > 2
+    %Combine stiffness terms
+    Damping.K = kron([1 -1; -1 1],mtimesx(R',mtimesx(Damping.K,R)));
+    Damping.C = kron([1 -1; -1 1],mtimesx(R',mtimesx(Damping.C,R)));
+    Damping.M = kron([1 -1; -1 1],mtimesx(R',mtimesx(Damping.M,R)));
+    
+    Damping = default_damping(Damping);
+end
+
+function Damping = default_damping(Damping)
+field = 'KCM';
+for i = 1:3
+    if ~isfield(Damping,[field(i) 'qq'])
+        K = Damping.(field(i));
+        Damping.([field(i) 'qq']) = K;
+        Damping.([field(i) 'qx']) = zeros(size(K,1),0,size(K,3));
+        Damping.([field(i) 'xq']) = zeros(0,size(K,2),size(K,3));
+        Damping.([field(i) 'xx']) = zeros(0,0,size(K,3));
+    end
+end
 
 function States = default_int(States,NPts)
 if ~isfield(States,'bSolve')
@@ -89,11 +106,11 @@ end
 if ~isfield(States,'xInt')
     States.xInt = zeros(0,NPts);
 end
-if ~isfield(States,'xIntdot')
-    States.xIntdot = 0*States.xInt;
+if ~isfield(States,'xdotInt')
+    States.xdotInt = 0*States.xInt;
 end
-if ~isfield(States,'xIntddot')
-    States.xIntddot = 0*States.xInt;
+if ~isfield(States,'xddotInt')
+    States.xddotInt = 0*States.xInt;
 end
 
 function States = default_inputs(States,R)
