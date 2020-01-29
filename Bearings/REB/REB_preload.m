@@ -143,7 +143,7 @@ if ~isempty(States.xInt)
 end
 Forces = REB_model(Params,States);
 FInt = Forces.FInt;
-FFree = Forces.Fi - States.F;
+FFree = Forces.F(1:4,:) - States.F;
 F = [FFree(iFree);FInt];
 
 function J = preload_jac(X,Params,States,N,iFree)

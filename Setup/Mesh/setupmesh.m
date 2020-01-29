@@ -171,7 +171,7 @@ Mb_lin = zeros(NInputBearing);
 IMapInput = eye(NInputBearing);
 IMapInternal = eye(NInternalTot);
 
-Sb = [];
+Sb = zeros(0,NDofTot);
 for i = 1:NBearings
     bGround = false;
     %work out mapping matrices
@@ -307,7 +307,7 @@ Ce = zeros(NExcInputTot);
 Ke = zeros(NExcInputTot);
 usync = zeros(NExcInputTot,1);
 uasync = zeros(NExcInputTot,1);
-Se = [];
+Se = zeros(0,NDofTot);
 
 for i = 1:NBearings
     P.Bearing{i}.NExcite = 0;

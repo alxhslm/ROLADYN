@@ -99,6 +99,8 @@ P.Model.Bearing.Cu     = P.Model.Bearing.S'*mean(Stiffness.Cu,3);
 P.Model.Bearing.Mu     = P.Model.Bearing.S'*mean(Stiffness.Mu,3);
 
 P.Model.K            = P.Model.Rotor.K + P.Model.Stator.K + P.Model.Bearing.K;
+P.Model.C            = P.Model.Rotor.C + P.Model.Stator.C + P.Model.Bearing.C;
+P.Model.M            = P.Model.Rotor.M + P.Model.Stator.M + P.Model.Bearing.M;
 
 %% Mesh
 P.Mesh.Rotor.F0       = P.Mesh.Rotor.K*P.Mesh.x0;
@@ -133,6 +135,8 @@ P.Mesh.Bearing.Cu     = P.Mesh.Bearing.S'*P.Mesh.Bearing.Cbu;
 P.Mesh.Bearing.Mu     = P.Mesh.Bearing.S'*P.Mesh.Bearing.Mbu;
 
 P.Mesh.K              = P.Mesh.Rotor.K + P.Mesh.Stator.K + P.Mesh.Bearing.K;
+P.Mesh.C              = P.Mesh.Rotor.C + P.Mesh.Stator.C + P.Mesh.Bearing.C;
+P.Mesh.M              = P.Mesh.Rotor.M + P.Mesh.Stator.M + P.Mesh.Bearing.M;
 
 if ~bSuccess
     error('Failed to find equilibrium position')
