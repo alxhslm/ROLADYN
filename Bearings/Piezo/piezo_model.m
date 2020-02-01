@@ -108,7 +108,19 @@ else
     Stiffness.C = Stiffness.Cqq;
     
     Stiffness.Ku = Stiffness.Kqu;
-    Stiffness.Cu = Stiffness.Cqu;    
+    Stiffness.Cu = Stiffness.Cqu;
+        
+    Npts = size(States.qi,2);
+    Stiffness.Kqx = zeros(1,0,Npts);
+    Stiffness.Kxq = zeros(0,1,Npts);
+    Stiffness.Kxx = zeros(0,0,Npts);
+    
+    Stiffness.Cqx = zeros(1,0,Npts);
+    Stiffness.Cxq = zeros(0,1,Npts);
+    Stiffness.Cxx = zeros(0,0,Npts);
+    
+    Stiffness.Kxu = zeros(0,1,Npts);
+    Stiffness.Cxu = zeros(0,1,Npts);
 end
 
 
