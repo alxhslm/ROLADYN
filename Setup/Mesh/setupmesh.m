@@ -179,18 +179,24 @@ for i = 1:NBearings
         switch P.Bearing{i}.Node{j}.Type
             case 'ground'
                 Sio{j} = zeros(NDofe,NDofTot);
+                z(j) = NaN;
                 bGround = true;
             case 'rotor'
                 iNode = P.Bearing{i}.Node{j}.iNode;
                 Sio{j} = P.Rotor{P.Bearing{i}.Node{j}.iRotor}.S((iNode-1)*NDofe+(1:NDofe),:);
+                z(j) =  P.Rotor{P.Bearing{i}.Node{j}.iRotor}.Nodes(iNode);
             case 'stator'
                 Sio{j} = P.Stator{P.Bearing{i}.Node{j}.iStator}.S(1:NDofe,:);
+                z(j) =  P.Stator{P.Bearing{i}.Node{j}.iStator}.z;
         end
     end
 
     bLinear = strcmp(P.Bearing{i}.Model,'linear');
     
     Rio = {P.Bearing{i}.Ri,P.Bearing{i}.Ro};
+    
+    P.Bearing{i}.zi = z(1);
+    P.Bearing{i}.zo = z(2);
     
     P.Bearing{i}.Si = Sio{1};
     P.Bearing{i}.So = Sio{2};
@@ -217,7 +223,6 @@ for i = 1:NBearings
     end
     
     %and finally work out the boundary nodes of the rotors
-    zBear = NaN(1,2);
     for j = 1:2
         switch P.Bearing{i}.Node{j}.Type
             case 'rotor'
@@ -230,41 +235,18 @@ for i = 1:NBearings
                 P.Rotor{iRotor}.Bearing{end}.iNodeBearing = j;
                 P.Rotor{iRotor}.Bearing{end}.bLinear = bLinear;
                 P.Rotor{iRotor}.Bearing{end}.bGround = bGround;
-                
-                zBear(j) = P.Rotor{iRotor}.Nodes(iNode);
             case 'stator'
                 iStator = P.Bearing{i}.Node{j}.iStator;
                 
                 P.Stator{iStator}.Bearing{end+1}.iBearing = i;
                 P.Stator{iStator}.Bearing{end}.iActive = findrows(Rio{j}(P.Bearing{i}.bActive,:));
-                
-                if isfield(P.Stator{iStator},'z')
-                    zBear(j) = P.Stator{iStator}.z;
-                end
         end
     end
-    
-    P.Bearing{i}.z = mean(zBear,'omitnan');
-    if ~isnan(P.Bearing{i}.z)
-        for j = 1:2
-            switch P.Bearing{i}.Node{j}.Type
-                case 'rotor'
-                    iRotor = P.Bearing{i}.Node{j}.iRotor;
-                    iNode  = P.Bearing{i}.Node{j}.iNode(1);
-                    %do nothing, as has z already
-                    if P.Rotor{iRotor}.Nodes(iNode) ~= P.Bearing{i}.z
-                        error('Invalid connectivity specified for bearing "%s"',P.Bearing{i}.Name)
-                    end
-                case 'stator'
-                    iStator = P.Bearing{i}.Node{j}.iStator;
-                    if ~isfield(P.Stator{iStator},'z')
-                        P.Stator{iStator}.z = P.Bearing{i}.z;
-                    elseif P.Stator{iStator}.z ~= P.Bearing{i}.z
-                        error('Invalid connectivity specified for bearing "%s"',P.Bearing{i}.Name)
-                    end
-            end
-        end
+        
+    if ~isnan(P.Bearing{i}.zi) && ~isnan(P.Bearing{i}.zo) && P.Bearing{i}.zi ~= P.Bearing{i}.zo
+        warning('Mismatching axial locations for bearing "%s"',P.Bearing{i}.Name)
     end
+   
     
     P.Bearing{i}.bLinear = bLinear;
     P.Bearing{i}.bGround = bGround;

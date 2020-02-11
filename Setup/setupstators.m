@@ -17,11 +17,15 @@ end
 function S = setup_each_stator(S,ind,x0)
 
 if ~isfield(S, 'Name')
-    S.Name = sprintf('Rotor %d',ind);
+    S.Name = sprintf('Stator %d',ind);
 end
 
 if ~isfield(S,'NDof')
     S.NDof = size(S.M,1);
+end
+                
+if ~isfield(S,'z')
+    error('Missing field "z" for Stator "%s"',S.Name);
 end
 
 if ~isempty(x0)
