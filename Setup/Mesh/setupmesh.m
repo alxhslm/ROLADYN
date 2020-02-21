@@ -197,8 +197,8 @@ for i = 1:NBearings
     
     P.Bearing{i}.zi = z(1);
     P.Bearing{i}.zo = z(2);
-    
-    P.Bearing{i}.Si = Sio{1};
+        
+    P.Bearing{i}.Si = axial_offset(z(2)-z(1))*Sio{1};
     P.Bearing{i}.So = Sio{2};
     P.Bearing{i}.S = [P.Bearing{i}.Si; P.Bearing{i}.So];
     Sb = [Sb; P.Bearing{i}.S];

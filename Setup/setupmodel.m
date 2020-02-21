@@ -12,10 +12,8 @@ RBearing = [];
 NBearings = length(P.Bearing);
 RbBearing = zeros(2*4*NBearings,size(RRotor,1));
 for i = 1:NBearings
-    Ti = axial_offset(-P.Bearing{i}.zi);
-    To = axial_offset(-P.Bearing{i}.zo);
-    RbSb = (P.Bearing{i}.Ri*Ti*P.Bearing{i}.Si - P.Bearing{i}.Ro*To*P.Bearing{i}.So);
-    RbUb = (P.Bearing{i}.Ri*Ti*P.Bearing{i}.Ui - P.Bearing{i}.Ro*To*P.Bearing{i}.Uo);
+    RbSb = (P.Bearing{i}.Ri*P.Bearing{i}.Si - P.Bearing{i}.Ro*P.Bearing{i}.So);
+    RbUb = (P.Bearing{i}.Ri*P.Bearing{i}.Ui - P.Bearing{i}.Ro*P.Bearing{i}.Uo);
     for k = 1:2
         if isinf(P.Bearing{i}.Kxx(k,k))
             RBearing(end+1,:) = RbSb(k,:);
