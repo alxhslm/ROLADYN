@@ -196,9 +196,8 @@ RBear(4,:) = -RBear(4,:);
 R_fields = {'Ri','Ro'};
 for i = 1:2
     if ~isfield(B,R_fields{i})
-        B.(R_fields{i}) = eye(4);
+        B.(R_fields{i}) = RBear;
     end
-    B.(R_fields{i}) = RBear * B.(R_fields{i});
 end
 
 %We can't have infs in the final bearing stiffness matrix as this breaks

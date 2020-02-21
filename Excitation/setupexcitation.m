@@ -1,6 +1,5 @@
 function P = setupexcitation(P)
 E = P.Excite;
-Speed = getrotorspeeds(P.Rotor);
 
 iCount = 0;
 for i = 1:length(E)
