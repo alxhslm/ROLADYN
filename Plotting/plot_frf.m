@@ -169,3 +169,23 @@ for i = 1:length(f)
         opt.(f{i}) = d{i};
     end
 end
+
+function names = index2dofnames(P,iPlot)
+    dof = {'x','y','\theta','\psi'};
+    
+    iDOF = mod(iPlot,4); iDOF(iDOF == 0) = 4;
+    iGlobal = floor((iPlot-1)/4)+1;
+    
+    for j = 1:length(iPlot)
+        for i = 1:length(P.Rotor)
+            ii = find(iGlobal(j) == P.Rotor{i}.iGlobal,1);
+            if ~isempty(ii)
+                names{j} = sprintf('%s_{%s,%d}',dof{iDOF(j)}, P.Rotor{i}.Name,ii);
+            end
+        end
+        for i = 1:length(P.Stator)
+            if iGlobal(j) == P.Stator{i}.iGlobal
+                names{j} = sprintf('%s_{%s}',dof{iDOF(j)}, P.Stator{i}.Name);
+            end
+        end
+    end
