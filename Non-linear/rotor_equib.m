@@ -10,8 +10,11 @@ N = length(A);
 if isfield(P.Model,'x0') && length(P.Model.x0) == P.Model.NDof
     x0 = [P.Model.x0;
           repmat(P.Model.xInt,N,1)];
+elseif rank(P.Model.K) == size(P.Model.K,1)
+    x0 = [P.Model.K\P.Model.Fg;
+          rand(P.Model.NDofInt*N,1)*1E-6];
 else
-    x0 = [rand(P.Model.NDof,1)*1E-2;
+    x0 = [rand(P.Model.NDof*N,1)*1E-2;
           rand(P.Model.NDofInt*N,1)*1E-6];
 end
 
@@ -19,12 +22,12 @@ Jb = get_sparsity(P.Bearing);
 Jstr = [ones(P.Model.NDof)    ones(P.Model.NDof,P.Model.NDofInt*N);
         ones(P.Model.NDofInt*N,P.Model.NDof) kron(eye(N),Jb)];
 
-options.maxit = 10;
+options.maxit = 50;
 options.ftol = 1E-8;
 options.xtol = 1E-12;
 options.jacobian = @rotor_equilibrium_jacob;
 options.jacobianstructure = Jstr;
-options.print_level = 5;
+options.print_level = 0;
 
 info.status = 2;
 
@@ -35,6 +38,10 @@ while ~bSuccess && iter < 20
     bSuccess = any(info.status == [0 1]);
     x0 = x;
     iter = iter + 1;
+end
+
+if ~bSuccess
+    error('Failed to find equilibrium position')
 end
 
 [xCG,xInt] = unpack_vector(x,P,N);
@@ -56,29 +63,7 @@ States.bSolve = 0;
 
 [Forces, Stiffness] = bearingforces(P,States);
 
-P.Mesh.Bearing.Kqq  = Stiffness.Kqq;
-P.Mesh.Bearing.Kqx =  Stiffness.Kqx;
-P.Mesh.Bearing.Kxq =  Stiffness.Kxq;
-P.Mesh.Bearing.Kxx =  Stiffness.Kxx;
-
-P.Mesh.Bearing.Kqu =  Stiffness.Kqu;
-P.Mesh.Bearing.Kxu =  Stiffness.Kxu;
-
-P.Mesh.Bearing.Cqq =  Stiffness.Cqq;
-P.Mesh.Bearing.Cqx =  Stiffness.Cqx;
-P.Mesh.Bearing.Cxq =  Stiffness.Cxq;
-P.Mesh.Bearing.Cxx =  Stiffness.Cxx;
-
-P.Mesh.Bearing.Cqu =  Stiffness.Cqu;
-P.Mesh.Bearing.Cxu =  Stiffness.Cxu;
-
-P.Mesh.Bearing.Mqq =  Stiffness.Mqq;
-P.Mesh.Bearing.Mqx =  Stiffness.Mqx;
-P.Mesh.Bearing.Mxq =  Stiffness.Mxq;
-P.Mesh.Bearing.Mxx =  Stiffness.Mxx;
-
-P.Mesh.Bearing.Mqu =  Stiffness.Mqu;
-P.Mesh.Bearing.Mxu =  Stiffness.Mxu;
+P.Mesh.Bearing = structmerge(P.Mesh.Bearing,Stiffness);
 
 %% Model
 P.Model.Rotor.F0       = P.Model.Rotor.K*P.Model.x0;
@@ -137,10 +122,6 @@ P.Mesh.Bearing.Mu     = P.Mesh.Bearing.S'*P.Mesh.Bearing.Mbu;
 P.Mesh.K              = P.Mesh.Rotor.K + P.Mesh.Stator.K + P.Mesh.Bearing.K;
 P.Mesh.C              = P.Mesh.Rotor.C + P.Mesh.Stator.C + P.Mesh.Bearing.C;
 P.Mesh.M              = P.Mesh.Rotor.M + P.Mesh.Stator.M + P.Mesh.Bearing.M;
-
-if ~bSuccess
-    error('Failed to find equilibrium position')
-end
 
 function [xCG,xInt] = unpack_vector(x,P,N)
 xCG = x(1:P.Model.NDof);
