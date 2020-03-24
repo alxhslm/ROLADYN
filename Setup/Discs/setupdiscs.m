@@ -203,7 +203,7 @@ for i = 1:D.Mesh.Nt
         D.Element{i,j}.R = eye(NDofe*NEle);
 
         [D.Element{i,j}.K,D.Element{i,j}.M,D.Element{i,j}.G] = disc_annular(D.Material,D.Mesh.t(j),D.Mesh.r(j),D.Mesh.dtheta(i),D.Mesh.dr(j));
-
+        D.Element{i,j}.C = D.Material.alpha*D.Element{i,j}.M + D.Material.beta*D.Element{i,j}.K;
         D.Element{i,j}.G = D.Options.bGyro*D.Element{i,j}.G;
 
         if ~isempty(x0)

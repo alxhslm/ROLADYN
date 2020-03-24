@@ -70,6 +70,7 @@ for k = 1:(S.Mesh.Nz-1)
     
     [S.Element{k}.K,S.Element{k}.M,S.Element{k}.G] = feval(['shaft_' S.Options.Element],S.Material,S.Section.ri,S.Section.ro,S.Element{k}.L);
     S.Element{k}.G = S.Options.bGyro*S.Element{k}.G;
+    S.Element{k}.C = S.Material.alpha*S.Element{k}.M + S.Material.beta*S.Element{k}.K;
     
     S.Element{k}.R = RShaft;
     S.Element{k}.S = [S.Mesh.SNode{k}; S.Mesh.SNode{k+1}];
