@@ -1,4 +1,7 @@
 *.MATLABDriveTag
-*.asv
-*.mat
 *.bak
+*.asv
+*.m~
+*.DS_Store
+desktop.ini
+thumbs.db
