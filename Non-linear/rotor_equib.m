@@ -68,7 +68,7 @@ P.Mesh.Bearing = structmerge(P.Mesh.Bearing,Stiffness);
 %% Model
 P.Model.Rotor.F0       = P.Model.Rotor.K*P.Model.x0;
 P.Model.Stator.F0      = P.Model.Stator.K*P.Model.x0;
-P.Model.Bearing.Lin.F0 = P.Model.Bearing.Lin.K*P.Model.x0;
+P.Model.Bearing.Lin.F0 = P.Model.Bearing.Lin.F + P.Model.Bearing.Lin.K*P.Model.x0;
 
 P.Model.Bearing.F0     = P.Model.Bearing.S'*mean(Forces.F,2);
 P.Model.Bearing.NL.F0  = P.Model.Bearing.F0 - P.Model.Bearing.Lin.F0;

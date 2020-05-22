@@ -160,10 +160,12 @@ end
 NInternalTot = sum(NInternal(:));
 
 NInputBearing = 2*NDofe*NBearings;
+Fb = zeros(NInputBearing,1);
 Kb = zeros(NInputBearing);
 Cb = zeros(NInputBearing);
 Mb = zeros(NInputBearing);
 
+Fb_lin = zeros(NInputBearing,1);
 Kb_lin = zeros(NInputBearing);
 Cb_lin = zeros(NInputBearing);
 Mb_lin = zeros(NInputBearing);
@@ -220,11 +222,13 @@ for i = 1:NBearings
     P.Bearing{i}.R = blkdiag(P.Bearing{i}.Ri,P.Bearing{i}.Ro);
 
     %now compute the stiffness matrices  
+    Fb = Fb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Fb;
     Kb = Kb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Kb*P.Bearing{i}.R*P.Bearing{i}.U;
     Cb = Cb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Cb*P.Bearing{i}.R*P.Bearing{i}.U;
     Mb = Mb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Mb*P.Bearing{i}.R*P.Bearing{i}.U;
     
     if bLinear
+        Fb_lin = Fb_lin + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Fb;
         Kb_lin = Kb_lin + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Kb*P.Bearing{i}.R*P.Bearing{i}.U;
         Cb_lin = Cb_lin + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Cb*P.Bearing{i}.R*P.Bearing{i}.U;
         Mb_lin = Mb_lin + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Mb*P.Bearing{i}.R*P.Bearing{i}.U;
@@ -255,23 +259,29 @@ for i = 1:NBearings
     P.Bearing{i}.bGround = bGround;
 end
 
+P.Mesh.Bearing.Fb = Fb;
 P.Mesh.Bearing.Kb = Kb;
 P.Mesh.Bearing.Cb = Cb;
 P.Mesh.Bearing.Mb = Mb;
-P.Mesh.Bearing.K = Sb'*Kb*Sb;
-P.Mesh.Bearing.C = Sb'*Cb*Sb;
-P.Mesh.Bearing.M = Sb'*Mb*Sb;
+P.Mesh.Bearing.F  = Sb'*Fb;
+P.Mesh.Bearing.K  = Sb'*Kb*Sb;
+P.Mesh.Bearing.C  = Sb'*Cb*Sb;
+P.Mesh.Bearing.M  = Sb'*Mb*Sb;
 
+P.Mesh.Bearing.Lin.Fb = Fb_lin;
 P.Mesh.Bearing.Lin.Kb = Kb_lin;
 P.Mesh.Bearing.Lin.Cb = Cb_lin;
 P.Mesh.Bearing.Lin.Mb = Mb_lin;
-P.Mesh.Bearing.Lin.K = Sb'*Kb_lin*Sb;
-P.Mesh.Bearing.Lin.C = Sb'*Cb_lin*Sb;
-P.Mesh.Bearing.Lin.M = Sb'*Mb_lin*Sb;
+P.Mesh.Bearing.Lin.F  = Sb'*Fb_lin;
+P.Mesh.Bearing.Lin.K  = Sb'*Kb_lin*Sb;
+P.Mesh.Bearing.Lin.C  = Sb'*Cb_lin*Sb;
+P.Mesh.Bearing.Lin.M  = Sb'*Mb_lin*Sb;
 
+P.Mesh.Bearing.NL.Fb = Fb-Fb_lin;
 P.Mesh.Bearing.NL.Kb = Kb-Kb_lin;
 P.Mesh.Bearing.NL.Cb = Cb-Cb_lin;
 P.Mesh.Bearing.NL.Mb = Mb-Mb_lin;
+P.Mesh.Bearing.NL.F = Sb'*(Fb-Fb_lin);
 P.Mesh.Bearing.NL.K = Sb'*(Kb-Kb_lin)*Sb;
 P.Mesh.Bearing.NL.C = Sb'*(Cb-Cb_lin)*Sb;
 P.Mesh.Bearing.NL.M = Sb'*(Mb-Mb_lin)*Sb;

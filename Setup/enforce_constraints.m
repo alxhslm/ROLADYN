@@ -19,9 +19,11 @@ T.Stator.C = A'*S.Stator.C*A;
 T.Stator.K = A'*S.Stator.K*A;
 T.Stator.Fg = A'*S.Stator.Fg;
 
+T.Bearing.F = A'*S.Bearing.F;
 T.Bearing.K = A'*S.Bearing.K*A;
 T.Bearing.C = A'*S.Bearing.C*A;
 T.Bearing.M = A'*S.Bearing.M*A;
+T.Bearing.Lin.F = A'*S.Bearing.Lin.F;
 T.Bearing.Lin.K = A'*S.Bearing.Lin.K*A;
 T.Bearing.Lin.C = A'*S.Bearing.Lin.C*A;
 T.Bearing.Lin.M = A'*S.Bearing.Lin.M*A;

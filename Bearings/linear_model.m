@@ -3,7 +3,7 @@ xBearing = [States.qi; States.qo];
 dxBearing = [States.qidot; States.qodot];
 ddxBearing = [States.qiddot; States.qoddot];
 
-fb = B.Kb*xBearing + B.Cb*dxBearing + B.Mb*ddxBearing;
+fb = B.Fb + B.Kb*xBearing + B.Cb*dxBearing + B.Mb*ddxBearing;
 
 NPts = size(xBearing,2);
 F.F = fb;

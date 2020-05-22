@@ -109,7 +109,7 @@ for i = 1:NBearing
     end
     P.Bearing{i}.Kb = mean(Stiffness.K,3);
     P.Bearing{i}.Cb = mean(Stiffness.C,3);
-    P.Bearing{i}.F = mean(Forces.F,2);
+    P.Bearing{i}.Fb = mean(Forces.F,2);
 end
 
 P.Mesh.Bearing.F0 = P.Mesh.Bearing.F0 + P.Mesh.Bearing.R*Fc;
