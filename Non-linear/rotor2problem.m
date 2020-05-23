@@ -24,6 +24,7 @@ problem.Mu = P.Model.Excite.M;
 problem.M  =  P.Model.Rotor.M + P.Model.Stator.M;
 problem.C  =  P.Model.Rotor.C + P.Model.Stator.C;
 problem.K  =  P.Model.Rotor.K + P.Model.Stator.K;
+problem.G  =  P.Model.Rotor.G;
 problem.F0 = -P.Model.Fg;
 
 problem.Ku = [problem.Ku; zeros(NDofInt,size(problem.Ku,2))];
@@ -32,6 +33,7 @@ problem.Mu = [problem.Mu; zeros(NDofInt,size(problem.Mu,2))];
 problem.K  = blkdiag(problem.K,zeros(NDofInt));
 problem.C  = blkdiag(problem.C,zeros(NDofInt));
 problem.M  = blkdiag(problem.M,zeros(NDofInt));
+problem.G  = blkdiag(problem.G,zeros(NDofInt));
 problem.F0 = [problem.F0; zeros(NDofInt,1)];
 
 if isfield(P.Model,'RDofPlot')

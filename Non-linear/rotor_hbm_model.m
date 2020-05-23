@@ -11,9 +11,7 @@ bearing_states.bSolve = 0;
 
 varargout = {};
 switch part
-    case  'nl'
-        Fgyro = O*P.Model.Rotor.G*States.xdot(1:P.Model.NDof,:);
-        
+    case  'nl'        
         if P.Model.bNL
             Forces = bearingforces(P,bearing_states);
         else
@@ -21,7 +19,7 @@ switch part
         end
         
         Fi = Forces.FInt(P.Model.Reduced.iInt,:);
-        Fnl = P.Model.Bearing.S'*Forces.F + Fgyro;
+        Fnl = P.Model.Bearing.S'*Forces.F;
         
         varargout{end+1} = [Fnl; Fi];
     case 'output'
@@ -60,7 +58,6 @@ switch part
                     Cqx =  mtimesx(P.Model.Bearing.S',Stiffness.Cqx);
                     Cxq =  mtimesx(Stiffness.Cxq,P.Model.Bearing.S);
                     Cxx =  Stiffness.Cxx;
-                    Cqq = Cqq + O*P.Model.Rotor.G;
                     C = [Cqq Cqx; Cxq Cxx];
                 else
                     C = numerical_deriv(States,f0,'xdot',hbm,problem);
@@ -107,10 +104,7 @@ switch part
             case 'nl_w'
                 if P.Model.bAnalyticalDerivs
                     %only valid if VC is turned off
-                    Dw{1} = [P.Model.Rotor.G*States.xdot(1:P.Model.NDof,:); zeros(P.Model.NDofInt,NPts)];
-                    if length(States.w0)>1
-                        Dw{2} = 0*States.x;
-                    end
+                    Dw = repmat({0*States.x},1,2);
                 else
                     w0 = States.w0;
                     h = 1E-6;
