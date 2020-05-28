@@ -243,11 +243,6 @@ for i = 1:NBearings
         end
     end
         
-    if ~isnan(P.Bearing{i}.zi) && ~isnan(P.Bearing{i}.zo) && P.Bearing{i}.zi ~= P.Bearing{i}.zo
-        warning('Mismatching axial locations for bearing "%s"',P.Bearing{i}.Name)
-    end
-   
-    
     P.Bearing{i}.bLinear = bLinear;
     P.Bearing{i}.bGround = bGround;
 end
