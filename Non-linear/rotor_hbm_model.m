@@ -9,6 +9,11 @@ bearing_states.A = O*States.t(P.Model.iRot,:);
 bearing_states.O = O + 0*States.t(P.Model.iRot,:);
 bearing_states.bSolve = 0;
 
+States.xInt = States.x(P.Model.NDof + 1:end,:);
+States.x = States.x(1:P.Model.NDof,:);
+States.xdot = States.xdot(1:P.Model.NDof,:);
+States.xddot = States.xddot(1:P.Model.NDof,:);
+
 varargout = {};
 switch part
     case  'nl'        

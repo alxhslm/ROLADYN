@@ -6,17 +6,19 @@ else
     R = 1;
 end
 
+Ru = 1;
+
 model = Params.fun;
 NPts = size(States.qi,2);
 
-States = default_inputs(States,R);
+States = default_inputs(States,R,Ru);
 States = default_int(States,NPts);
 
 if nargout < 3
     [Forces,Channels] = feval(model,Params,States);
     Forces.F  = mkron([1;-1],R'*Forces.F);
 else
-    [Forces,Channels,Stiffness] = stiffnessAndDamping(model,Params,States,R);
+    [Forces,Channels,Stiffness] = stiffnessAndDamping(model,Params,States,R,Ru);
 end
 
 Forces.xInt     = States.xInt;
@@ -25,7 +27,7 @@ Forces.xddotInt = States.xddotInt;
 
 Forces.q = R'*(States.qi - States.qo);
 
-function [Forces,Channels,Stiffness] = stiffnessAndDamping(model,Params,States,R)
+function [Forces,Channels,Stiffness] = stiffnessAndDamping(model,Params,States,R,Ru)
 [Forces,Channels,Stiffness] = feval(model,Params,States);
 
 if isempty(Stiffness)
@@ -129,16 +131,16 @@ Stiffness.Kqq = mkron([1 -1; -1 1],mtimesx(R',mtimesx(Stiffness.Kqq,R)));
 Stiffness.Kqx = mkron([1; -1],mtimesx(R',Stiffness.Kqx));
 Stiffness.Kxq = mkron([1 -1],mtimesx(Stiffness.Kxq,R));
 Stiffness.K   = mkron([1 -1; -1 1],mtimesx(R',mtimesx(Stiffness.K,R)));
-Stiffness.Ku  = mkron([1; -1],mtimesx(R',Stiffness.Ku));
-Stiffness.Kqu = mkron([1; -1],mtimesx(R',Stiffness.Kqu));
+Stiffness.Ku  = mkron([1; -1],mtimesx(R',mtimesx(Stiffness.Ku,Ru)));
+Stiffness.Kqu = mkron([1; -1],mtimesx(R',mtimesx(Stiffness.Kqu,Ru)));
 
 %Combine damping terms
 Stiffness.Cqq = mkron([1 -1; -1 1],mtimesx(R',mtimesx(Stiffness.Cqq,R)));
 Stiffness.Cqx = mkron([1; -1],mtimesx(R',Stiffness.Cqx));
 Stiffness.Cxq = mkron([1 -1],mtimesx(Stiffness.Cxq,R));
 Stiffness.C   = mkron([1 -1; -1 1],mtimesx(R',mtimesx(Stiffness.C,R)));
-Stiffness.Cu  = mkron([1; -1],mtimesx(R',Stiffness.Cu));
-Stiffness.Cqu = mkron([1; -1],mtimesx(R',Stiffness.Cqu));
+Stiffness.Cu  = mkron([1; -1],mtimesx(R',mtimesx(Stiffness.Cu,Ru)));
+Stiffness.Cqu = mkron([1; -1],mtimesx(R',mtimesx(Stiffness.Cqu,Ru)));
 
 function States = default_int(States,NPts)
 if ~isfield(States,'bSolve')
@@ -154,7 +156,7 @@ if ~isfield(States,'xddotInt')
     States.xddotInt = 0*States.xInt;
 end
 
-function States = default_inputs(States,R)
+function States = default_inputs(States,R,Ru)
 if ~isfield(States,'qo')
     States.qo = 0*States.qi;
 end
@@ -177,14 +179,9 @@ for i = 1:length(suffix)
     end
 end
 
-
-if ~isfield(States,'u') || isempty(States.u)
-    States.u = repmat(0*States.qi(1,:),2,1);
-end
-
-suffix = {'dot','ddot'};
 for i = 1:length(suffix)
-    if ~isfield(States,['u' suffix{i}])
-        States.(['u' suffix{i}]) = 0*States.u;
+    if ~isfield(States,['u' suffix{i}]) || isempty(States.(['u' suffix{i}]))
+        States.(['u' suffix{i}]) = repmat(0*States.qi(1,:),2,1);
     end
+    States.(['u' suffix{i}]) = Ru*States.(['u' suffix{i}]);
 end

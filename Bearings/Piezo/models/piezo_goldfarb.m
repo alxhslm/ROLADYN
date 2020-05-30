@@ -88,6 +88,7 @@ if nargout > 1
 end
 
 function [zdot,dzdot_dz,dzdot_dqdot] = bouc_wen_ode(p,qdot,z)
+z(z == 0) = eps;
 zdot = qdot  - p.beta*abs(qdot).*(abs(z).^(p.n-1)).*z - p.gamma*qdot.*(abs(z).^p.n);
 dzdot_dqdot = 1 - p.beta*sign(qdot).*(abs(z).^(p.n-1)).*z - p.gamma.*(abs(z).^p.n);
 dzdot_dz = - p.beta*abs(qdot).*((abs(z).^(p.n-1)) + (p.n-1)*(abs(z).^(p.n-2)).*sign(z).*z) - p.n*p.gamma*qdot.*(abs(z).^(p.n-1)).*sign(z);
