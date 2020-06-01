@@ -3,8 +3,8 @@ Piezo.Model = 'goldfarb';
 
 Piezo.fun = str2func(['piezo_', Piezo.Model]);
 
-Piezo.Mech.kO = Piezo.Mech.k + Piezo.T^2/Piezo.C;
-Piezo.Mech.kS = Piezo.Mech.k + Piezo.T^2/(Piezo.C + Piezo.Cm);
+Piezo.Mech.kO = Piezo.Mech.k + Piezo.Elec.T^2/Piezo.Elec.C;
+Piezo.Mech.kS = Piezo.Mech.k + Piezo.Elec.T^2/(Piezo.Elec.C + Piezo.Elec.Cm);
 
 if ~isfield(Piezo,'bAmplifiersOn')
     Piezo.bAmplifiersOn = true;

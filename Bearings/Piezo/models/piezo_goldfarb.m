@@ -4,7 +4,7 @@ Npts = size(States.qi,2);
 xPz     = States.qi     - States.qo;
 xPzdot  = States.qidot  - States.qodot;
 
-Ve = B.G*States.u;
+Ve = B.Elec.G*States.u;
 
 if B.bAmplifiersOn
     Vpz     = States.xInt(1,:);
@@ -13,8 +13,8 @@ if B.bAmplifiersOn
     z    = States.xInt(2,:);
     zdot = States.xdotInt(2,:);
     
-    q    = B.T*xPz    + B.C*Vpz;
-    qdot = B.T*xPzdot + B.C*Vpzdot;
+    q    = B.Elec.T*xPz    + B.Elec.C*Vpz;
+    qdot = B.Elec.T*xPzdot + B.Elec.C*Vpzdot;
     
     if nargout < 3
         zdot_model = bouc_wen_ode(B.Bouc_wen,qdot,z);
@@ -22,12 +22,12 @@ if B.bAmplifiersOn
         [zdot_model,dzdot_dz,dzdot_dqdot] = bouc_wen_ode(B.Bouc_wen,qdot,z);
     end
     
-    Vh = z/B.Cm;
+    Vh = z/B.Elec.Cm;
     
     F.FInt = [Vpz + Vh - Ve;
              (zdot - zdot_model)];
 else
-    Vpz = - B.T/B.C * xPz;
+    Vpz = - B.Elec.T/B.Elec.C * xPz;
     
     z = zeros(0,Npts);
     zdot = zeros(0,Npts);
@@ -40,7 +40,7 @@ else
     F.FInt = zeros(0,Npts);
 end
 
-F.F = B.Mech.k*xPz + B.Mech.c*xPzdot - B.T*Vpz;
+F.F = B.Mech.k*xPz + B.Mech.c*xPzdot - B.Elec.T*Vpz;
       
 if nargout > 1
     V.q    = q;
@@ -53,32 +53,32 @@ if nargout > 1
     V.Vh   = Vh;
     V.Ve   = Ve;
 
-    V.Fpz  = B.T*Vpz;
+    V.Fpz  = B.Elec.T*Vpz;
 
     if nargout > 2
         wons = permute(0*xPz,[1 3 2])+1;
         if B.bAmplifiersOn
             S.Kqq =  B.Mech.k*wons;
-            S.Kqx = [-B.T*wons 0*wons];
+            S.Kqx = [-B.Elec.T*wons 0*wons];
             S.Kxq = [0*wons;
                      0*wons];
-            S.Kxx =  [wons       1/B.Cm*wons;
+            S.Kxx =  [wons       1/B.Elec.Cm*wons;
                       0*wons   -permute(dzdot_dz,[1 3 2])];
             S.Kqu = 0*wons;
-            S.Kxu = [-B.G*wons;
+            S.Kxu = [-B.Elec.G*wons;
                      0*wons];
 
             S.Cqq = B.Mech.c*wons;
             S.Cqx = [0*wons 0*wons];
             S.Cxq = [0*wons;
-                     -permute(dzdot_dqdot .* B.T,[1 3 2])];
+                     -permute(dzdot_dqdot .* B.Elec.T,[1 3 2])];
             S.Cxx = [0*wons    0*wons;
-                     -permute(dzdot_dqdot .* B.C,[1 3 2]) wons];
+                     -permute(dzdot_dqdot .* B.Elec.C,[1 3 2]) wons];
             S.Cqu = 0*wons;
             S.Cxu = [0*wons;
                      0*wons];
         else
-            S.Kqq = (B.Mech.k + B.T^2/B.C)*wons;            
+            S.Kqq = (B.Mech.k + B.Elec.T^2/B.Elec.C)*wons;            
             S.Cqq = B.Mech.c*wons;            
             
             S.Kqu = 0*wons;
