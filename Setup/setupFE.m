@@ -77,9 +77,9 @@ for i = 1:length(Rotor)
         B = Bearing{Rotor{i}.Bearing{j}.iBearing};
         switch Rotor{i}.Bearing{j}.iNodeBearing
             case 1
-                Kb = B.Ri' * B.Kb(1:4,1:4) * B.Ri;
+                Kb = B.Ti' * B.Ri' * B.Kb(1:4,1:4) * B.Ri * B.Ti;
             case 2
-                Kb = B.Ro' * B.Kb(5:8,5:8) * B.Ro;
+                Kb = B.To' * B.Ro' * B.Kb(5:8,5:8) * B.Ro * B.To;
         end
         Sb = Rotor{i}.SNode{Rotor{i}.Bearing{j}.iNode};
         Kr = Kr + Sb'*Kb*Sb;
