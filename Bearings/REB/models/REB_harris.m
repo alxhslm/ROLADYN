@@ -63,7 +63,7 @@ dz = z - Z;
 dr = r - B.Geometry.rRacei;
 
 Az = B.Geometry.A0*sinALPHA + dz;
-Ar = B.Geometry.A0*cosALPHA + dr;
+Ar = B.Geometry.A0*cosALPHA + dr - wi - wo;
 A = sqrt(Az.^2 + Ar.^2);
 
 Xz0 = (Az./A) .* ((B.Geometry.RRaceo-B.Geometry.D/2) + max(A - B.Geometry.A0,0)/(1 + B.Contact.lambda));
@@ -82,8 +82,8 @@ if (B.Options.bCentrifugal || B.Options.bGyro)
     
     [Ai,Ao,alpha_i,alpha_o] = race_geometry(Xz,Xr,Az,Ar);
        
-    dbi = Ai - (B.Geometry.RRacei-B.Geometry.D/2) - wi;
-    dbo = Ao - (B.Geometry.RRaceo-B.Geometry.D/2) - wo;
+    dbi = Ai - (B.Geometry.RRacei-B.Geometry.D/2);
+    dbo = Ao - (B.Geometry.RRaceo-B.Geometry.D/2);
     Qi = hertz_contactlaw(B.Contact.Inner.K,B.Contact.n,dbi,B.Contact.tol);
     Qo = hertz_contactlaw(B.Contact.Outer.K,B.Contact.n,dbo,B.Contact.tol);
 
@@ -92,27 +92,13 @@ else
     alpha_i = alpha_i0;
     alpha_o = alpha_o0;
 
-    if B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
-        dn =  (dn0 - (wo + wi));
-        Qi = hertz_contactlaw(B.Contact.K,B.Contact.n,dn,B.Contact.tol);
-        Qo = Qi;
-        db = dn/(1+lambda);
-        dbo = db;
-        dbi = dn - db;  
-
-        Xz = (B.Geometry.RRaceo-B.Geometry.D/2 + db)*sin(alpha_i0);
-        Xr = (B.Geometry.RRaceo-B.Geometry.D/2 + db)*cos(alpha_i0);
-
-        dn = dbi + dbo;
-    else
-        Xz = Xz0;
-        Xr = Xr0;
-        dbi = dbi0;
-        dbo = dbo0;
-        Qi = Qi0;
-        Qo = Qo0;
-        dn = dn0;
-    end
+    Xz = Xz0;
+    Xr = Xr0;
+    dbi = dbi0;
+    dbo = dbo0;
+    Qi = Qi0;
+    Qo = Qo0;
+    dn = dn0;
 end
 
 %dynamic loads

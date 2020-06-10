@@ -70,7 +70,7 @@ if B.Options.bCentrifugal
     dbo = db-wo;
     dn = dn0 - (wo + wi);
 elseif B.Options.bRaceCompliancei || B.Options.bRaceComplianceo
-    [Qi,Qo,wi,wo,Ktot] = race_compliance_contactlaw(B.Contact,B.Race,B.Options,dn0);
+    [Qi,Qo,wi,wo,Ktot] = race_compliance_contactlaw_const_contact(B.Contact,B.Race,B.Options,dn0);
     dn = dn0 - (wo + wi);
     dbo = dn/(1+B.Contact.lambda);
     dbi = dn - dbo;
