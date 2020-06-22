@@ -39,9 +39,11 @@ if States.bSolve
 end
 
 if nargout<3
-    [Forces,Channels] = feval(model,Params,States);  
-    Forces.F  = [R'*Forces.Fi;
-                 R'*Forces.Fo];
+    [Forces,Channels] = feval(model,Params,States); 
+    Forces.Fi = R'*Forces.Fi;
+    Forces.Fo = R'*Forces.Fo;
+    Forces.F  = [Forces.Fi;
+                 Forces.Fo];
 else
     [Forces,Channels,Stiffness] = stiffnessAndDamping(model,Params,States,R);
 end
@@ -358,8 +360,11 @@ else
     S.C = S.Cqq;
 end
 
-F.F  = [R'*F.Fi;
-        R'*F.Fo];
+F.Fi = R'*F.Fi;
+F.Fo = R'*F.Fo;
+    
+F.F  = [F.Fi;
+        F.Fo];
 
 function J = myinv(M)
 if size(M,1) == 1

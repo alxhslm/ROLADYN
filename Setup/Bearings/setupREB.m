@@ -40,13 +40,13 @@ B.Geometry = setupGeometry(B.Geometry);
 if ~isfield(B,'Elements')
     B.Elements = struct();
 end
-if ~isfield(B.Elements,'N')
-    if B.Options.bSjovall
+if B.Options.bSjovall 
+    if ~isfield(B.Elements,'N')
         error('Need to know number of points for Sjovall integral formulation');
-    else
-        B.Elements.N = B.Setup.Z;
-    end   
-end
+    end
+else
+    B.Elements.N = B.Setup.Z;
+end   
 B.Elements.r = B.Setup.Z/B.Elements.N; %force ratio
 switch B.Setup.ElementArrangement
     case {'single','double_alternating'}
