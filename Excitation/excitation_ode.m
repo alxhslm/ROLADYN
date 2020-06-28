@@ -28,9 +28,9 @@ for i = 1:length(P.Excite)
      udot  =  u*1i.*omega;
      uddot = -u.*omega.^2 + u*1i.*domega_dt;
      
-     U     = U   + P.Excite{i}.S'*u;
-     Udot  = Udot  + P.Excite{i}.S'*udot;
-     Uddot = Uddot + P.Excite{i}.S'*uddot;
+     U     = U     + P.Excite{i}.U'*u;
+     Udot  = Udot  + P.Excite{i}.U'*udot;
+     Uddot = Uddot + P.Excite{i}.U'*uddot;
 end
 
 %remove any singular dimensions

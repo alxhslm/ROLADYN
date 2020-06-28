@@ -1,4 +1,4 @@
-function bearing_states = getbearingstates(States,O,P,hbm)
+function bearing_states = getbearingstates(States,P,hbm)
 NPts = size(States.x,2);
 
 bearing_states.x     = P.Model.Bearing.S*States.x(1:P.Model.NDof,:);

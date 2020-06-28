@@ -1,37 +1,26 @@
-function [t,x,u,f,yEnd] = rotor_ode(P,ti,Oi,wi,A,y0)
+function [t,x,u,f,yEnd] = rotor_ode(P,ti,Oi,wi,y0)
+P.Model.bNL = 1;
 
 if length(Oi) == 1
     Oi = 0*ti + Oi;
+end
+
+if nargin < 4 || isempty(wi)
+    wi = 0;
 end
 
 if length(wi) == 1
     wi = 0*ti + wi;
 end
 
+if nargin < 5 || isempty(y0)
+    y0 = [0*P.Model.x0; P.Model.x0];
+end
+
+y0 = [y0;0;0];
+
 P.Model.bCompressREB = 0;
 M = blkdiag(P.Model.M,eye(P.Model.NDof),zeros(P.Model.NDofInt),eye(2));
-
-if nargin < 6 || isempty(y0)
-    x0 = rotor_equib(P,[P.Model.x0; P.Model.xInt],Oi(1),0);
-    xdot0  = 0*P.Model.x0(1:P.Model.NDof);
-    y0 = [xdot0; x0;0;0];
-end
-ydot0 = odefun(0,y0,P,ti,Oi,wi);
-
-% Jstr = [ones(P.Model.NDof) problem.sparsity(1:P.Model.NDof,:);
-%         eye(P.Model.NDof) zeros(P.Model.NDof,P.Model.NDof+P.Model.NDofInt);
-%         zeros(P.Model.NDofInt,P.Model.NDof)  problem.sparsity(P.Model.NDof+1:end,:)];
-
-% ts = mean(diff(t0));
-% N = floor(time(2)/t0(end));
-% T = t0;
-% X = x0;
-% for i = 1:N
-%     T = [T; T(end) + t0 + ts];
-%     X = [X; x0];
-% end
-% t0 = T;
-% x0 = X;
 
 ode_fun = @(t,y)odefun(t,y,P,ti,Oi,wi);
 plot_fun = @(t,y,flag)odeplot(t,y,flag,P);
@@ -44,10 +33,6 @@ options = odeset('OutputFcn',plot_fun,...
              
 [t,y] = ode15s(ode_fun,ti,y0,options);
 
-% options = odeset('OutputFcn',fun,'Vectorized','on','AbsTol',1E-3);
-% e0 = odefuni(0,y0,ydot0,P,O,w,U,M);
-% [t,y] = ode15i(@(t,y,yp)odefuni(t,y,yp,P,O,w,U,M),time,y0,ydot0,options);
-
 y = y'; t = t';
 [ydot,Forces] = odefun(t,y,P,ti,Oi,wi);
 O = ydot(end-1,:);
@@ -55,7 +40,7 @@ w = ydot(end-1,:);
 A = y(end-1,:);
 th = y(end-1,:);
 [u,udot,uddot] = excitation_ode(P,O,w,A,th); 
-f = [Forces.Fb; Forces.FInt];
+f = [Forces.F; Forces.FInt];
 
 [xCG,xdotCG,xInt]  = get_states(y,P);
 x = [xCG; xInt]';
@@ -105,99 +90,103 @@ switch flag
         close(fig);
 end
 
-function e = odefuni(t,y,yp,P,O,w,U,M)
-ydot = odefun(t,y,P,O,w,U);
-e = M*yp - ydot;
-
 function varargout = odefun(t,y,P,ti,Oi,wi)
-[xCG,xdotCG,xInt,A,th]  = get_states(y,P);
+if length(t) < size(y,2)
+    t = t + 0*y(1,:);
+end
+[xCG,xdotCG,xInt,Theta,th]  = get_states(y,P);
 xddotCG = 0*xCG;
 x0 = P.Model.x0*(xCG(1,:)*0+1);
 
-O = interp1(ti,Oi,t);
+Omega = interp1(ti,Oi,t);
 w = interp1(ti,wi,t);
-[u,udot,uddot] = excitation_ode(P,O,w,A,th); 
+[u,udot,uddot] = excitation_ode(P,Omega,w,Theta,th); 
 
 %and now compute the bearing forces
-States.x     = P.Model.A*xCG;
-States.xdot  = P.Model.A*xdotCG;
-States.xddot = P.Model.A*xddotCG;
-States.xInt  = xInt;
+States.x     = [xCG;xInt];
+States.xdot  = [xdotCG;0*xInt];
+States.xddot = [xddotCG;0*xInt];
 
-States.A = A;
-States.O = O;
-States.bSolve = 0;
-[Forces] = bearingforces(P,States);
-Fi  = Forces.FInt;
+States.u     = u;
+States.udot  = udot;
+States.uddot = uddot;
+
 if P.Model.bNL
-    Fb  = P.Model.A'*Forces.F;
+bearing_states = getbearingstates(States,P);
+bearing_states.A = Theta;
+bearing_states.O = Omega;
+bearing_states.bSolve = 0;
+
+Forces = bearingforces(P,bearing_states);
+Fi  = Forces.FInt;
+    Fb = P.Model.Bearing.S'*Forces.F;
 else
-    Fb = P.Model.K*xCG + P.Model.C*xdotCG;
+    Fb = P.Model.Bearing.F0 + P.Model.Bearing.K*(xCG-x0) + P.Model.Bearing.C*xdotCG;
+    Fi = [];
 end
 
 Fe = P.Model.Excite.M*uddot + P.Model.Excite.C*udot + P.Model.Excite.K*u;
-Fr = P.Model.Rotor.K*(xCG-x0) + (P.Model.Rotor.G)*(O.*xdotCG) + P.Model.Rotor.F0;
+Fr = P.Model.Rotor.K*(xCG-x0) + (P.Model.Rotor.G)*(Omega.*xdotCG) + P.Model.Rotor.C*xdotCG + P.Model.Rotor.F0;
+Fs = P.Model.Stator.K*(xCG-x0) + P.Model.Stator.C*xdotCG + P.Model.Stator.F0;
 Fg = P.Model.Fg;
 
 %and finally compute the derivatives
-Mydot = [(Fe + Fg - Fr - Fb);
+Mydot = [(Fe + Fg - Fr - Fb - Fs);
             xdotCG;
             Fi;
-            O;
+            Omega;
             w];
                     
-if any(isnan(Mydot) | isinf(Mydot))
-    1
-end
 varargout{1} = Mydot;
 if nargout > 1
     varargout{2} = Forces;
 end
 
 function J = odejacob(t,y,P,ti,Oi,wi)
-if 1
-    J = jacobian(@(x)odefun(t,x,P,ti,Oi,wi),y);
-    return
-end
-[xCG,xdotCG,xInt,A,th] = get_states(y,P);
+[xCG,xdotCG,xInt,Theta,th] = get_states(y,P);
 xddotCG = 0*xCG;
-x0 = P.Model.x0*(xCG(1,:)*0+1);
 
-O = interp1(ti,Oi,t);
+Omega = interp1(ti,Oi,t);
 w = interp1(ti,wi,t);
-[u,udot,uddot] = excitation_ode(P,O,w,A,th);
+[u,udot,uddot] = excitation_ode(P,Omega,w,Theta,th);
 
 %and now compute the bearing forces
-States.x     = P.Model.A*xCG;
-States.xdot  = P.Model.A*xdotCG;
-States.xddot = P.Model.A*xddotCG;
-States.xInt  = xInt;
+States.x     = [xCG;xInt];
+States.xdot  = [xdotCG;0*xInt];
+States.xddot = [xddotCG;0*xInt];
 
-States.A = A;
-States.O = O;
-States.bSolve = 0;
-[Forces,Stiffness] = bearingforces(P,States);
+States.u     = u;
+States.udot  = udot;
+States.uddot = uddot;
 
-Cr = (P.Model.Rotor.C+P.Model.Rotor.G*O);
+bearing_states = getbearingstates(States,P);
+bearing_states.A = Theta;
+bearing_states.O = Omega;
+bearing_states.bSolve = 0;
+
+[~,Stiffness] = bearingforces(P,bearing_states);
+
+Cr = P.Model.Rotor.C+P.Model.Rotor.G*Omega;
 Kr = P.Model.Rotor.K;
-Cb = P.Model.A'*Stiffness.Cqq*P.Model.A;
-Kb = P.Model.A'*Stiffness.Kqq*P.Model.A;
+
+Cs = P.Model.Stator.C;
+Ks = P.Model.Stator.K;
+
+Cb = P.Model.Bearing.S'*Stiffness.Cqq*P.Model.Bearing.S;
+Kb = P.Model.Bearing.S'*Stiffness.Kqq*P.Model.Bearing.S;
 
 %and finally compute the derivatives
-J     = [  -(Cr+Cb)                     -(Kr+Kb)        -P.Model.A'*Stiffness.Kqx;
+J     = [  -(Cr+Cb+Cs)                  -(Kr+Kb+Ks)        -P.Model.Bearing.S'*Stiffness.Kqx;
         eye(P.Model.NDof)           zeros(P.Model.NDof)    zeros(P.Model.NDof,P.Model.NDofInt);
-        Stiffness.Cxq*P.Model.A    Stiffness.Kxq*P.Model.A        Stiffness.Kxx];
+        Stiffness.Cxq*P.Model.Bearing.S    Stiffness.Kxq*P.Model.Bearing.S        Stiffness.Kxx];
     
-function [xCG,xdotCG,xInt,A,th]  = get_states(y,P)
+J  = blkdiag(J,eye(2));
+
+function [xCG,xdotCG,xInt,Theta,phPiezo]  = get_states(y,P)
 NDof = P.Model.NDof;
 NDofInt = P.Model.NDofInt;
 xdotCG = y(1:NDof,:);
 xCG    = y(NDof+(1:NDof),:);
 xInt   = y(2*NDof+(1:NDofInt),:);
-A = y(end-1,:); %int O dt
-th = y(end,:); %int w dt
-
-function [u,udot,uddot] = get_input(U,O,A,w,th)
-u     = real(U{1}*exp(1i*A)) + real(U{2}*exp(1i*th));
-udot  = real(U{1}*1i*O.*exp(1i*A)) + real(U{2}*w.*exp(1i*th));
-uddot = real(-U{1}*O.^2.*exp(1i*A)) + real(-U{2}*w.^2.*exp(1i*th));
+Theta = y(end-1,:); %int O dt
+phPiezo = y(end,:); %int w dt

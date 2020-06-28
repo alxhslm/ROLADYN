@@ -2,9 +2,7 @@ function varargout = rotor_hbm_model(part,States,hbm,problem)
 O  = States.w0(1);
 P = problem.P;
 
-NPts = size(States.x,2);
-
-bearing_states = getbearingstates(States,O,P,hbm);
+bearing_states = getbearingstates(States,P,hbm);
 bearing_states.A = O*States.t(P.Model.iRot,:);
 bearing_states.O = O + 0*States.t(P.Model.iRot,:);
 bearing_states.bSolve = 0;
