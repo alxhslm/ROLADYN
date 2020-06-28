@@ -1,4 +1,4 @@
-function [t,x,u,f,yEnd] = rotor_ode(P,ti,Oi,wi,y0)
+function ode = rotor_ode(P,ti,Oi,wi,y0)
 P.Model.bNL = 1;
 
 if length(Oi) == 1
@@ -35,19 +35,41 @@ options = odeset('OutputFcn',plot_fun,...
 
 y = y'; t = t';
 [ydot,Forces] = odefun(t,y,P,ti,Oi,wi);
+
+%frequencies
 O = ydot(end-1,:);
 w = ydot(end-1,:);
 A = y(end-1,:);
 th = y(end-1,:);
-[u,udot,uddot] = excitation_ode(P,O,w,A,th); 
+
+%forces
 f = [Forces.F; Forces.FInt];
+[u,udot,uddot] = excitation_ode(P,O,w,A,th); 
+fe = P.Model.Excite.M*uddot + P.Model.Excite.C*udot + P.Model.Excite.K*u;
 
+%states
 [xCG,xdotCG,xInt]  = get_states(y,P);
-x = [xCG; xInt]';
-u = u';
-f = f';
+[~,xddotCG,~]  = get_states(ydot,P);
 
-yEnd  = y(1:end-2,end);
+%% Create structure
+ode.t = t';
+
+ode.X     = [xCG; xInt]';
+ode.Xdot  = [xdotCG; 0*xInt]';
+ode.Xddot = [xddotCG; 0*xInt]';
+
+ode.U     = u';
+ode.Udot  = udot';
+ode.Uddot = uddot';
+
+ode.F     = f';
+ode.Fe    = fe';
+
+ode.O = O';
+ode.A = A';
+
+ode.w = w';
+ode.th = th';
 
 function status = odeplot(t,y,flag,P)
 persistent fig ax h peaks xdot_last count 
