@@ -134,13 +134,13 @@ States.udot  = udot;
 States.uddot = uddot;
 
 if P.Model.bNL
-bearing_states = getbearingstates(States,P);
-bearing_states.A = Theta;
-bearing_states.O = Omega;
-bearing_states.bSolve = 0;
+    bearing_states = getbearingstates(States,P);
+    bearing_states.A = Theta;
+    bearing_states.O = Omega;
+    bearing_states.bSolve = 0;
 
-Forces = bearingforces(P,bearing_states);
-Fi  = Forces.FInt;
+    Forces = bearingforces(P,bearing_states);
+    Fi  = Forces.FInt;
     Fb = P.Model.Bearing.S'*Forces.F;
 else
     Fb = P.Model.Bearing.F0 + P.Model.Bearing.K*(xCG-x0) + P.Model.Bearing.C*xdotCG;
@@ -181,26 +181,38 @@ States.u     = u;
 States.udot  = udot;
 States.uddot = uddot;
 
-bearing_states = getbearingstates(States,P);
-bearing_states.A = Theta;
-bearing_states.O = Omega;
-bearing_states.bSolve = 0;
-
-[~,Stiffness] = bearingforces(P,bearing_states);
-
 Cr = P.Model.Rotor.C+P.Model.Rotor.G*Omega;
 Kr = P.Model.Rotor.K;
 
 Cs = P.Model.Stator.C;
 Ks = P.Model.Stator.K;
 
-Cb = P.Model.Bearing.S'*Stiffness.Cqq*P.Model.Bearing.S;
-Kb = P.Model.Bearing.S'*Stiffness.Kqq*P.Model.Bearing.S;
+if P.Model.bNL
+    bearing_states = getbearingstates(States,P);
+    bearing_states.A = Theta;
+    bearing_states.O = Omega;
+    bearing_states.bSolve = 0;
 
-%and finally compute the derivatives
-J     = [  -(Cr+Cb+Cs)                  -(Kr+Kb+Ks)        -P.Model.Bearing.S'*Stiffness.Kqx;
-        eye(P.Model.NDof)           zeros(P.Model.NDof)    zeros(P.Model.NDof,P.Model.NDofInt);
-        Stiffness.Cxq*P.Model.Bearing.S    Stiffness.Kxq*P.Model.Bearing.S        Stiffness.Kxx];
+    [~,Stiffness] = bearingforces(P,bearing_states);
+
+    Cb = P.Model.Bearing.S'*Stiffness.Cqq*P.Model.Bearing.S;
+    Kb = P.Model.Bearing.S'*Stiffness.Kqq*P.Model.Bearing.S;
+
+else
+    Cb = P.Model.Bearing.C;
+    Kb = P.Model.Bearing.K;
+end
+
+J     = [  -(Cr+Cb+Cs)          -(Kr+Kb+Ks);
+        eye(P.Model.NDof)   zeros(P.Model.NDof)];
+
+if P.Model.bNL
+    %and finally compute the derivatives
+    J     = [J        [-P.Model.Bearing.S'*Stiffness.Kqx;
+                       zeros(P.Model.NDof,P.Model.NDofInt)];
+             Stiffness.Cxq*P.Model.Bearing.S    Stiffness.Kxq*P.Model.Bearing.S   Stiffness.Kxx];
+end
+
     
 J  = blkdiag(J,eye(2));
 
