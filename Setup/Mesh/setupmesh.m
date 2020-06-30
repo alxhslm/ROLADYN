@@ -244,6 +244,7 @@ for i = 1:NBearings
                 P.Rotor{iRotor}.Bearing{end+1}.iBearing = i;
                 P.Rotor{iRotor}.Bearing{end}.iNode = iNode;
                 P.Rotor{iRotor}.Bearing{end}.iActive = findrows(Rio{j}(P.Bearing{i}.bActive,:));
+                P.Rotor{iRotor}.Bearing{end}.bRigid = P.Bearing{i}.bRigid(P.Bearing{i}.bActive);
                 P.Rotor{iRotor}.Bearing{end}.iNodeBearing = j;
                 P.Rotor{iRotor}.Bearing{end}.bLinear = bLinear;
                 P.Rotor{iRotor}.Bearing{end}.bGround = bGround;
@@ -252,6 +253,7 @@ for i = 1:NBearings
                 
                 P.Stator{iStator}.Bearing{end+1}.iBearing = i;
                 P.Stator{iStator}.Bearing{end}.iActive = findrows(Rio{j}(P.Bearing{i}.bActive,:));
+                P.Stator{iStator}.Bearing{end}.bRigid = P.Bearing{i}.bRigid(P.Bearing{i}.bActive);
         end
     end
         

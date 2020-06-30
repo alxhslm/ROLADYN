@@ -27,6 +27,8 @@ end
 B.bActive = [true; false; true; false];
 B.bActive = B.bActive | diag(B.KbParallel) > 0;
 
+B.bRigid = isinf(diag(B.KbParallel));
+
 B.KPar = kron([1 -1; -1 1], max(-1E20,min(B.KbParallel,1E20)));
 K = kron([1 -1; -1 1], B.KbParallel);
 C = kron([1 -1; -1 1],B.C*diag([1 0 1 0]));

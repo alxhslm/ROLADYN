@@ -94,7 +94,8 @@ switch B.Model
         B.Fb = zeros(8,1);
         
         B.NDofInt = B.Params.Model.NDofTot;       
-        B.bActive = B.Params.bActive;       
+        B.bActive = B.Params.bActive;  
+        B.bRigid  = B.Params.bRigid;
 
         B.Kxx = B.Kb(1:2,1:2);
         B.Kxy = B.Kb(1:2,3:4);
@@ -116,6 +117,7 @@ switch B.Model
         
         B.NDofInt = 0;
         B.bActive = B.Params.bActive;   
+        B.bRigid  = B.Params.bRigid;
 
         B.Kxx = B.Kb(1:2,1:2);
         B.Kxy = B.Kb(1:2,3:4);
@@ -137,6 +139,7 @@ switch B.Model
         
         B.NDofInt = 0;
         B.bActive = true(4,1);
+        B.bRigid  = B.Params.bRigid;
 
         B.Kxx = B.Kb(1:2,1:2);
         B.Kxy = B.Kb(1:2,3:4);
@@ -157,7 +160,8 @@ switch B.Model
         B.Fb = zeros(8,1);
         
         B.NDofInt = B.Params.NDofTot;        
-        B.bActive = [true;false;false;false];       
+        B.bActive = [true;false;false;false];   
+        B.bRigid  = [true;true;true;true];        
 
         B.Kxx = B.Kb(1:2,1:2);
         B.Kxy = B.Kb(1:2,3:4);
@@ -202,6 +206,7 @@ switch B.Model
                 B.Kxy B.Kyy];
 
         B.bActive = abs(diag(B.Kb)) > 0;
+        B.bRigid  = isinf(diag(B.Kb));
 
         B.Kb = kron([1 -1; -1 1],B.Kb);
 

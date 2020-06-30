@@ -18,6 +18,8 @@ end
 
 D.fun = str2func(['SFD_', D.Model]);
 
+D.bRigid = isiinf(diag(D.KbSquirrel));
+
 D.KSq = max(-1E20,min(D.KbSquirrel,1E20));
 K = D.K0 + D.KbSquirrel;
 C = D.C0;

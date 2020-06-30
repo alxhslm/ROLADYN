@@ -112,6 +112,8 @@ C = kron([1 -1; -1 1], B.Setup.CbParallel);
 
 M = 0*C;
 
+B.bRigid = isinf(diag(B.Setup.KbParallel));
+
 function S = createArrangement(Arrangement,Geometry,S)
 S.alpha = Geometry.alpha0 + 0*S.psi;
 S.z = Geometry.z0 + 0*S.psi;

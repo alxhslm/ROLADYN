@@ -101,8 +101,12 @@ for i = 1:length(Rotor)
         %work out which nodes are fixed (to bearings)
         iFixed = [];
         for j = 1:length(Rotor{i}.Bearing)
-            iFixed = [iFixed;
-                     (Rotor{i}.Bearing{j}.iNode-1)*NDofe + Rotor{i}.Bearing{j}.iActive];
+            for k = 1:length(Rotor{i}.Bearing{j}.iActive)
+                if ~Rotor{i}.Bearing{j}.bLinear || Rotor{i}.Bearing{j}.bRigid(k)
+                    iFixed = [iFixed;
+                             (Rotor{i}.Bearing{j}.iNode-1)*NDofe + Rotor{i}.Bearing{j}.iActive(k)];
+                end
+            end
         end
         
         %compute modes of rotor subsystem
