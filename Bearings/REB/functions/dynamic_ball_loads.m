@@ -43,11 +43,16 @@ Mg = B.Options.bGyro*B.Dynamics.Jb*wRoll.*Ocage.*sin(beta);
 Mp = B.Options.bPivot*B.Dynamics.Jb*wdotPivot;
 
 %split moment reaction forces between inner/outer contacts
-switch B.Options.Control
-    case 'outer'
-        Fo = (Mg-Mp)*2/B.Geometry.D;
-        Fi = 0*alpha_i;
-    case 'inner'
-        Fo = 0*alpha_i;
-        Fi = (Mg-Mp)*2/B.Geometry.D;
+if ~B.Options.bGyro
+    Fi = 0*alpha_i;
+    Fo = 0*alpha_i;
+else
+    switch B.Options.Control
+        case 'outer'
+            Fo = (Mg-Mp)*2/B.Geometry.D;
+            Fi = 0*alpha_i;
+        case 'inner'
+            Fo = 0*alpha_i;
+            Fi = (Mg-Mp)*2/B.Geometry.D;
+    end
 end

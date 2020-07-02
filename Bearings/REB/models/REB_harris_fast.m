@@ -2,9 +2,6 @@ function [F,V,S] = REB_harris_fast(B,States)
 
 q    = States.qi - States.qo;
 
-N = 6;
-NPts = size(q,2);
-
 Oi = States.Oi;
 Oo = States.Oo;
 Ai = States.Ai;
@@ -50,14 +47,14 @@ dr = r - B.Geometry.rRacei;
 Az = B.Geometry.A0*sinALPHA + dz;
 Ar = B.Geometry.A0*cosALPHA + dr;
 
-V = deriv_contact(B,Oi*wons,Oo*wons,Ar,Az);
+V = eval_contact_law(B,wons*Oi,wons*Oo,Ar,Az);
 
 %% Introduce scaling factor to account for Sjovall
 V.Qi = E.r * V.Qi;
 V.Qo = E.r * V.Qo;
 
-V.Ki = E.r * V.Ki;
-V.Ko = E.r * V.Ko;
+V.Qri = E.r * V.Qri;
+V.Qro = E.r * V.Qro;
 
 V.Fc = E.r*V.Fc;
 V.Fi = E.r*V.Fi;
@@ -65,28 +62,23 @@ V.Fo = E.r*V.Fo;
 V.Mg = E.r*V.Mg;
 
 %% Race loads
-cosPSI = permute(cosPSI,[3 4 2 1]);
-sinPSI = permute(sinPSI,[3 4 2 1]);
+Fri = V.Qi.*cos(V.alphai) + V.Fi.*sin(V.alphai);
+Fzi = V.Qi.*sin(V.alphai) - V.Fi.*cos(V.alphai);
+Wi = [sum(Fri.*cosPSI);
+      sum(Fri.*sinPSI);
+      sum(Fzi);
+      sum( B.Geometry.rRacei.*Fzi.*sinPSI - Zi.*Fri.*sinPSI);
+      sum(-B.Geometry.rRacei.*Fzi.*cosPSI + Zi.*Fri.*cosPSI);
+      0*x0];
 
-Zi = permute(Zi,[3 4 2 1]);
-Zo = permute(Zo,[3 4 2 1]);
-
-Ji = [cosPSI 0*Zi;
-      sinPSI 0*Zi;
-      0*Zi   0*Zi+1;
-    - Zi.*sinPSI, + B.Geometry.rRacei.*sinPSI
-      Zi.*cosPSI, - B.Geometry.rRacei.*cosPSI;
-      0*Zi 0*Zi];
-
-Jo =-[cosPSI 0*Zo;
-      sinPSI 0*Zo;
-      0*Zo   0*Zo+1;
-    - Zo.*sinPSI,   B.Geometry.rRaceo.*sinPSI
-      Zo.*cosPSI, - B.Geometry.rRaceo.*cosPSI;
-      0*Zo  0*Zi];
-
-Wi =  permute(sum(mtimesx(Ji,permute(V.qi,[1 2 4 3])),4),[1 3 2]);
-Wo =  permute(sum(mtimesx(Jo,permute(V.qo,[1 2 4 3])),4),[1 3 2]);
+Fro = V.Qo.*cos(V.alphao) + V.Fo.*sin(V.alphao);
+Fzo = V.Qo.*sin(V.alphao) - V.Fo.*cos(V.alphao);
+Wo =-[sum(Fro.*cosPSI);
+      sum(Fro.*sinPSI);
+      sum(Fzo);
+      sum( B.Geometry.rRaceo.*Fzo.*sinPSI - Zo.*Fro.*sinPSI);
+      sum(-B.Geometry.rRaceo.*Fzo.*cosPSI + Zo.*Fro.*cosPSI);
+      0*x0];
 
 %forces
 F.Fi = Wi;
@@ -94,48 +86,11 @@ F.Fo = Wo;
 F.FInt = [];
 
 %stiffnesses
-if nargout > 2
-    Jit = permute(Ji,[2 1 3 4]);
-    Jot = permute(Jo,[2 1 3 4]);
-    
-    S.Kqiqi = sum(mtimesx(Ji,mtimesx(permute(V.Ki,[1 2 4 3]),Jit)),4); 
-    S.Kqoqi = sum(mtimesx(Jo,mtimesx(permute(V.Ko,[1 2 4 3]),Jit)),4); 
-    S.Kqiqo = sum(mtimesx(Ji,mtimesx(permute(V.Ki,[1 2 4 3]),Jot)),4); 
-    S.Kqoqo = sum(mtimesx(Jo,mtimesx(permute(V.Ko,[1 2 4 3]),Jot)),4); 
-    
-    S.Kqiqi(:,[4 5],:) = 0;
-    S.Kqoqi(:,[4 5],:) = 0;
-    S.Kqiqo(:,[4 5],:) = 0;
-    S.Kqoqo(:,[4 5],:) = 0;
-    
-    S.Kqiqi([4 5],:,:) = 0;
-    S.Kqoqi([4 5],:,:) = 0;
-    S.Kqiqo([4 5],:,:) = 0;
-    S.Kqoqo([4 5],:,:) = 0;
-
-    S.Kxqi = zeros(0,N,NPts);
-    S.Kxqo = zeros(0,N,NPts);
-    S.Kqix = zeros(N,0,NPts);
-    S.Kqox = zeros(N,0,NPts);
-    S.Kxx  = [];
-
-    %damping
-    S.Cqiqi = zeros(N,N,NPts);
-    S.Cqoqi = zeros(N,N,NPts);
-    S.Cqiqo = zeros(N,N,NPts);
-    S.Cqoqo = zeros(N,N,NPts);
-
-    S.Cxqi = zeros(0,N,NPts);
-    S.Cxqo = zeros(0,N,NPts);
-    S.Cqix = zeros(N,0,NPts);
-    S.Cqox = zeros(N,0,NPts);
-    S.Cxx  = [];
-end
-
+S = struct([]);
 
 function L = eval_contact_law(B,Oi,Oo,Ar0,Az0)
 %now find the ball forces
-if (B.Options.bCentrifugal || B.Options.bGyro) 
+if B.Options.bCentrifugal 
     [Qi,Qo,Xr,Xz,wi,wo] = dynamic_contactlaw_harris(B,Oi,Oo,Ar0,Az0);
     Ar = Ar0 - wo - wi;
     Az = Az0;
@@ -181,11 +136,17 @@ end
 L.Qi = Qi;
 L.Qo = Qo;
 
+L.Qri = Qi.*cos(ai);
+L.Qro = Qo.*cos(ao);
+
 L.dbi = dbi;
 L.dbo = dbo;
 
 L.Fi = Fi;
 L.Fo = Fo;
+
+L.Az = Az;
+L.Ar = Ar;
 
 L.alphai = ai;
 L.alphao = ao;

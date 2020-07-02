@@ -38,6 +38,9 @@ sz = size(Ar);
 Az = permute(Az(:),[2 3 1]);
 Ar = permute(Ar(:),[2 3 1]);
 
+Oi = permute(Oi(:),[2 3 1]);
+Oo = permute(Oo(:),[2 3 1]);
+
 wi = permute(wi(:),[2 3 1]);
 wo = permute(wo(:),[2 3 1]);
 Xr = permute(Xr(:),[2 3 1]);
