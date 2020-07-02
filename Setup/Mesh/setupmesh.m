@@ -173,6 +173,7 @@ Mb_lin = zeros(NInputBearing);
 IMapInput = eye(NInputBearing);
 IMapInternal = eye(NInternalTot);
 
+%NB. order of nodes: inner, outer 
 Sb = zeros(0,NDofTot);
 for i = 1:NBearings
     bGround = false;

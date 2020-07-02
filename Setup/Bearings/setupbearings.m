@@ -17,9 +17,11 @@ for i = 1:length(B)
 end
 
 function Node = setupnodes(Node,Rotor)
+%NB. order of nodes: inner, outer 
 if length(Node) == 1
+    %add outer connection to ground
     ground.Type = 'ground';
-    Node = [Node; {ground}];
+    Node{end+1} = ground;
 end
 for j = 1:length(Node)
     switch Node{j}.Type
@@ -32,7 +34,6 @@ for j = 1:length(Node)
         otherwise
             error('Unknown connection type "%s"',Node{j}.Type)
     end
-    
 end
 
 function B = setup_each_bearing(B,ind,R)
