@@ -6,6 +6,7 @@ bearing_states = getbearingstates(States,P,hbm);
 bearing_states.A = O*States.t(P.Model.iRot,:);
 bearing_states.O = O + 0*States.t(P.Model.iRot,:);
 bearing_states.bSolve = 0;
+bearing_states.bNLOnly = 1;
 
 States.xInt = States.x(P.Model.NDof + 1:end,:);
 States.x = States.x(1:P.Model.NDof,:);
@@ -23,9 +24,8 @@ switch part
         
         Fi = Forces.FInt(P.Model.Reduced.iInt,:);
         Fnl = P.Model.Bearing.S'*Forces.F;
-        Flin =  P.Model.Bearing.Lin.F + P.Model.Bearing.Lin.K * States.x + P.Model.Bearing.Lin.C * States.xdot + P.Model.Bearing.Lin.M*States.xddot;
         
-        varargout{end+1} = [Fnl-Flin; Fi];
+        varargout{end+1} = [Fnl; Fi];
     case 'output'
         if P.Model.bNL
             Forces = bearingforces(P,bearing_states);
@@ -47,7 +47,7 @@ switch part
         switch part
             case 'nl_x'
                 if P.Model.bAnalyticalDerivs
-                    Kqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Kqq,P.Model.Bearing.S)) - P.Model.Bearing.Lin.K;
+                    Kqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Kqq,P.Model.Bearing.S));
                     Kqx =  mtimesx(P.Model.Bearing.S',Stiffness.Kqx);
                     Kxq =  mtimesx(Stiffness.Kxq,P.Model.Bearing.S);
                     Kxx =  Stiffness.Kxx;
@@ -58,7 +58,7 @@ switch part
                 varargout{end+1} = K;
             case 'nl_xdot'
                 if P.Model.bAnalyticalDerivs
-                    Cqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Cqq,P.Model.Bearing.S)) - P.Model.Bearing.Lin.C;
+                    Cqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Cqq,P.Model.Bearing.S));
                     Cqx =  mtimesx(P.Model.Bearing.S',Stiffness.Cqx);
                     Cxq =  mtimesx(Stiffness.Cxq,P.Model.Bearing.S);
                     Cxx =  Stiffness.Cxx;
@@ -69,7 +69,7 @@ switch part
                 varargout{end+1} = C;
             case 'nl_xddot'
                 if P.Model.bAnalyticalDerivs
-                    Mqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Mqq,P.Model.Bearing.S)) - P.Model.Bearing.Lin.M;
+                    Mqq =  mtimesx(P.Model.Bearing.S',mtimesx(Stiffness.Mqq,P.Model.Bearing.S));
                     Mqx =  mtimesx(P.Model.Bearing.S',Stiffness.Mqx);
                     Mxq =  mtimesx(Stiffness.Mxq,P.Model.Bearing.S);
                     Mxx =  Stiffness.Mxx;
