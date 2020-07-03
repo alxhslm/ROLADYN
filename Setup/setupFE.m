@@ -109,6 +109,8 @@ for i = 1:length(Rotor)
             end
         end
         
+        iFixed = unique(iFixed);
+        
         %compute modes of rotor subsystem
         [Vm,Vc] = cms_analysis(Mr,Kr,Fgr,A,iFixed);
         
