@@ -50,7 +50,7 @@ for j = 1:length(defaultable_fields)
 end
 
 E.NInput = 2;
-E.M = eye(2);
+E.M = -eye(2);
 E.u = E.m * E.r.*exp(1i*(E.Angle + [0; -pi/2*sign(R{E.iRotor}.Speed)]));
 if ~isfield(E,'Mode')
     E.Mode = 'sync';
@@ -72,7 +72,7 @@ for j = 1:length(defaultable_fields)
 end
 
 E.NInput = 2;
-E.M = (R{E.iRotor}.Disc{E.iDisc}.Inertia.Id - R{E.iRotor}.Disc{E.iDisc}.Inertia.Ip)*eye(2);
+E.M = -(R{E.iRotor}.Disc{E.iDisc}.Inertia.Id - R{E.iRotor}.Disc{E.iDisc}.Inertia.Ip)*eye(2);
 E.u = E.Skew.*exp(1i*(E.Angle + pi/2 + [0; -pi/2*sign(R{E.iRotor}.Speed)]));
 
 if ~isfield(E,'Mode')
