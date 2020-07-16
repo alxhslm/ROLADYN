@@ -42,18 +42,6 @@ elseif isfield(P.Model,'iDofPlot')
     problem.iDofPlot = P.Model.iDofPlot;
 end
 
-if ~isfield(P.Model,'bUseGroups')
-    P.Model.bUseGroups = 0;
-end
-
-if P.Model.bUseGroups
-    problem.iGroup = [1*ones(P.Model.NDof,1);
-                      2*ones(NDofInt,1)];
-else
-    problem.iGroup = [1*ones(P.Model.NDof,1);
-                      1*ones(NDofInt,1)];
-end
-
 if ~isfield(P.Model,'bAnalyticalDerivs')
     P.Model.bAnalyticalDerivs = 1;
 end
