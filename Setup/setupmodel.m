@@ -1,11 +1,20 @@
 function P = setupmodel(P,type)
+
+%Find basis for rotor
 if strcmpi(type,'rigid')
-    RRotor = setuprigid(P.Rotor);
+    [RRotor,ARotor] = setuprigid(P.Rotor);
 elseif strcmpi(type,'FE')
-    RRotor = setupFE(P.Rotor,P.Bearing);
+    [RRotor,ARotor] = setupFE(P.Rotor,P.Bearing);
 else
     error('Unknown model type')
 end
+
+%Basis for other dof
+SRotor = [];
+for i = 1:length(P.Rotor)
+    SRotor = [SRotor;P.Rotor{i}.S];
+end
+AOther = null(SRotor);
 
 %Impose bearing constraints
 RBearing = [];
@@ -37,13 +46,12 @@ for i = 1:length(P.Stator)
     end
 end
 
-AConstr = [RRotor; RBearing; RStator];
-if ~isempty(AConstr)
-    A = null(AConstr,'r');
-else
-    A = eye(P.Mesh.NDof);
+% Impose constraints
+R = [RBearing; RStator];
+A = [ARotor AOther];
+if ~isempty(R)
+  A = A*null(R*A,'r');
 end
-
 A = reorder_modes(P,A);
 
 P.Model = enforce_constraints(P.Mesh,A);
