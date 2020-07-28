@@ -14,7 +14,11 @@ SRotor = [];
 for i = 1:length(P.Rotor)
     SRotor = [SRotor;P.Rotor{i}.S];
 end
-AOther = null(SRotor);
+if ~isempty(SRotor)
+    AOther = null(SRotor);
+else
+    AOther = eye(P.Mesh.NDof);
+end
 
 %Impose bearing constraints
 RBearing = [];
