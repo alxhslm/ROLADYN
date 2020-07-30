@@ -72,7 +72,7 @@ ode.w = w';
 ode.th = th';
 
 function status = odeplot(t,y,flag,P)
-persistent fig ax h peaks xdot_last count 
+persistent fig h count tp xp
 NDof = P.Model.NDof;
 status = 0;
 switch flag
@@ -86,28 +86,23 @@ switch flag
             hold on
             xlim(t)
         end
-        count = zeros(NDof,1);
-        xdot_last = xdot;
-        peaks = xdot_last + NaN;
-    case ''           
+        count = 0;
+        xp = [];
+        tp = [];
+    case ''      
+        count = count + 1;
         x  = get_states(y,P);
-        for i = 1:NDof
-            set(h(i),'xdata',[get(h(i),'xdata') t],'ydata',[get(h(i),'ydata') x(i,:)]);
-            %             for j = 1:length(t)
-            %                if (xdot(i,j) * xdot_last(i) < 0) && (x(i,j)>x0(i)) %detect ZC
-            %                     amp = x(i,j) - x0(i);
-            %                     if abs(amp - peaks(i))<1E-10
-            %                         count(i) = count(i) + 1;
-            %                     end
-            %                     peaks(i) = amp;
-            %                 end
-            %                 xdot_last(i) = xdot(i,j);
-            %             end
+        tp = [tp t];
+        xp = [xp x];
+        if count > 100
+            for i = 1:NDof
+                set(h(i),'xdata',[get(h(i),'xdata') tp],'ydata',[get(h(i),'ydata') xp(i,:)]);
+            end
+            drawnow
+            tp = [];
+            xp = [];
+            count = 0;
         end
-        if all(count > 4)
-            status = 1;
-        end
-        drawnow limitrate
     case 'done'
         close(fig);
 end
@@ -120,8 +115,8 @@ end
 xddotCG = 0*xCG;
 x0 = P.Model.x0*(xCG(1,:)*0+1);
 
-Omega = interp1(ti,Oi,t);
-w = interp1(ti,wi,t);
+Omega = interp1q(ti,Oi,t')';
+w = interp1q(ti,wi,t')';
 [u,udot,uddot] = excitation_ode(P,Omega,w,Theta,th); 
 
 %and now compute the bearing forces
