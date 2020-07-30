@@ -92,7 +92,7 @@ end
 switch B.Model
     case 'REB'
         [B.Params,B.Kb,B.Cb,B.Mb] = setupREB(B.Params); 
-        B.Fb = zeros(8,1);
+        B.F0 = zeros(8,1);
         
         B.NDofInt = B.Params.Model.NDofTot;       
         B.bActive = B.Params.bActive;  
@@ -109,12 +109,9 @@ switch B.Model
         B.Mxx = B.Mb(1:2,1:2);
         B.Mxy = B.Mb(1:2,3:4);
         B.Myy = B.Mb(3:4,3:4);
-        
-        B.Fx = B.Fb(1:2);
-        B.Fy = B.Fb(3:4);
     case 'radial'
         [B.Params,B.Kb,B.Cb,B.Mb] = setupRadial(B.Params); 
-        B.Fb = zeros(8,1);
+        B.F0 = zeros(8,1);
         
         B.NDofInt = 0;
         B.bActive = B.Params.bActive;   
@@ -131,12 +128,9 @@ switch B.Model
         B.Mxx = B.Mb(1:2,1:2);
         B.Mxy = B.Mb(1:2,3:4);
         B.Myy = B.Mb(3:4,3:4);
-        
-        B.Fx = B.Fb(1:2);
-        B.Fy = B.Fb(3:4);
     case 'SFD'
         [B.Params,B.Kb,B.Cb,B.Mb] = setupSFD(B.Params);
-        B.Fb = zeros(8,1);
+        B.F0 = zeros(8,1);
         
         B.NDofInt = 0;
         B.bActive = true(4,1);
@@ -153,12 +147,9 @@ switch B.Model
         B.Mxx = B.Mb(1:2,1:2);
         B.Mxy = B.Mb(1:2,3:4);
         B.Myy = B.Mb(3:4,3:4);
-        
-        B.Fx = B.Fb(1:2);
-        B.Fy = B.Fb(3:4);
     case 'piezo'
         [B.Params,B.Kb,B.Cb,B.Mb] = setupPiezo(B.Params);
-        B.Fb = zeros(8,1);
+        B.F0 = zeros(8,1);
         
         B.NDofInt = B.Params.NDofTot;        
         B.bActive = [true;false;false;false];   
@@ -175,9 +166,6 @@ switch B.Model
         B.Mxx = B.Mb(1:2,1:2);
         B.Mxy = B.Mb(1:2,3:4);
         B.Myy = B.Mb(3:4,3:4);
-        
-        B.Fx = B.Fb(1:2);
-        B.Fy = B.Fb(3:4);
     otherwise
         %throw error if we don't have stiffess
         params_required = {'Kxx','Kyy','Cxx','Cyy'};
@@ -220,10 +208,9 @@ switch B.Model
                 B.Mxy B.Myy];
 
         B.Mb = kron([1 -1; -1 1],B.Mb);
-        
-        B.Fb = [B.Fx;B.Fy];
-        
-        B.Fb = kron([1; -1],B.Fb);
+
+        B.F0 = [B.Fx;B.Fy];
+        B.F0 = kron([1; -1],B.F0);
 end
 
 RBear = eye(4);

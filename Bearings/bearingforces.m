@@ -13,7 +13,8 @@ if nargout > 1
 end
 
 for i = 1:length(P.Bearing)
-    if ~States.bNLOnly || ~strcmp(P.Bearing{i}.Model,'Linear')
+    bLin = strcmp(P.Bearing{i}.Model,'linear');
+    if (States.bNL && ~bLin) ||  (States.bLin && bLin)
         %loop over each bearing
         
         Oshaft = repmat(0*States.O,3,1);
@@ -284,8 +285,11 @@ function States = default_int(States,P,NPts)
 if ~isfield(States,'bSolve')
     States.bSolve = 1;
 end
-if ~isfield(States,'bNLOnly')
-    States.bNLOnly = 0;
+if ~isfield(States,'bNL')
+    States.bNL = 1;
+end
+if ~isfield(States,'bLin')
+    States.bLin = 1;
 end
 if ~isfield(States,'xInt')
     States.xInt = zeros(P.Mesh.NDofInt,NPts);

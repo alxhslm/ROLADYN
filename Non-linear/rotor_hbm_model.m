@@ -6,7 +6,8 @@ bearing_states = getbearingstates(States,P,hbm);
 bearing_states.A = O*States.t(P.Model.iRot,:);
 bearing_states.O = O + 0*States.t(P.Model.iRot,:);
 bearing_states.bSolve = 0;
-bearing_states.bNLOnly = 1;
+bearing_states.bNL = 1;
+bearing_states.bLin = 0;
 
 States.xInt = States.x(P.Model.NDof + 1:end,:);
 States.x = States.x(1:P.Model.NDof,:);

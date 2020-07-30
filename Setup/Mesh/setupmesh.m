@@ -223,13 +223,13 @@ for i = 1:NBearings
     P.Bearing{i}.R = blkdiag(P.Bearing{i}.Ri,P.Bearing{i}.Ro);
 
     %now compute the stiffness matrices  
-    Fb = Fb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Fb;
+    Fb = Fb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.F0;
     Kb = Kb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Kb*P.Bearing{i}.R*P.Bearing{i}.U;
     Cb = Cb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Cb*P.Bearing{i}.R*P.Bearing{i}.U;
     Mb = Mb + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Mb*P.Bearing{i}.R*P.Bearing{i}.U;
     
     if bLinear
-        Fb_lin = Fb_lin + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Fb;
+        Fb_lin = Fb_lin + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.F0;
         Kb_lin = Kb_lin + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Kb*P.Bearing{i}.R*P.Bearing{i}.U;
         Cb_lin = Cb_lin + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Cb*P.Bearing{i}.R*P.Bearing{i}.U;
         Mb_lin = Mb_lin + P.Bearing{i}.U'*P.Bearing{i}.R'*P.Bearing{i}.Mb*P.Bearing{i}.R*P.Bearing{i}.U;
