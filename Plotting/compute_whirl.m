@@ -17,20 +17,22 @@ end
 
 NNodesTot = sum(NNodes);
 
-kappa = zeros([NNodes,sz(2:end)]);
-ampl =  zeros([NNodes,sz(2:end)]);
+kappa = zeros([NNodesTot,sz(2:end)]);
+ampl =  zeros([NNodesTot,sz(2:end)]);
 
-modes = mtimesx(P.Model.A(iNodesIn,:),modes);
+if size(modes,1) == P.Model.NDof
+    modes = mtimesx(P.Model.A(iNodesIn,:),modes);
+end
 
 %we need to scale the modes such that the outer rotor is (arbitrarily) 
 %aligned with the real axis which will then allow comparions across all
 %speeds
 if nargin > 3 && options.bRot
-    u = modes(3:4:end,:,:); 
-    v = modes(4:4:end,:,:);
+    u = modes(3:4:NNodesTot*4,:,:); 
+    v = modes(4:4:NNodesTot*4,:,:);
 else
-    u = modes(1:4:end,:,:); 
-    v = modes(2:4:end,:,:);
+    u = modes(1:4:NNodesTot*4,:,:); 
+    v = modes(2:4:NNodesTot*4,:,:);
 end
 
 %scale by u(iNode) so this will be entirely real and have amplitude 1

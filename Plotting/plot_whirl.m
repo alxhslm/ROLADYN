@@ -12,7 +12,10 @@ NRows = ceil(NModes/NCols);
 
 aLocus = linspace(0,2*pi,20);
 
-modes = mtimesx(P.Model.A,modes);
+if size(modes,1) == P.Model.NDof
+    modes = mtimesx(P.Model.A,modes);
+end
+
 
 %extract the useful formation from the modeshapes
 NNodes = [];
@@ -21,6 +24,8 @@ for i = 1:length(P.Rotor)
     NNodes(i) = length(P.Rotor{i}.Nodes);
     iNodesIn = [iNodesIn P.Rotor{i}.iGlobal(1:(4*NNodes(i)))];
 end
+NNodesTot = sum(NNodes);
+
 u = modes(iNodesIn(1:4:end),:,:);
 v = modes(iNodesIn(2:4:end),:,:);
 umax = max(abs(u),[],1);
@@ -28,6 +33,10 @@ vmax = max(abs(v),[],1);
 % scale = 1./(repmat(max([umax;vmax],[],1),size(modes,1),1,1) + eps);
 scale = 10;
 modes = modes .* (scale + eps);
+
+if nargin < 5
+    kappa = repmat(permute(omega + NaN,[3 1 2]),NNodesTot,1);
+end
 
 fig = figure('Name','Modeshapes');
 ax = zeros(NModes,1);
@@ -65,7 +74,7 @@ for i = 1:NModes
             Shaft = P.Rotor{j}.Shaft{k};
             SShaft = Shaft.S * SRotor;
             for m = 1:(P.Rotor{j}.Shaft{k}.Mesh.Nz-1)
-                zNode = P.Rotor{j}.Shaft{k}.Mesh.z(k);
+                zNode = P.Rotor{j}.Shaft{k}.Mesh.z(m);
                 le = Shaft.Element{m}.L;
                 qe = Shaft.Element{m}.S * SShaft * modes(:,i,1);
                 [zShaft,uShaft,vShaft] = shaft_disp_field(qe,le,10);
@@ -86,16 +95,26 @@ for i = 1:NModes
             
             %circle to denote where disc is
             han.DiscRoot{i,j}(k) = plot3(zDisc, real(ud),real(vd),'color',col(j,:),'marker','o');
-                        
-            %shape of disc
+            
             qDisc = Disc.Hub.S * SDisc * modes(:,i,1);
             uDisc = qDisc(1); vDisc = qDisc(2);
-            for m = 1:Disc.Mesh.Nt
-                for n = 1:(Disc.Mesh.Nr-1)
-                    qe = Disc.Element{m,n}.S * SDisc * modes(:,i,1);
-                    [xDisc,yDisc,wDisc] = disc_disp_field(qe,Disc.Mesh.r(n),Disc.Mesh.theta(m),Disc.Mesh.dr(n),Disc.Mesh.dtheta(m),10);
-                    han.Disc{i,j}{k}(m,n) = surf(zDisc+real(wDisc),xDisc+real(uDisc),yDisc+real(vDisc));
+                        
+            if strcmp(P.Rotor{j}.Disc{k}.Type,'Flexible')
+                %shape of disc
+                for m = 1:Disc.Mesh.Nt
+                    for n = 1:(Disc.Mesh.Nr-1)
+                        qe = Disc.Element{m,n}.S * SDisc * modes(:,i,1);
+                        [xDisc,yDisc,wDisc] = disc_disp_field(qe,Disc.Mesh.r(n),Disc.Mesh.theta(m),Disc.Mesh.dr(n),Disc.Mesh.dtheta(m),10);
+                        han.Disc{i,j}{k}(m,n) = surf(zDisc+real(wDisc),xDisc+real(uDisc),yDisc+real(vDisc));
+                    end
                 end
+            else
+                R = P.Rotor{1}.Disc{1}.Ring(end).Geometry.R(end);
+                ang = linspace(0,2*pi,100);
+                xDisc = R*cos(ang);
+                yDisc = R*sin(ang);
+                wDisc = yDisc*real(qDisc(3)) - xDisc*real(qDisc(4)); 
+                han.Disc{i,j}{k} = patch(zDisc+real(wDisc),xDisc+real(uDisc),yDisc+real(vDisc));
             end
         end
         kap = kappa(P.Rotor{j}.Disc{1}.iNode,i,1);
@@ -109,9 +128,9 @@ for i = 1:NModes
     end
     
     for j = 1:NBearings
-        qb = P.Bearing{j}.Sb * modes(:,i,1);
+        qb = P.Bearing{j}.Si * modes(:,i,1);
         ub = qb(1); vb = qb(2);
-        zb = P.Bearing{j}.z;  
+        zb = P.Bearing{j}.zi;  
         
         han.Bearing{j} = plot3(zb, real(ub),real(vb),'color',0.5*[1 1 1],'marker','x');     
         
@@ -128,7 +147,7 @@ for i = 1:NModes
     end
 %     dir = dir(1);
 %     zlabel(ax(i),[sprintf('Mode %d \n',i) sprintf('%s ',dir{:}) sprintf('\n%0.1f Hz',omega(i,1)/(2*pi))],'Rotation',0,'Position',[23.7383   82.2127  -59.4555]);
-    title(ax(i),[sprintf('Mode %d \n',i) '\omega' sprintf(' = %0.2f Hz',omega(i,1)/(2*pi))]);
+    title(ax(i),[sprintf('Mode %d (%s) \n',i,dir{1}) '\omega' sprintf(' = %0.2f Hz',omega(i,1)/(2*pi))]);
     xlabel(ax(i),'z (m)')
     ylabel(ax(i),'x (m)')
     zlabel(ax(i),'y (m)')
@@ -213,12 +232,21 @@ for i = 1:NModes
             %shape of disc
             qHub = Disc.Hub.S * SDisc * modes(:,i,iPlot);
             uHub = qHub(1); vHub = qHub(2);
-            for m = 1:Disc.Mesh.Nt
-                for n = 1:(Disc.Mesh.Nr-1)
-                    qe = Disc.Se{m,n} * SDisc * modes(:,i,iPlot);
-                    [xElem,yElem,wElem] = disc_disp_field(qe,Disc.Mesh.r(n),Disc.Mesh.theta(m),Disc.Mesh.dr(n),Disc.Mesh.dtheta(m),10);
-                    set(han.Disc{i,j}{k}(m,n),'ydata',xElem+real(uHub),'zdata',yElem+real(vHub),'xdata',zDisc+real(wElem));
+            if strcmp(P.Rotor{j}.Disc{k}.Type,'Flexible')
+                for m = 1:Disc.Mesh.Nt
+                    for n = 1:(Disc.Mesh.Nr-1)
+                        qe = Disc.Se{m,n} * SDisc * modes(:,i,iPlot);
+                        [xElem,yElem,wElem] = disc_disp_field(qe,Disc.Mesh.r(n),Disc.Mesh.theta(m),Disc.Mesh.dr(n),Disc.Mesh.dtheta(m),10);
+                        set(han.Disc{i,j}{k}(m,n),'ydata',xElem+real(uHub),'zdata',yElem+real(vHub),'xdata',zDisc+real(wElem));
+                    end
                 end
+            else
+                R = P.Rotor{1}.Disc{1}.Ring(end).Geometry.R(end);
+                ang = linspace(0,2*pi,100);
+                xDisc = R*cos(ang);
+                yDisc = R*sin(ang);
+                wDisc = yDisc*real(qHub(3)) - xDisc*real(qHub(4)); 
+                set(han.Disc{i,j}{k},'xdata',zDisc+real(wDisc),'ydata',xDisc+real(uHub),'zdata',yDisc+real(vHub));
             end
         end
           
@@ -232,7 +260,7 @@ for i = 1:NModes
         end
     end
     for k = 1:length(P.Bearing)
-        qb = P.Bearing{k}.Sb * modes(:,i,iPlot);
+        qb = P.Bearing{k}.Si * modes(:,i,iPlot);
         ub = qb(1); vb = qb(2);
         
         %cross to denote where bearing is
@@ -240,7 +268,8 @@ for i = 1:NModes
         set(han.BearingCircle{k}, 'ydata', real(ub*exp(1i*aLocus)), 'zdata', real(vb*exp(1i*aLocus)));
         
     end
-    title(ax(i),['\omega' sprintf(' = %0.2f Hz',omega(i,iPlot)/(2*pi))]);
+    title(ax(i),[sprintf('Mode %d (%s) \n',i,dir{1}) '\omega' sprintf(' = %0.2f Hz',omega(i,iPlot)/(2*pi))]);
+
 %     dir = dir(1);
 %     zlabel(ax(i),[sprintf('Mode %d \n',i) sprintf('%s ',dir{:}) sprintf('\n%0.1f Hz',omega(i,iPlot)/(2*pi))],'Rotation',0,'Position',[23.7383   82.2127  -59.4555]);
 end
