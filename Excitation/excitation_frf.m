@@ -30,7 +30,7 @@ for i = 1:length(P.Excite)
          uddot = repmat(permute(uddot,[1 3 2]),1,length(O),1);
      end
      
-     U     = U + mtimesx(P.Excite{i}.S',u);
-     Udot  = Udot + mtimesx(P.Excite{i}.S',udot);
-     Uddot = Uddot + mtimesx(P.Excite{i}.S',uddot);
+     U     = U + mtimesx(P.Excite{i}.U',u);
+     Udot  = Udot + mtimesx(P.Excite{i}.U',udot);
+     Uddot = Uddot + mtimesx(P.Excite{i}.U',uddot);
 end

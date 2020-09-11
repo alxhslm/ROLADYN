@@ -73,7 +73,7 @@ if ~isempty(P.Rotor)
     elseif ~isempty(P.Rotor{1}.Disc)
         Sx = [];
         for i = 1:length(P.Rotor{1}.Disc)
-            Sx = [Sx; P.Rotor{1}.Disc{1}.SHub(1,:)];
+            Sx = [Sx; P.Rotor{1}.Disc{1}.Hub.S(1,:)*P.Rotor{1}.Disc{1}.S];
         end
     end
     Sx = Sx * P.Rotor{1}.S;
