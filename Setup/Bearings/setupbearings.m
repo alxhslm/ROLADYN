@@ -152,25 +152,6 @@ switch B.Model
         B.Mxx = B.Mb(1:2,1:2);
         B.Mxy = B.Mb(1:2,3:4);
         B.Myy = B.Mb(3:4,3:4);
-    case 'piezo'
-        [B.Params,B.Kb,B.Cb,B.Mb] = setupPiezo(B.Params);
-        B.F0 = zeros(8,1);
-        
-        B.NDofInt = B.Params.NDofTot;        
-        B.bActive = [true;false;false;false];   
-        B.bRigid  = [true;true;true;true];        
-
-        B.Kxx = B.Kb(1:2,1:2);
-        B.Kxy = B.Kb(1:2,3:4);
-        B.Kyy = B.Kb(3:4,3:4);
-
-        B.Cxx = B.Cb(1:2,1:2);
-        B.Cxy = B.Cb(1:2,3:4);
-        B.Cyy = B.Cb(3:4,3:4);
-        
-        B.Mxx = B.Mb(1:2,1:2);
-        B.Mxy = B.Mb(1:2,3:4);
-        B.Myy = B.Mb(3:4,3:4);
     otherwise
         %throw error if we don't have stiffess
         params_required = {'Kxx','Kyy','Cxx','Cyy'};

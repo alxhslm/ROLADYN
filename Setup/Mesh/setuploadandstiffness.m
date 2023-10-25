@@ -96,8 +96,6 @@ for i = 1:NBearing
         case 'radial'
             [Forces,~,Stiffness] = radial_model(P.Bearing{i}.Params,StatesB);
             Forces.F = Forces.F + P.Bearing{i}.Params.KPar*[StatesB.qi; StatesB.qo];
-        case 'piezo'
-            [Forces,~,Stiffness] = piezo_model(P.Bearing{i}.Params,StatesB);
         case 'linear'
             [Forces,~,Stiffness] = linear_model(P.Bearing{i},StatesB);
         otherwise

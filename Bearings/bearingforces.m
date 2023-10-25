@@ -60,12 +60,6 @@ for i = 1:length(P.Bearing)
                 else
                     ForcesB = linear_model(P.Bearing{i},StatesB);
                 end
-            case 'piezo'
-                if nargout > 1
-                    [ForcesB,~,StiffnessB] = piezo_model(P.Bearing{i}.Params,StatesB);
-                else
-                    ForcesB = piezo_model(P.Bearing{i}.Params,StatesB);
-                end
             otherwise
                 if nargout > 1
                     [ForcesB,~,StiffnessB] = empty_model(StatesB);
