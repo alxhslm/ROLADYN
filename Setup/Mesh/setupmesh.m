@@ -201,13 +201,8 @@ for i = 1:NBearings
     P.Bearing{i}.zi = z(1);
     P.Bearing{i}.zo = z(2);
 
-    if isfield(P.Bearing{i},'zb')
-        P.Bearing{i}.Ti = axial_offset(P.Bearing{i}.zb-z(1));
-        P.Bearing{i}.To = axial_offset(P.Bearing{i}.zb-z(2));
-    else
-        P.Bearing{i}.Ti = eye(4);
-        P.Bearing{i}.To = eye(4);
-    end
+    P.Bearing{i}.Ti = axial_offset(P.Bearing{i}.z-z(1));
+    P.Bearing{i}.To = axial_offset(P.Bearing{i}.z-z(2));
         
     P.Bearing{i}.Si = P.Bearing{i}.Ti*Sio{1};
     P.Bearing{i}.So = P.Bearing{i}.To*Sio{2};
