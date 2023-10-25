@@ -20,7 +20,7 @@ end
 y0 = [y0;0;0];
 
 P.Model.bCompressREB = 0;
-M = blkdiag(P.Model.M,eye(P.Model.NDof),zeros(P.Model.NDofInt),eye(2));
+M = blkdiag(P.Model.M,eye(2));
 
 ode_fun = @(t,y)odefun(t,y,P,ti,Oi,wi);
 plot_fun = @(t,y,flag)odeplot(t,y,flag,P);
@@ -43,20 +43,20 @@ A = y(end-1,:);
 th = y(end-1,:);
 
 %forces
-f = [Forces.F; Forces.FInt];
+f = Forces.F;
 [u,udot,uddot] = excitation_ode(P,O,w,A,th); 
 fe = P.Model.Excite.M*uddot + P.Model.Excite.C*udot + P.Model.Excite.K*u;
 
 %states
-[xCG,xdotCG,xInt]  = get_states(y,P);
+[xCG,xdotCG]  = get_states(y,P);
 [~,xddotCG,~]  = get_states(ydot,P);
 
 %% Create structure
 ode.t = t';
 
-ode.X     = [xCG; xInt]';
-ode.Xdot  = [xdotCG; 0*xInt]';
-ode.Xddot = [xddotCG; 0*xInt]';
+ode.X     = [xCG]';
+ode.Xdot  = [xdotCG]';
+ode.Xddot = [xddotCG]';
 
 ode.U     = u';
 ode.Udot  = udot';
@@ -111,7 +111,7 @@ function varargout = odefun(t,y,P,ti,Oi,wi)
 if length(t) < size(y,2)
     t = t + 0*y(1,:);
 end
-[xCG,xdotCG,xInt,Theta,th]  = get_states(y,P);
+[xCG,xdotCG,Theta,th]  = get_states(y,P);
 xddotCG = 0*xCG;
 x0 = P.Model.x0*(xCG(1,:)*0+1);
 
@@ -120,26 +120,22 @@ w = interp1q(ti,wi,t')';
 [u,udot,uddot] = excitation_ode(P,Omega,w,Theta,th); 
 
 %and now compute the bearing forces
-States.x     = [xCG;xInt];
-States.xdot  = [xdotCG;0*xInt];
-States.xddot = [xddotCG;0*xInt];
+States.x     = [xCG];
+States.xdot  = [xdotCG];
+States.xddot = [xddotCG];
 
 States.u     = u;
 States.udot  = udot;
 States.uddot = uddot;
 
-if P.Model.bNL
-    bearing_states = getbearingstates(States,P);
-    bearing_states.A = Theta;
-    bearing_states.O = Omega;
-    bearing_states.bSolve = 0;
+States.A = Theta;
+States.O = Omega;
 
-    Forces = bearingforces(P,bearing_states);
-    Fi  = Forces.FInt;
+if P.Model.bNL
+    Forces = bearingforces(P,States);
     Fb = P.Model.Bearing.S'*Forces.F;
 else
     Fb = P.Model.Bearing.F0 + P.Model.Bearing.K*(xCG-x0) + P.Model.Bearing.C*xdotCG;
-    Fi = [];
 end
 
 Fe = P.Model.Excite.M*uddot + P.Model.Excite.C*udot + P.Model.Excite.K*u;
@@ -150,7 +146,6 @@ Fg = P.Model.Fg;
 %and finally compute the derivatives
 Mydot = [(Fe + Fg - Fr - Fb - Fs);
             xdotCG;
-            Fi;
             Omega;
             w];
                     
@@ -160,7 +155,7 @@ if nargout > 1
 end
 
 function J = odejacob(t,y,P,ti,Oi,wi)
-[xCG,xdotCG,xInt,Theta,th] = get_states(y,P);
+[xCG,xdotCG,Theta,th] = get_states(y,P);
 xddotCG = 0*xCG;
 
 Omega = interp1(ti,Oi,t);
@@ -168,9 +163,9 @@ w = interp1(ti,wi,t);
 [u,udot,uddot] = excitation_ode(P,Omega,w,Theta,th);
 
 %and now compute the bearing forces
-States.x     = [xCG;xInt];
-States.xdot  = [xdotCG;0*xInt];
-States.xddot = [xddotCG;0*xInt];
+States.x     = [xCG];
+States.xdot  = [xdotCG];
+States.xddot = [xddotCG];
 
 States.u     = u;
 States.udot  = udot;
@@ -182,16 +177,14 @@ Kr = P.Model.Rotor.K;
 Cs = P.Model.Stator.C;
 Ks = P.Model.Stator.K;
 
+States.A = Theta;
+States.O = Omega;
+
 if P.Model.bNL
-    bearing_states = getbearingstates(States,P);
-    bearing_states.A = Theta;
-    bearing_states.O = Omega;
-    bearing_states.bSolve = 0;
+    [~,Stiffness] = bearingforces(P,States);
 
-    [~,Stiffness] = bearingforces(P,bearing_states);
-
-    Cb = P.Model.Bearing.S'*Stiffness.Cqq*P.Model.Bearing.S;
-    Kb = P.Model.Bearing.S'*Stiffness.Kqq*P.Model.Bearing.S;
+    Cb = P.Model.Bearing.S'*Stiffness.C*P.Model.Bearing.S;
+    Kb = P.Model.Bearing.S'*Stiffness.K*P.Model.Bearing.S;
 
 else
     Cb = P.Model.Bearing.C;
@@ -201,21 +194,12 @@ end
 J     = [  -(Cr+Cb+Cs)          -(Kr+Kb+Ks);
         eye(P.Model.NDof)   zeros(P.Model.NDof)];
 
-if P.Model.bNL
-    %and finally compute the derivatives
-    J     = [J        [-P.Model.Bearing.S'*Stiffness.Kqx;
-                       zeros(P.Model.NDof,P.Model.NDofInt)];
-             Stiffness.Cxq*P.Model.Bearing.S    Stiffness.Kxq*P.Model.Bearing.S   Stiffness.Kxx];
-end
-
     
 J  = blkdiag(J,eye(2));
 
-function [xCG,xdotCG,xInt,Theta,phPiezo]  = get_states(y,P)
+function [xCG,xdotCG,Theta,phPiezo]  = get_states(y,P)
 NDof = P.Model.NDof;
-NDofInt = P.Model.NDofInt;
 xdotCG = y(1:NDof,:);
 xCG    = y(NDof+(1:NDof),:);
-xInt   = y(2*NDof+(1:NDofInt),:);
 Theta = y(end-1,:); %int O dt
 phPiezo = y(end,:); %int w dt

@@ -152,13 +152,6 @@ P.Mesh.Stator.Fg = Fgs;
 %% Move onto the bearings
 NBearings = length(P.Bearing);
 
-%work out the number of internal states
-NInternal = zeros(NBearings);
-for i = 1:NBearings
-    NInternal(i) = P.Bearing{i}.NDofInt;
-end
-NInternalTot = sum(NInternal(:));
-
 NInputBearing = 2*NDofe*NBearings;
 Fb = zeros(NInputBearing,1);
 Kb = zeros(NInputBearing);
@@ -171,7 +164,6 @@ Cb_lin = zeros(NInputBearing);
 Mb_lin = zeros(NInputBearing);
 
 IMapInput = eye(NInputBearing);
-IMapInternal = eye(NInternalTot);
 
 %NB. order of nodes: inner, outer 
 Sb = zeros(0,NDofTot);
@@ -211,10 +203,7 @@ for i = 1:NBearings
 
     P.Bearing{i}.Ui = IMapInput(P.Bearing{i}.iInputi,:);
     P.Bearing{i}.Uo = IMapInput(P.Bearing{i}.iInputo,:);
-    P.Bearing{i}.U = [P.Bearing{i}.Ui;P.Bearing{i}.Uo];    
-    
-    P.Bearing{i}.V  = IMapInternal(P.Bearing{i}.iInternal,:);
-    
+    P.Bearing{i}.U = [P.Bearing{i}.Ui;P.Bearing{i}.Uo];
     P.Bearing{i}.R = blkdiag(P.Bearing{i}.Ri,P.Bearing{i}.Ro);
 
     %now compute the stiffness matrices  
@@ -367,13 +356,10 @@ P.Mesh.Fg = P.Mesh.Rotor.Fg + P.Mesh.Stator.Fg;
 P.Mesh.A  = eye(NDofTot);
 
 %% Store some useful numbers
-P.Mesh.NDofInt = NInternalTot;
 P.Mesh.NDof = NDofTot;
-P.Mesh.NDofTot = NDofTot+NInternalTot;
 P.Mesh.Excite.NExcite = NExcInputTot;
 
 P.Mesh.Rotor.NDof  = NDofRotor;
 P.Mesh.Stator.NDof = NDofStator;
 
-P.Mesh.Bearing.NDofInt = NInternalTot;
 P.Mesh.Bearing.NInput = NInputBearing;

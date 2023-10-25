@@ -29,14 +29,13 @@ if ~isfield(States,'bWaitbar')
     States.bWaitbar = 0;
 end
 
-if States.bSolve
-    %QS solution
-    States.xInt     = zeros(Params.Model.NDofTot,NPts);
-    %(Params.Geometry.ro-Params.Geometry.D/2) * repmat([sin(Params.alpha); cos(Params.alpha)],1,NPts);
-    States.xdotInt  = 0*States.xInt;
-    States.xddotInt = 0*States.xInt;
-    States = equilibrium(model,Params,States);
-end
+%QS solution
+States.xInt     = zeros(Params.Model.NDofTot,NPts);
+%(Params.Geometry.ro-Params.Geometry.D/2) * repmat([sin(Params.alpha); cos(Params.alpha)],1,NPts);
+States.xdotInt  = 0*States.xInt;
+States.xddotInt = 0*States.xInt;
+States = equilibrium(model,Params,States);
+
 
 if nargout<3
     [Forces,Channels] = feval(model,Params,States); 
@@ -55,9 +54,6 @@ Forces.xddotInt = States.xddotInt;
 Forces.q = R'*(States.qi - States.qo);
 
 function States = default_int(States,REB,NPts)
-if ~isfield(States,'bSolve')
-    States.bSolve = 1;
-end
 if ~isfield(States,'xInt')
     States.xInt = zeros(REB.Model.NDofTot,NPts);
 end

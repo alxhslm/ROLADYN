@@ -62,13 +62,9 @@ wons = 0*A + 1;
 States.x = P.Mesh.Bearing.S*P.Mesh.x0*wons;
 States.xdot = 0*States.x;
 States.xddot = 0*States.x;
-States.xInt = P.Mesh.xInt*wons;
-States.xdotInt = 0*States.xInt;
-States.xddotInt = 0*States.xInt;
 States.u = 0*P.Mesh.Excite.uSync*wons;
 States.udot = 0*P.Mesh.Excite.uSync*wons;
 States.uddot = 0*P.Mesh.Excite.uSync*wons;
-States.bSolve = 0;
 
 for i = 1:NBearing
     Oshaft = repmat(0*O,3,1);
@@ -85,9 +81,7 @@ for i = 1:NBearing
         case 'REB'
             [Forces,~,Stiffness] = REB_model(P.Bearing{i}.Params,StatesB);
             Stiffness.K   = Stiffness.K   + P.Bearing{i}.Params.KPar;
-            Stiffness.Kqq = Stiffness.Kqq + P.Bearing{i}.Params.KPar;
             Stiffness.C   = Stiffness.C   + P.Bearing{i}.Params.CPar;
-            Stiffness.Cqq = Stiffness.Cqq + P.Bearing{i}.Params.CPar;
             Forces.F = Forces.F + P.Bearing{i}.Params.KPar*[StatesB.qi; StatesB.qo] + P.Bearing{i}.Params.CPar*[StatesB.qidot;StatesB.qodot];
         case 'SFD'
             [Forces,~,Stiffness] = SFD_model(P.Bearing{i}.Params,StatesB);
@@ -129,12 +123,6 @@ StatesB.qiddot = B.Ri * (B.Ui * States.xddot);
 StatesB.Oo = Oshaft(1,:); StatesB.Oi = Oshaft(2,:); 
 StatesB.Ao = Ashaft(1,:); StatesB.Ai = Ashaft(2,:); 
 
-StatesB.xInt     = B.V*States.xInt;
-StatesB.xdotInt  = B.V*States.xdotInt;
-StatesB.xddotInt = B.V*States.xddotInt;
-
 StatesB.u     = B.Ue*States.u;
 StatesB.udot  = B.Ue*States.udot;
 StatesB.uddot = B.Ue*States.uddot;
-
-StatesB.bSolve = States.bSolve;

@@ -66,22 +66,6 @@ if nargout > 2
     S.K = K;
     S.C = C;
     S.M = M;
-
-    S.Kqq = K;
-    S.Cqq = C; 
-    S.Mqq = M;
-    
-    S.Kqx = zeros(8,0,NPts);
-    S.Kxq = zeros(0,8,NPts);
-    S.Kxx = zeros(0,0,NPts);
-
-    S.Cqx = zeros(8,0,NPts);
-    S.Cxq = zeros(0,8,NPts);
-    S.Cxx = zeros(0,0,NPts);
-    
-    S.Mqx = zeros(8,0,NPts);
-    S.Mxq = zeros(0,8,NPts);
-    S.Mxx = zeros(0,0,NPts);
 end
 
 function [fel,Kr] = getforces(B,r)

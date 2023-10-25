@@ -9,7 +9,6 @@ iRot = P.Model.iRot;
 Z = REB.Setup.Z;
 
 NDof = P.Model.NDof;
-NInt = P.Model.Reduced.NDofInt;
 ijacobx = hbm.nonlin.hbm.ijacobx;
 
 if P.Model.bCompressREB

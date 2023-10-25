@@ -11,11 +11,6 @@ NPts = size(States.qi,2);
 States = default_inputs(States);
 States = default_speeds(States,NPts);
 
-States.bSolve   = 0;
-States.xInt     = zeros(Params.Model.NDofTot,NPts);
-States.xdotInt  = 0*States.xInt;
-States.xddotInt = 0*States.xInt;
-
 %find free and fixed dof
 iConstr = isinf(diag(Params.Setup.KbParallel));
 iFree = isnan(States.qi(:,1));
@@ -29,9 +24,8 @@ end
 States.qi(iConstr,:) = 0;
 N = sum(iFree);
 
-Jstr = [ones(N) ones(N,Params.Model.NDofTot);
-        ones(Params.Model.NDofTot,N) repmat(eye(Params.Elements.N),Params.Model.NDof)];
-x0 = zeros(Params.Model.NDofTot,1);
+Jstr = ones(N);
+x0 = zeros(Params.Model.NDof,1);
 if nargin < 3
     q0 = zeros(4,1);
 end
@@ -74,8 +68,6 @@ if States.bWaitbar
 end
 
 States.qi(iFree,:) = Xsol(1:N,:);
-States.xInt = Xsol(N+1:end,:);
-States.bSolve = 0;
 if nargout > 2
     [F,V,S] = REB_model(Params, States);
 else
@@ -91,11 +83,6 @@ for i = 1:length(prefix)
     for k = 1:2
         States.([prefix{i} IO{k} suffix{i}]) = States.([prefix{i} IO{k} suffix{i}])(:,j);
     end
-end
-
-fields = {'xInt','xdotInt','xddotInt'};
-for i = 1:length(fields)
-    States.(fields{i}) = States.(fields{i})(:,j);
 end
 
 States.F = States.F(:,j);
@@ -138,19 +125,11 @@ end
 
 function F = preload_constr(X,Params,States,N,iFree)
 States.qi(iFree) = X(1:N);
-if ~isempty(States.xInt)
-    States.xInt = X(N+1:end);
-end
 Forces = REB_model(Params,States);
-FInt = Forces.FInt;
 FFree = Forces.F(1:4,:) - States.F;
-F = [FFree(iFree);FInt];
+F = FFree(iFree);
 
 function J = preload_jac(X,Params,States,N,iFree)
 States.qi(iFree) = X(1:N);
-if ~isempty(States.xInt)
-    States.xInt = X(N+1:end);
-end
 [F,~,S] = REB_model(Params,States);
-J = [S.Kqq(iFree,iFree) S.Kqx(iFree,:);
-     S.Kxq(:,iFree)     S.Kxx];
+J = S.Kqq(iFree,iFree);

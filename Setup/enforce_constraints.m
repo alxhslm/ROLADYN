@@ -28,7 +28,6 @@ T.Bearing.Lin.K = A'*S.Bearing.Lin.K*A;
 T.Bearing.Lin.C = A'*S.Bearing.Lin.C*A;
 T.Bearing.Lin.M = A'*S.Bearing.Lin.M*A;
 T.Bearing.S = S.Bearing.S*A;
-T.Bearing.NDofInt = S.Bearing.NDofInt;
 
 %and finally the excitation matrices
 T.Excite.K = A'*S.Excite.K;
@@ -40,5 +39,3 @@ T.Excite.NExcite = S.Excite.NExcite;
 
 %some useful numbers
 T.NDof = size(T.M,1);
-T.NDofInt = S.NDofInt;
-T.NDofTot = T.NDof + S.NDofInt;

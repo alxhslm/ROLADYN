@@ -100,9 +100,6 @@ for i = 1:3
 end
 
 function States = default_int(States,NPts)
-if ~isfield(States,'bSolve')
-    States.bSolve = 1;
-end
 if ~isfield(States,'xInt')
     States.xInt = zeros(0,NPts);
 end

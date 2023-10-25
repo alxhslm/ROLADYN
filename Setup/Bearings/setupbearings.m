@@ -4,16 +4,11 @@ if ~iscell(B)
 end
 
 iInputCount = 0;
-iInternalCount = 0;
 for i = 1:length(B)
     B{i} = setup_each_bearing(B{i},i,R);
     B{i}.iInputi = iInputCount + (1:4);
     B{i}.iInputo = iInputCount + (5:8);
     iInputCount = iInputCount + 8;
-    
-
-    B{i}.iInternal = iInternalCount + (1:B{i}.NDofInt);
-    iInternalCount = iInternalCount + B{i}.NDofInt;
 end
 
 function Node = setupnodes(Node,Rotor)
@@ -99,7 +94,6 @@ switch B.Model
         [B.Params,B.Kb,B.Cb,B.Mb] = setupREB(B.Params); 
         B.F0 = zeros(8,1);
         
-        B.NDofInt = B.Params.Model.NDofTot;       
         B.bActive = B.Params.bActive;  
         B.bRigid  = B.Params.bRigid;
 
@@ -118,7 +112,6 @@ switch B.Model
         [B.Params,B.Kb,B.Cb,B.Mb] = setupRadial(B.Params); 
         B.F0 = zeros(8,1);
         
-        B.NDofInt = 0;
         B.bActive = B.Params.bActive;   
         B.bRigid  = B.Params.bRigid;
 
@@ -137,7 +130,6 @@ switch B.Model
         [B.Params,B.Kb,B.Cb,B.Mb] = setupSFD(B.Params);
         B.F0 = zeros(8,1);
         
-        B.NDofInt = 0;
         B.bActive = true(4,1);
         B.bRigid  = B.Params.bRigid;
 
@@ -174,8 +166,6 @@ switch B.Model
                 [B.(params2default{i})] = zeros(2,1);
             end
         end
-
-        B.NDofInt = 0;
 
         B.Kb = [B.Kxx B.Kxy;
                 B.Kxy B.Kyy];
