@@ -41,6 +41,11 @@ if ~isfield(B, 'Name')
     B.Name = sprintf('Bearing %d',ind);
 end
 
+%error if no position is specified
+if ~isfield(B, 'z')
+    error('Cannot find parameter "z" for bearing "%s"',B.Name);
+end
+
 %error if we don't have the connection details
 if ~isfield(B,'Node')
     error('Cannot find parameter "Node" for bearing "%s"',B.Name);
