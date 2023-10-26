@@ -21,7 +21,6 @@ NPts = size(States.qi,2);
 
 States = default_inputs(States,R);
 States = default_speeds(States,NPts);
-States = default_int(States,NPts);
 
 if nargout < 3
     [Forces,Channels] = feval(model,Params,States);
@@ -99,16 +98,6 @@ for i = 1:3
     end
 end
 
-function States = default_int(States,NPts)
-if ~isfield(States,'xInt')
-    States.xInt = zeros(0,NPts);
-end
-if ~isfield(States,'xdotInt')
-    States.xdotInt = 0*States.xInt;
-end
-if ~isfield(States,'xddotInt')
-    States.xddotInt = 0*States.xInt;
-end
 
 function States = default_inputs(States,R)
 if ~isfield(States,'qo')

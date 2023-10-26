@@ -24,11 +24,6 @@ fb = zeros(4,NPts);
 fb([1 3],:) = (fel + fdamp + finer).*n;
 
 F.F = [fb; -fb];
-F.FInt     = zeros(0,NPts);
-F.xInt     = zeros(0,NPts);
-F.xdotInt  = zeros(0,NPts);
-F.xddotInt = zeros(0,NPts);
-
 V.Fr = fb;
 V.r  = r;
 V.rdot = rdot;
