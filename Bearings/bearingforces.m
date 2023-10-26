@@ -1,10 +1,15 @@
-function [Forces,Stiffness] = bearingforces(P,States)
+function [Forces,Stiffness] = bearingforces(P,States, bNL, bLin)
 NPts = size(States.x,2);
 
+if nargin < 3
+    bNL = true;
+end
+if nargin < 4
+    bLin = true;
+end
 %default any missing fields
 States = default_inputs(States,P,NPts);
 States = default_speeds(States,NPts);
-States = default_options(States);
 
 %initialise outputs
 Forces = forces_init(P,NPts);
@@ -13,8 +18,8 @@ if nargout > 1
 end
 
 for i = 1:length(P.Bearing)
-    bLin = strcmp(P.Bearing{i}.Model,'linear');
-    if (States.bNL && ~bLin) ||  (States.bLin && bLin)
+    bLinearBearing = strcmp(P.Bearing{i}.Model,'linear');
+    if (bNL && ~bLinearBearing) ||  (bLin && bLinearBearing)
         %loop over each bearing
         
         Oshaft = repmat(0*States.O,3,1);
@@ -26,44 +31,11 @@ for i = 1:length(P.Bearing)
         
         %assemble inputs for current bearing
         StatesB = states_init_j(P.Bearing{i},Oshaft,Ashaft,States);
-        
-        switch P.Bearing{i}.Model
-            case 'REB'
-                if nargout > 1
-                    [ForcesB,~,StiffnessB] = REB_model(P.Bearing{i}.Params,StatesB);
-                    StiffnessB.K   = StiffnessB.K   + P.Bearing{i}.Params.KPar;
-                    StiffnessB.C   = StiffnessB.C   + P.Bearing{i}.Params.CPar;
-                else
-                    ForcesB = REB_model(P.Bearing{i}.Params,StatesB);
-                end
-                ForcesB.F = ForcesB.F + P.Bearing{i}.Params.KPar*[StatesB.qi; StatesB.qo] + P.Bearing{i}.Params.CPar*[StatesB.qidot;StatesB.qodot];
-            case 'SFD'
-                if nargout > 1
-                    [ForcesB,~,StiffnessB] = SFD_model(P.Bearing{i}.Params,StatesB);
-                    StiffnessB.K = StiffnessB.K + P.Bearing{i}.Params.KSq;
-                else
-                    ForcesB = SFD_model(P.Bearing{i}.Params,StatesB);
-                end
-                ForcesB.F = ForcesB.F + P.Bearing{i}.Params.KSq*[StatesB.qi; StatesB.qo];
-            case 'radial'
-                if nargout > 1
-                    [ForcesB,~,StiffnessB] = radial_model(P.Bearing{i}.Params,StatesB);
-                else
-                    ForcesB = radial_model(P.Bearing{i}.Params,StatesB);
-                end
-                ForcesB.F = ForcesB.F + P.Bearing{i}.Params.KPar*[StatesB.qi; StatesB.qo];
-            case 'linear'
-                if nargout > 1
-                    [ForcesB,~,StiffnessB] = linear_model(P.Bearing{i},StatesB);
-                else
-                    ForcesB = linear_model(P.Bearing{i},StatesB);
-                end
-            otherwise
-                if nargout > 1
-                    [ForcesB,~,StiffnessB] = empty_model(StatesB);
-                else
-                    ForcesB = empty_model(StatesB);
-                end
+
+        if nargout > 1
+            [ForcesB,~,StiffnessB] =  P.Bearing{i}.ModelFun(P.Bearing{i}.Params,StatesB);
+        else
+            ForcesB = P.Bearing{i}.ModelFun(P.Bearing{i}.Params,StatesB);
         end
         
         R  = P.Bearing{i}.R;
@@ -81,7 +53,7 @@ for i = 1:length(P.Bearing)
 
             Stiffness.C   = Stiffness.C   + mtimesx(U'*R',mtimesx(StiffnessB.C,R*U));   
             Stiffness.Cu  = Stiffness.Cu  + mtimesx(U'*R',mtimesx(StiffnessB.Cu,Ue));
- 
+
             Stiffness.M   = Stiffness.M   + mtimesx(U'*R',mtimesx(StiffnessB.M,R*U));
             Stiffness.Mu  = Stiffness.Mu  + mtimesx(U'*R',mtimesx(StiffnessB.Mu,Ue));
         end
@@ -172,11 +144,3 @@ if length(States.O) == 1
     States.A = States.A + zeros(1,NPts);
 end
 
-
-function States = default_options(States)
-if ~isfield(States,'bNL')
-    States.bNL = 1;
-end
-if ~isfield(States,'bLin')
-    States.bLin = 1;
-end

@@ -1,4 +1,4 @@
-function [F,V,S] = empty_model(States)
+function [F,V,S] = empty_model(Params, States)
 NPts = size(States.qi,2);
 
 F.F = zeros(8,NPts);

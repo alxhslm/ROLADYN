@@ -48,27 +48,6 @@ end
 
 B.Node = setupnodes(B.Node,R);
 
-%no damping as default
-damping_fields = {'cxx','cxy','cyy'};
-for i = 1:length(damping_fields)
-    if ~isfield(B,damping_fields{i})
-        B.(damping_fields{i}) = 0;
-    end
-end
-
-%or inertia
-inertia_fields = {'mxx','mxy','myy'};
-for i = 1:length(inertia_fields)
-    if ~isfield(B,inertia_fields{i})
-        B.(inertia_fields{i}) = 0;
-    end
-end
-
-%default to linear bearing model
-if ~isfield(B,'Model')
-    B.Model = 'linear';
-end
-
 if ~isfield(B,'Params')
     B.Params = struct();
 end
@@ -78,117 +57,45 @@ if ~isfield(B,'t')
     B.t = 0.01;
 end
 
-%convert any linear stiffness properties (kxx) into stiffness matrices (Kxx)
-dof = {'xx','xy','yy'};
-mat = {'K','C','M'};
-for iMat = 1:3
-    for iDof = 1:3
-        if ~isfield(B,[mat{iMat} dof{iDof}]) && isfield(B,[lower(mat{iMat}) dof{iDof}])
-            B.([mat{iMat} dof{iDof}]) = diag([B.([lower(mat{iMat}) dof{iDof}]) 0]);
-        end
-    end
+if ~isfield(B,'Model')
+    error(['Bearing ' B.Name ' has no model type'])
 end
-
 switch B.Model
     case 'REB'
-        [B.Params,B.Kb,B.Cb,B.Mb] = setupREB(B.Params); 
-        B.F0 = zeros(8,1);
-        
-        B.bActive = B.Params.bActive;  
-        B.bRigid  = B.Params.bRigid;
-
-        B.Kxx = B.Kb(1:2,1:2);
-        B.Kxy = B.Kb(1:2,3:4);
-        B.Kyy = B.Kb(3:4,3:4);
-
-        B.Cxx = B.Cb(1:2,1:2);
-        B.Cxy = B.Cb(1:2,3:4);
-        B.Cyy = B.Cb(3:4,3:4);
-        
-        B.Mxx = B.Mb(1:2,1:2);
-        B.Mxy = B.Mb(1:2,3:4);
-        B.Myy = B.Mb(3:4,3:4);
-    case 'radial'
-        [B.Params,B.Kb,B.Cb,B.Mb] = setupRadial(B.Params); 
-        B.F0 = zeros(8,1);
-        
-        B.bActive = B.Params.bActive;   
-        B.bRigid  = B.Params.bRigid;
-
-        B.Kxx = B.Kb(1:2,1:2);
-        B.Kxy = B.Kb(1:2,3:4);
-        B.Kyy = B.Kb(3:4,3:4);
-
-        B.Cxx = B.Cb(1:2,1:2);
-        B.Cxy = B.Cb(1:2,3:4);
-        B.Cyy = B.Cb(3:4,3:4);
-        
-        B.Mxx = B.Mb(1:2,1:2);
-        B.Mxy = B.Mb(1:2,3:4);
-        B.Myy = B.Mb(3:4,3:4);
+        B.SetupFun = str2func('setupREB');
+        B.ModelFun = str2func('REB_model');
     case 'SFD'
-        [B.Params,B.Kb,B.Cb,B.Mb] = setupSFD(B.Params);
-        B.F0 = zeros(8,1);
-        
-        B.bActive = true(4,1);
-        B.bRigid  = B.Params.bRigid;
-
-        B.Kxx = B.Kb(1:2,1:2);
-        B.Kxy = B.Kb(1:2,3:4);
-        B.Kyy = B.Kb(3:4,3:4);
-
-        B.Cxx = B.Cb(1:2,1:2);
-        B.Cxy = B.Cb(1:2,3:4);
-        B.Cyy = B.Cb(3:4,3:4);
-        
-        B.Mxx = B.Mb(1:2,1:2);
-        B.Mxy = B.Mb(1:2,3:4);
-        B.Myy = B.Mb(3:4,3:4);
+        B.SetupFun = str2func('setupSFD');
+        B.ModelFun = str2func('SFD_model');
+    case 'radial'
+        B.SetupFun = str2func('setupRadial');
+        B.ModelFun = str2func('radial_model');
+    case 'linear'
+        B.SetupFun = str2func('setupLinear');
+        B.ModelFun = str2func('linear_model');
+    case 'empty'
+        B.SetupFun = str2func('setupEmpty');
+        B.ModelFun = str2func('empty_model');
     otherwise
-        %throw error if we don't have stiffess
-        params_required = {'Kxx','Kyy','Cxx','Cyy'};
-        for i = 1:length(params_required)
-            if ~isfield(B,params_required{i})
-                error('Cannot find parameter "%s" in the B structure',params_required{i});
-            end
-        end
-
-        params2default = {'Kxy','Cxy'}; %off-diagonal stiffness terms
-        for i = 1:length(params2default)
-            if ~isfield(B,params2default{i})
-                [B.(params2default{i})] = zeros(2);
-            end
-        end
-        
-        params2default = {'Fx','Fy'}; %off-diagonal stiffness terms
-        for i = 1:length(params2default)
-            if ~isfield(B,params2default{i})
-                [B.(params2default{i})] = zeros(2,1);
-            end
-        end
-
-        B.Kb = [B.Kxx B.Kxy;
-                B.Kxy B.Kyy];
-
-        B.bActive = abs(diag(B.Kb)) > 0;
-        B.bRigid  = isinf(diag(B.Kb));
-
-        B.Kb = kron([1 -1; -1 1],B.Kb);
-
-        B.Cb = [B.Cxx B.Cxy;
-                B.Cxy B.Cyy];
-
-        B.Cb = kron([1 -1; -1 1],B.Cb);
-        
-        B.Mb = [B.Mxx B.Mxy;
-                B.Mxy B.Myy];
-
-        B.Mb = kron([1 -1; -1 1],B.Mb);
-
-        B.F0 = [B.Fx;B.Fy];
-        B.F0 = kron([1; -1],B.F0);
+        error(['Bearing ' B.Name ' has an invalid model type'])
 end
+[B.Params,B.F0,B.Kb,B.Cb,B.Mb] = B.SetupFun(B.Params); 
 
+B.Kxx = B.Kb(1:2,1:2);
+B.Kxy = B.Kb(1:2,3:4);
+B.Kyy = B.Kb(3:4,3:4);
+
+B.Cxx = B.Cb(1:2,1:2);
+B.Cxy = B.Cb(1:2,3:4);
+B.Cyy = B.Cb(3:4,3:4);
+
+B.Mxx = B.Mb(1:2,1:2);
+B.Mxy = B.Mb(1:2,3:4);
+B.Myy = B.Mb(3:4,3:4);
+
+B.bActive = B.Params.bActive;
+B.bRigid  = B.Params.bRigid; 
+        
 RBear = eye(4);
 RBear = RBear([1 4 2 3],:);
 RBear(4,:) = -RBear(4,:);
@@ -208,3 +115,4 @@ end
 
 ii = isinf(B.Kb); B.Kb(ii) = 0;
 ii = isinf(B.Cb); B.Cb(ii) = 0;
+    

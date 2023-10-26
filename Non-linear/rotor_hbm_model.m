@@ -8,16 +8,12 @@ bearing_states.xddot = P.Model.Bearing.S*States.xddot;
 
 bearing_states.A = O*States.t(P.Model.iRot,:);
 bearing_states.O = O + 0*States.t(P.Model.iRot,:);
-bearing_states.bSolve = 0;
-bearing_states.bNL = 1;
-bearing_states.bLin = 0;
-
 
 varargout = {};
 switch part
     case  'nl'        
         if P.Model.bNL
-            Forces = bearingforces(P,bearing_states);
+            Forces = bearingforces(P,bearing_states, 1, 0);
         else
             Forces = linear_bearingforces(P,bearing_states);
         end
@@ -27,7 +23,7 @@ switch part
         varargout{end+1} = Fnl;
     case 'output'
         if P.Model.bNL
-            Forces = bearingforces(P,bearing_states);
+            Forces = bearingforces(P,bearing_states, 1, 0);
         else
             Forces = linear_bearingforces(P,bearing_states);
         end
@@ -36,7 +32,7 @@ switch part
         if P.Model.bAnalyticalDerivs
             % ///// Analytical derivs /////
             if P.Model.bNL
-                [~,Stiffness] = bearingforces(P,bearing_states);
+                [~,Stiffness] = bearingforces(P,bearing_states, 1, 0);
             else
                 [~,Stiffness] = linear_bearingforces(P,bearing_states);
             end

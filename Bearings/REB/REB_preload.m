@@ -12,16 +12,11 @@ States = default_inputs(States);
 States = default_speeds(States,NPts);
 
 %find free and fixed dof
-iConstr = isinf(diag(Params.Setup.KbParallel));
 iFree = isnan(States.qi(:,1));
 iFixed = isnan(States.F(:,1));
-if any(iConstr & iFree)
-    error(error('Problem specified incorrectly'));
-end
 if any(iFixed & iFree)
     error('Problem specified incorrectly')
 end
-States.qi(iConstr,:) = 0;
 N = sum(iFree);
 
 Jstr = ones(N);

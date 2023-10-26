@@ -1,10 +1,11 @@
-function [B,K,C,M] = setupREB(B)
+function [B,F0,K,C,M] = setupREB(B)
 switch B.Setup.Type
     case 'radial'
         B.bActive = true(4,1);
     case 'selfaligning'
         B.bActive = [true false true false]';
 end
+B.bRigid = false(4,1);
 
 switch B.Setup.ElementType
     case 'ball'
@@ -57,14 +58,6 @@ end
     
 B.Elements = createArrangement(B.Setup.ElementArrangement,B.Geometry,B.Elements);
 
-if ~isfield(B.Setup,'KbParallel')
-    B.Setup.KbParallel = zeros(4);
-end
-
-if ~isfield(B.Setup,'CbParallel')
-    B.Setup.CbParallel = zeros(4);
-end
-
 B.Material = setupMaterial(B.Material);
 
 if ~isfield(B,'Contact')
@@ -104,15 +97,10 @@ B.Model         = setupModel(B.Model,B.Options);
 B.Model.NDofTot = B.Model.NDof * B.Elements.N;
 
 %assemble outputs
-B.KPar = kron([1 -1; -1 1], max(-1E20,min(B.Setup.KbParallel,1E20)));
-K = kron([1 -1; -1 1], B.Setup.KbParallel);
-
-B.CPar = kron([1 -1; -1 1], max(-1E20,min(B.Setup.CbParallel,1E20)));
-C = kron([1 -1; -1 1], B.Setup.CbParallel);
-
-M = 0*C;
-
-B.bRigid = isinf(diag(B.Setup.KbParallel));
+F0 = zeros(8,1);
+K = zeros(8);
+C = zeros(8);
+M = zeros(8);
 
 function S = createArrangement(Arrangement,Geometry,S)
 S.alpha = Geometry.alpha0 + 0*S.psi;

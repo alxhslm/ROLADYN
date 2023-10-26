@@ -31,7 +31,6 @@ end
 
 %QS solution
 States.xInt     = zeros(Params.Model.NDofTot,NPts);
-%(Params.Geometry.ro-Params.Geometry.D/2) * repmat([sin(Params.alpha); cos(Params.alpha)],1,NPts);
 States.xdotInt  = 0*States.xInt;
 States.xddotInt = 0*States.xInt;
 States = equilibrium(model,Params,States);

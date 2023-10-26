@@ -76,29 +76,8 @@ for i = 1:NBearing
     
     %assemble inputs for current bearing
     StatesB = states_init_j(P.Bearing{i},Oshaft,Ashaft,States);
-    
-    switch P.Bearing{i}.Model
-        case 'REB'
-            [Forces,~,Stiffness] = REB_model(P.Bearing{i}.Params,StatesB);
-            Stiffness.K   = Stiffness.K   + P.Bearing{i}.Params.KPar;
-            Stiffness.C   = Stiffness.C   + P.Bearing{i}.Params.CPar;
-            Forces.F = Forces.F + P.Bearing{i}.Params.KPar*[StatesB.qi; StatesB.qo] + P.Bearing{i}.Params.CPar*[StatesB.qidot;StatesB.qodot];
-        case 'SFD'
-            [Forces,~,Stiffness] = SFD_model(P.Bearing{i}.Params,StatesB);
-            Stiffness.K = Stiffness.K + P.Bearing{i}.Params.KSq;
-            Forces.F = Forces.F + P.Bearing{i}.Params.KSq*[StatesB.qi; StatesB.qo];
-        case 'radial'
-            [Forces,~,Stiffness] = radial_model(P.Bearing{i}.Params,StatesB);
-            Forces.F = Forces.F + P.Bearing{i}.Params.KPar*[StatesB.qi; StatesB.qo];
-        case 'linear'
-            [Forces,~,Stiffness] = linear_model(P.Bearing{i},StatesB);
-        otherwise
-            if nargout > 1
-                [Forces,~,Stiffness] = empty_model(StatesB);
-            else
-                Forces = empty_model(StatesB);
-            end
-    end
+    [Forces,~,Stiffness] = P.Bearing{i}.ModelFun(P.Bearing{i}.Params,StatesB);
+        
     P.Bearing{i}.Kb = mean(Stiffness.K,3);
     P.Bearing{i}.Cb = mean(Stiffness.C,3);
     P.Bearing{i}.Fb = mean(Forces.F,2);
